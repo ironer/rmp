@@ -1,9 +1,15 @@
 <?php
 
 class Router {
-    private $test = 'zluva';
+    private $app;
+
+    public function __construct($app) {
+        $this->app = $app;
+    }
 
     public function go() {
-        echo 'Routuju!<br>';
+        App::lg('Routuju!');
+        $this->app->controller = 'trysko';
+        $this->app->view = 'zluva';
     }
 }

@@ -3,8 +3,10 @@
 define('PRODUCTION', false);
 define('NOW', microtime(true));
 define('MEMORY', memory_get_usage());
+define('ROOT', __DIR__);
+define('APP', ROOT . "/app");
 
-$app = require_once(__DIR__ . '/app/default.php');
+$app = require_once(APP . '/default.php');
 $app->go();
 
 if (!PRODUCTION) {

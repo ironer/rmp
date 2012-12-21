@@ -3,6 +3,8 @@
 class Router
 {
     private $app;
+    public $routes = array();
+    private $usedRoutes = array();
 
 
     public function __construct($app)
@@ -18,8 +20,6 @@ class Router
     public function go()
     {
         App::lg('Routuju!');
-        $this->app->controller = 'trysko';
-        $this->app->view = 'zluva';
     }
 
 }

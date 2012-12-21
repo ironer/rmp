@@ -81,6 +81,33 @@ class Dumper
 
 
     /**
+     * Finds the location where dump was called.
+     * @return array [file, line, code]
+     */
+    public static function findLocation()
+    {
+        foreach (debug_backtrace(FALSE) as $item) {
+            if (isset($item['file']) && strpos($item['file'], __DIR__) === 0) {
+                continue;
+
+            } elseif (!isset($item['file'], $item['line']) || !is_file($item['file'])) {
+                break;
+
+            } else {
+                $lines = file($item['file']);
+                $line = preg_replace('#(\r\n|\r|\n)#i', '', $lines[$item['line'] - 1]);
+                return array(
+                    $item['file'],
+                    $item['line'],
+                    preg_match('#\w*dump(er::\w+)?\(.*\)#i', $line, $m) ? $m[0] : $line
+                );
+            }
+        }
+        return false;
+    }
+
+
+    /**
      * Dumps variable to plain text.
      * @param $var
      * @param array $options
@@ -116,7 +143,7 @@ class Dumper
 	private static function dumpVar(&$var, array $options, $level = 0)
 	{
 		if (method_exists(__CLASS__, $m = 'dump' . gettype($var))) {
-			return /**/self::$m($var, $options, $level);
+			return self::$m($var, $options, $level);
 		} else {
 			return "<span>unknown type</span>\n";
 		}
@@ -265,32 +292,6 @@ class Dumper
 
 		$s = strtr($s, preg_match('#[^\x09\x0A\x0D\x20-\x7E\xA0-\x{10FFFF}]#u', $s) || preg_last_error() ? $binary : $utf);
 		return '"' . htmlSpecialChars($s, ENT_NOQUOTES) . '"';
-	}
-
-
-	/**
-	 * Finds the location where dump was called.
-	 * @return array [file, line, code]
-	 */
-	private static function findLocation()
-	{
-		foreach (debug_backtrace(FALSE) as $item) {
-			if (isset($item['file']) && strpos($item['file'], __DIR__) === 0) {
-				continue;
-
-			} elseif (!isset($item['file'], $item['line']) || !is_file($item['file'])) {
-				break;
-
-			} else {
-				$lines = file($item['file']);
-				$line = $lines[$item['line'] - 1];
-				return array(
-					$item['file'],
-					$item['line'],
-					preg_match('#\w*dump(er::\w+)?\(.*\)#i', $line, $m) ? $m[0] : $line
-				);
-			}
-		}
 	}
 
 }

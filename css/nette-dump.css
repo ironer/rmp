@@ -1,0 +1,35 @@
+pre.nette-dump div {
+    padding-left: 3ex;
+    margin-bottom: 5px;
+}
+pre.nette-dump div div {
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    margin-left: 0.5ex;
+}
+pre.nette-dump {
+    border: medium none;
+    margin: 0;
+    padding: 0;
+}
+.nette-dump-array, .nette-dump-object {
+    color: #CC2222;
+}
+.nette-dump-string {
+    color: #3355DD;
+}
+.nette-dump-number {
+    color: #009900;
+}
+.nette-dump-null, .nette-dump-bool {
+    color: #885500;
+}
+.nette-dump-visibility {
+    color: #999999;
+    font-size: 85%;
+}
+.nette-dump-indent {
+    display: none;
+}
+hr + hr {
+    display: none;
+}

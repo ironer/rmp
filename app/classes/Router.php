@@ -4,7 +4,7 @@ class Router
 {
     private $app;
     public $routes = array();
-    private $usedRoutes = array();
+    private $usedRoute = array();
 
 
     public function __construct($app)

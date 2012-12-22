@@ -19,7 +19,8 @@ class Dumper
 		TRUNCATE = 'truncate', // how truncate long strings? (defaults to 150)
 		COLLAPSE = 'collapse', // always collapse? (defaults to false)
 		COLLAPSE_COUNT = 'collapsecount', // how big array/object are collapsed? (defaults to 7)
-		LOCATION = 'location'; // show location string? (defaults to false)
+		LOCATION = 'location', // show location string? (defaults to false)
+        NO_BREAK = 'nobreak'; // return dump without line breaks (defaults to false)
 
 	/** @var array */
 	public static $terminalColors = array(
@@ -74,32 +75,71 @@ class Dumper
 				self::TRUNCATE => 150,
 				self::COLLAPSE => FALSE,
 				self::COLLAPSE_COUNT => 7,
+                self::NO_BREAK => FALSE
 			))
-			. ($file ? '<small>in <a href="editor://open/?file=' . rawurlencode($file) . "&amp;line=$line\">" . htmlspecialchars($file) . ":$line</a></small>" : '')
+			. ($file ? '<small>in <a href="editor://open/?file=' . rawurlencode($file) . "&amp;line=$line\"><i>" . htmlspecialchars($file) . "</i> <b>@$line</b></a></small>" : '')
 			. "</pre>\n";
 	}
 
 
     /**
      * Finds the location where dump was called.
+     * @param bool $getMethod
      * @return array [file, line, code]
      */
-    public static function findLocation()
+    public static function findLocation($getMethod = FALSE)
     {
-        foreach (debug_backtrace(FALSE) as $item) {
-            if (isset($item['file']) && strpos($item['file'], __DIR__) === 0) {
+        $backtrace = (debug_backtrace(FALSE));
+        foreach ($backtrace as $id => $item) {
+            if (isset($item['class']) && $item['class'] === 'Dumper') {
                 continue;
-
             } elseif (!isset($item['file'], $item['line']) || !is_file($item['file'])) {
                 break;
-
             } else {
                 $lines = file($item['file']);
-                $line = preg_replace('#(\r\n|\r|\n)#i', '', $lines[$item['line'] - 1]);
+                $line = trim($lines[$item['line'] - 1]);
+
+                if (!$getMethod) {
+                    $code = preg_match('#\w*dump(er::\w+)?\(.*\)#i', $line, $m) ? $m[0] : $line;
+//                } elseif ($getMethod && isset($backtrace[$id+1]['function'], $backtrace[$id+1]['class'], $backtrace[$id+1]['type'])) {
+//                    $args = array();
+//                    if (!empty($backtrace[$id+1]['args'])) {
+//                        foreach($backtrace[$id+1]['args'] as $arg) {
+//                            $args[] = self::dumpVar($arg, array(self::DEPTH => -1, self::TRUNCATE => 10, self::NO_BREAK => TRUE));
+//                        }
+//                    }
+//                    $code = $backtrace[$id+1]['class'] . $backtrace[$id+1]['type'] . $backtrace[$id+1]['function']
+//                        . '(' . implode(', ', $args) . ')';
+                } else {
+                    $backtraceCnt = count($backtrace);
+                    ++$id;
+                    while (!isset($backtrace[$id]['function'], $backtrace[$id]['class'], $backtrace[$id]['type'])) {
+                        if (++$id == $backtraceCnt) {
+                            $id = 0;
+                            break;
+                        }
+                    }
+
+                    if ($id) {
+                        $args = array();
+                        if (!empty($backtrace[$id]['args'])) {
+                            foreach($backtrace[$id]['args'] as $arg) {
+                                $args[] = self::dumpVar($arg, array(self::DEPTH => -1, self::TRUNCATE => 10, self::NO_BREAK => TRUE));
+                            }
+                        }
+
+                        $code = $backtrace[$id]['class'] . $backtrace[$id]['type'] . $backtrace[$id]['function']
+                            . '(' . implode(', ', $args) . ')';
+                    } else {
+                        $code = '';
+                    }
+
+                }
+
                 return array(
                     $item['file'],
                     $item['line'],
-                    preg_match('#\w*dump(er::\w+)?\(.*\)#i', $line, $m) ? $m[0] : $line
+                    $code
                 );
             }
         }
@@ -145,41 +185,45 @@ class Dumper
 		if (method_exists(__CLASS__, $m = 'dump' . gettype($var))) {
 			return self::$m($var, $options, $level);
 		} else {
-			return "<span>unknown type</span>\n";
+			return "<span>unknown type</span>" . ($options[self::NO_BREAK] ? '' : "\n");
 		}
 	}
 
 
-	private static function dumpNull()
+	private static function dumpNull(&$var, $options)
 	{
-		return "<span class=\"nette-dump-null\">NULL</span>\n";
+		return "<span class=\"nette-dump-null\">NULL</span>" . ($options[self::NO_BREAK] ? '' : "\n");
 	}
 
 
-	private static function dumpBoolean(&$var)
+	private static function dumpBoolean(&$var, $options)
 	{
-		return '<span class="nette-dump-bool">' . ($var ? 'TRUE' : 'FALSE') . "</span>\n";
+		return '<span class="nette-dump-bool">' . ($var ? 'TRUE' : 'FALSE') . "</span>" . ($options[self::NO_BREAK] ? '' : "\n");
 	}
 
 
-	private static function dumpInteger(&$var)
+	private static function dumpInteger(&$var, $options)
 	{
-		return "<span class=\"nette-dump-number\">$var</span>\n";
+		return "<span class=\"nette-dump-number\">$var</span>" . ($options[self::NO_BREAK] ? '' : "\n");
 	}
 
 
-	private static function dumpDouble(&$var)
+	private static function dumpDouble(&$var, $options)
 	{
 		$var = var_export($var, TRUE);
-		return '<span class="nette-dump-number">' . $var . (strpos($var, '.') === FALSE ? '.0' : '') . "</span>\n";
+		return '<span class="nette-dump-number">' . $var . (strpos($var, '.') === FALSE ? '.0' : '') . "</span>"
+            . ($options[self::NO_BREAK] ? '' : "\n");
 	}
 
 
 	private static function dumpString(&$var, $options)
 	{
-		return '<span class="nette-dump-string">'
-			. self::encodeString($options[self::TRUNCATE] && strlen($var) > $options[self::TRUNCATE] ? substr($var, 0, $options[self::TRUNCATE]) . ' ... ' : $var)
-			. '</span>' . (strlen($var) > 1 ? ' (' . strlen($var) . ')' : '') . "\n";
+        if ($options[self::TRUNCATE] && strlen($var) > $options[self::TRUNCATE]) {
+            return '<span class="nette-dump-string">' . self::encodeString(substr($var, 0, $options[self::TRUNCATE]), TRUE)
+                . '</span> (' . strlen($var) . ')' . ($options[self::NO_BREAK] ? '' : "\n");
+        } else {
+            return '<span class="nette-dump-string">' . self::encodeString($var) . '</span>' . ($options[self::NO_BREAK] ? '' : "\n");
+        }
 	}
 
 
@@ -193,10 +237,10 @@ class Dumper
 		$out = '<span class="nette-dump-array">array</span> (';
 
 		if (empty($var)) {
-			return $out . "0)\n";
+			return $out . "0)" . ($options[self::NO_BREAK] ? '' : "\n");
 
 		} elseif (isset($var[$marker])) {
-			return $out . (count($var) - 1) . ") [ <i>RECURSION</i> ]\n";
+			return $out . (count($var) - 1) . ") [ <i>RECURSION</i> ]" . ($options[self::NO_BREAK] ? '' : "\n");
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($var) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
@@ -213,7 +257,7 @@ class Dumper
 			return $out . '</div>';
 
 		} else {
-			return $out . count($var) . ") [ ... ]\n";
+			return $out . count($var) . ")" . ($options[self::NO_BREAK] ? '' : " [ ... ]\n");
 		}
 	}
 
@@ -226,10 +270,10 @@ class Dumper
 		$out = '<span class="nette-dump-object">' . get_class($var) . "</span> (" . count($fields) . ')';
 
 		if (empty($fields)) {
-			return $out . "\n";
+			return $options[self::NO_BREAK] ? $out : "$out\n";
 
 		} elseif (in_array($var, $list, TRUE)) {
-			return $out . " { <i>RECURSION</i> }\n";
+			return $out . " { <i>RECURSION</i> }" . ($options[self::NO_BREAK] ? '' : "\n");
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($fields) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
@@ -249,7 +293,7 @@ class Dumper
 			return $out . '</div>';
 
 		} else {
-			return $out . " { ... }\n";
+			return $options[self::NO_BREAK] ? "$out" : "$out { ... }\n";
 		}
 	}
 
@@ -266,11 +310,11 @@ class Dumper
 			}
 			return $out . '</div>';
 		}
-		return "$out\n";
+        return $options[self::NO_BREAK] ? $out : "$out\n";
 	}
 
 
-	private static function encodeString($s)
+	private static function encodeString($s, $truncated = FALSE)
 	{
 		static $utf, $binary;
 		if ($utf === NULL) {
@@ -291,7 +335,7 @@ class Dumper
 		}
 
 		$s = strtr($s, preg_match('#[^\x09\x0A\x0D\x20-\x7E\xA0-\x{10FFFF}]#u', $s) || preg_last_error() ? $binary : $utf);
-		return '"' . htmlSpecialChars($s, ENT_NOQUOTES) . '"';
+		return '"' . htmlSpecialChars($s, ENT_NOQUOTES) . ($truncated ? '&hellip;' : '') . '"';
 	}
 
 }

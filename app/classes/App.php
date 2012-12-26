@@ -2,57 +2,77 @@
 
 class App
 {
-
-    public $router = 'default';
-    public $model = 'default';
-    public $controller = 'default';
-    public $view = 'default';
+    public $id;
+    private $router = 'default';
+    private $model = 'default';
+    private $controller = 'default';
+    private $view = 'default';
 
     private $rmcv = array(
-        routers => array(),
-        models => array(),
-        controllers => array(),
-        views => array()
+        'routers' => array(),
+        'models' => array(),
+        'services' => array(),
+        'controllers' => array(),
+        'views' => array()
     );
 
 
-    public function route()
+    public function __construct($_id = 'default') {
+        $this->id = $_id;
+        App::lg("Vytvorena aplikace '$_id'");
+    }
+
+
+    public function route($_usedRouter = '')
     {
-        if (is_file(ROUTERS . "/$this->router.php")) {
-            $this->rmcv['routers'][$this->router] = require_once(ROUTERS . "/$this->router.php");
-            App::lg("Spusten router: '$this->router'");
-            $this->rmcv['routers'][$this->router]->go();
+        $_usedRouter = empty($_usedRouter) ? $this->router : ($this->router = $_usedRouter);
+        if (is_file(ROUTERS . "/$_usedRouter.php")) {
+            App::lg("  $this->id: Volani routeru '$_usedRouter'");
+            App::prependArray($this->rmcv['routers'], $_usedRouter, require_once(ROUTERS . "/$this->router.php"));
+            if (get_class($this->rmcv['routers'][$_usedRouter]) === 'Router') {
+                if ($_usedRouter === $this->router) {
+                    $this->rmcv['routers'][$_usedRouter]->go();
+                }
+            } else {
+                throw new Exception("Aplikace ocekava odkaz na router. Skript '$_usedRouter.php' nevraci objekt tridy 'Router'.");
+            }
         } else {
-            throw new Exception("Router '$this->router' (soubor '$this->router.php') nenalezen v adresari routeru '" . ROUTERS . "'.");
+            throw new Exception("Router '$_usedRouter' (soubor '$_usedRouter.php') nenalezen v adresari routeru '" . ROUTERS . "'.");
         }
+
+        return $this;
     }
 
 
     public function getModel()
     {
-        App::lg('Model...');
-        return;
+        App::lg("  $this->id: Model...");
+
+        return $this;
     }
 
 
     public function control()
     {
-        App::lg('Controller...');
-        return;
+        App::lg("  $this->id: Controller...");
+
+        return $this;
     }
 
 
     public function view()
     {
-        App::lg('View...');
-        return;
+        App::lg("  $this->id: View...");
+
+        return $this;
     }
 
 
     public function go()
     {
-        App::lg('Spusteni aplikace!');
-        return;
+        App::lg("Spusteni aplikace '$this->id'!");
+
+        return $this->id;
     }
 
 
@@ -81,7 +101,7 @@ class App
 
 
     public static function lg($text = '', $reset = FALSE) {
-        if (!PRODUCTION) {
+        if (DEBUG) {
             require_once(CLASSES . '/Dumper.php');
             list($file, $line, $code) = Dumper::findLocation(TRUE);
 
@@ -107,6 +127,13 @@ class App
             Dumper::dump($var, array('location' => TRUE));
             echo '<hr>';
         }
+    }
+
+
+    private static function prependArray(&$array, $key, $var) {
+        $array = array_reverse($array);
+        $array[$key] = $var;
+        $array = array_reverse($array);
     }
 
 }

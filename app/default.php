@@ -13,11 +13,6 @@ define('LOGS', ROOT . '/logs');
 define('TEMP', ROOT . '/temp');
 
 require_once(CLASSES . '/App.php');
-$app = new App();
+$app = new App('MLM+');
 
-$app->route();
-$app->getModel();
-$app->control();
-$app->view();
-
-return $app;
+return $app->route()->getModel()->control()->view();

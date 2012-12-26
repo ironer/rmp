@@ -101,15 +101,6 @@ class Dumper
 
                 if (!$getMethod) {
                     $code = preg_match('#\w*dump(er::\w+)?\(.*\)#i', $line, $m) ? $m[0] : $line;
-//                } elseif ($getMethod && isset($backtrace[$id+1]['function'], $backtrace[$id+1]['class'], $backtrace[$id+1]['type'])) {
-//                    $args = array();
-//                    if (!empty($backtrace[$id+1]['args'])) {
-//                        foreach($backtrace[$id+1]['args'] as $arg) {
-//                            $args[] = self::dumpVar($arg, array(self::DEPTH => -1, self::TRUNCATE => 10, self::NO_BREAK => TRUE));
-//                        }
-//                    }
-//                    $code = $backtrace[$id+1]['class'] . $backtrace[$id+1]['type'] . $backtrace[$id+1]['function']
-//                        . '(' . implode(', ', $args) . ')';
                 } else {
                     $backtraceCnt = count($backtrace);
                     ++$id;

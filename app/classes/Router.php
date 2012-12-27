@@ -2,10 +2,11 @@
 
 class Router
 {
+
     public $id;
     public $app;
-    private $used = FALSE;
     public $routes = array();
+
     private $usedRoute = array();
 
 
@@ -23,10 +24,7 @@ class Router
 
     public function go()
     {
-        if (!$this->used) {
-            $this->used = TRUE;
-            App::lg("    $this->id: Routovani...");
-        }
+        App::lg("    $this->id: Routovani...");
 
         return 'dalsi';
     }

@@ -2,16 +2,17 @@
 
 class App
 {
+
     public $id;
+    public $stop = FALSE;
+
     private $router = 'default';
     private $model = 'default';
     private $controller = 'default';
     private $view = 'default';
-
     private $rmcv = array(
         'routers' => array(),
         'models' => array(),
-        'services' => array(),
         'controllers' => array(),
         'views' => array()
     );
@@ -23,22 +24,24 @@ class App
     }
 
 
-    public function route($_usedRouter = '')
+    public function route($_router = '')
     {
-        $_usedRouter = empty($_usedRouter) ? $this->router : ($this->router = $_usedRouter);
-        if (is_file(ROUTERS . "/$_usedRouter.php")) {
-            App::lg("  $this->id: Volani routeru '$_usedRouter'");
-            App::prependArray($this->rmcv['routers'], $_usedRouter, require_once(ROUTERS . "/$this->router.php"));
-            if (get_class($this->rmcv['routers'][$_usedRouter]) === 'Router') {
-                if ($_usedRouter === $this->router) {
-                    $this->rmcv['routers'][$_usedRouter]->go();
-                }
-            } else {
-                throw new Exception("Aplikace ocekava odkaz na router. Skript '$_usedRouter.php' nevraci objekt tridy 'Router'.");
+        do {
+            if ($this->stop) return $this;
+
+            $this->router = empty($_router) ? $this->router : $_router;
+
+            if (!is_file(ROUTERS . "/$this->router.php")) {
+                throw new Exception("Router '$this->router' (soubor '$this->router.php') nenalezen v adresari routeru '" . ROUTERS . "'.");
             }
-        } else {
-            throw new Exception("Router '$_usedRouter' (soubor '$_usedRouter.php') nenalezen v adresari routeru '" . ROUTERS . "'.");
-        }
+
+            App::lg("  $this->id: Volani routeru '$this->router'");
+            $this->rmcv['routers'][$this->router] = require(ROUTERS . "/$this->router.php");
+
+            if (get_class($this->rmcv['routers'][$this->router]) !== 'Router') {
+                throw new Exception("Aplikace '$this->id' ocekava odkaz na router. '$this->router.php' nevraci objekt tridy 'Router'.");
+            }
+        } while (($_router = $this->rmcv['routers'][$this->router]->go()) !== $this->router);
 
         return $this;
     }
@@ -46,6 +49,8 @@ class App
 
     public function getModel()
     {
+        if ($this->stop) return $this;
+
         App::lg("  $this->id: Model...");
 
         return $this;
@@ -54,6 +59,8 @@ class App
 
     public function control()
     {
+        if ($this->stop) return $this;
+
         App::lg("  $this->id: Controller...");
 
         return $this;
@@ -62,6 +69,8 @@ class App
 
     public function view()
     {
+        if ($this->stop) return $this;
+
         App::lg("  $this->id: View...");
 
         return $this;
@@ -70,6 +79,8 @@ class App
 
     public function go()
     {
+        if ($this->stop) return FALSE;
+
         App::lg("Spusteni aplikace '$this->id'!");
 
         return $this->id;
@@ -127,13 +138,6 @@ class App
             Dumper::dump($var, array('location' => TRUE));
             echo '<hr>';
         }
-    }
-
-
-    private static function prependArray(&$array, $key, $var) {
-        $array = array_reverse($array);
-        $array[$key] = $var;
-        $array = array_reverse($array);
     }
 
 }

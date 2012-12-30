@@ -15,4 +15,4 @@ define('TEMP', ROOT . '/temp');
 require_once(CLASSES . '/App.php');
 $app = new App('MLM+');
 
-return $app->route()->getModel()->control()->view();
+return $app->route()->getModel()->control()->getView();

@@ -4,29 +4,31 @@ class Router
 {
 
     public $id;
-    public $app;
-    public $routes = array();
+    public $container;
 
+    public $routes = array();
     private $usedRoute = array();
 
 
-    public function __construct($_id, $_app)
+    public function __construct($_id, $_container)
     {
-        if (get_class($_app) === 'App') {
+        if (get_class($_container) === 'App') {
             $this->id = $_id;
-            $this->app = $_app;
-            App::lg("  " . $this->app->id . ": Vytvoren router '$this->id'");
+            $this->container = $_container;
+            App::lg("Vytvoren router '$this->id'", $this);
         } else {
-            throw new Exception("Konstruktor routeru ocekava odkaz na kontajner. Argument[0] neni objekt tridy 'App'.");
+            throw new Exception("Konstruktor routeru ocekava odkaz na kontajner. Druhy argument neni objekt tridy 'App'.");
         }
     }
 
 
     public function go()
     {
-        App::lg("    $this->id: Routovani...");
+        App::lg("Routovani...", $this);
 
-        return 'dalsi';
+//        App::dump($_SERVER);
+
+        return $this->id;
     }
 
 }

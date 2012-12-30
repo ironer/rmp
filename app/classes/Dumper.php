@@ -6,6 +6,7 @@ echo '</style>';
 
 /**
  * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
+ * Modified for RMCV by Stefan Fiedler [2012] (http://ironer.cz)
  */
 
 /**
@@ -83,7 +84,7 @@ class Dumper
 
 
     /**
-     * Finds the location where dump was called.
+     * Finds the location where dump was called, tries to find method and object class if $getMethod is TRUE
      * @param bool $getMethod
      * @return array [file, line, code]
      */

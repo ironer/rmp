@@ -4,12 +4,13 @@ class App
 {
 
     public $id;
+    public $request;
     public $stop = FALSE;
 
-    private $router = 'default';
-    private $model = 'default';
-    private $controller = 'default';
-    private $view = 'default';
+    private $router = 'router';
+    private $model = 'model';
+    private $controller = 'controller';
+    private $view = NULL;
     private $rmcv = array(
         'routers' => array(),
         'models' => array(),
@@ -18,9 +19,10 @@ class App
     );
 
 
-    public function __construct($_id = 'default') {
+    public function __construct($_id = 'myapp') {
         $this->id = $_id;
-        App::lg("Vytvorena aplikace '$_id'");
+        $this->request = urldecode(substr($_SERVER['REQUEST_URI'], strlen(WEBPATH) + 1));
+        App::lg("Vytvorena aplikace '$_id'", $this);
     }
 
 
@@ -35,7 +37,7 @@ class App
                 throw new Exception("Router '$this->router' (soubor '$this->router.php') nenalezen v adresari routeru '" . ROUTERS . "'.");
             }
 
-            App::lg("  $this->id: Volani routeru '$this->router'");
+            App::lg("Volani routeru '$this->router'", $this);
             $this->rmcv['routers'][$this->router] = require(ROUTERS . "/$this->router.php");
 
             if (get_class($this->rmcv['routers'][$this->router]) !== 'Router') {
@@ -51,7 +53,7 @@ class App
     {
         if ($this->stop) return $this;
 
-        App::lg("  $this->id: Model...");
+        App::lg("Model...", $this);
 
         return $this;
     }
@@ -61,17 +63,17 @@ class App
     {
         if ($this->stop) return $this;
 
-        App::lg("  $this->id: Controller...");
+        App::lg("Controller...", $this);
 
         return $this;
     }
 
 
-    public function view()
+    public function getView()
     {
-        if ($this->stop) return $this;
+        if ($this->stop || empty($this->view)) return $this;
 
-        App::lg("  $this->id: View...");
+        App::lg("View...", $this);
 
         return $this;
     }
@@ -81,7 +83,7 @@ class App
     {
         if ($this->stop) return FALSE;
 
-        App::lg("Spusteni aplikace '$this->id'!");
+        App::lg("Spusteni aplikace '$this->id'!", $this);
 
         return $this->id;
     }
@@ -111,7 +113,7 @@ class App
     }
 
 
-    public static function lg($text = '', $reset = FALSE) {
+    public static function lg($text = '', $object = NULL, $reset = FALSE) {
         if (DEBUG) {
             require_once(CLASSES . '/Dumper.php');
             list($file, $line, $code) = Dumper::findLocation(TRUE);
@@ -119,6 +121,19 @@ class App
             if ($reset) {
                 App::$lastRuntime = NOW;
                 App::$lastMemory = 0;
+            }
+
+            if ($object && isset($object->id)) {
+                $path = array($object->id);
+
+                while (isset($object->container->id)) {
+                    $object = $object->container;
+                    $path[] = $object->id;
+                }
+
+                $text = '<span class="nette-dump-path">' . htmlspecialchars(implode('/', array_reverse($path))) . '</span> ' . htmlspecialchars($text);
+            } else {
+                $text = htmlspecialchars($text);
             }
 
             echo '<pre style="margin: 3px 0">[' . str_pad(App::runtime(App::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '

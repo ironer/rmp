@@ -12,10 +12,10 @@ pre.nette-dump {
     padding: 0;
 }
 .nette-dump-array, .nette-dump-object {
-    color: #CC2222;
+    color: #cc2222;
 }
 .nette-dump-string {
-    color: #3355DD;
+    color: #3355dd;
 }
 .nette-dump-number {
     color: #009900;
@@ -29,6 +29,9 @@ pre.nette-dump {
 }
 .nette-dump-indent {
     display: none;
+}
+.nette-dump-path {
+	color: #4a25c5;
 }
 hr + hr {
     display: none;

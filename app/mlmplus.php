@@ -13,6 +13,11 @@ define('LOGS', ROOT . '/logs');
 define('TEMP', ROOT . '/temp');
 
 require_once(CLASSES . '/App.php');
-$app = new App('MLM+');
+$app = new App('MLM+', null, false, 'adasdadas', array(), 178);
 
-return $app->route()->getModel()->control()->getView();
+if (!empty($_GET['mail'])) {
+	return $app->route('mailrouter')->getModel()->control()->getView();
+}  else {
+	return $app->route()->getModel()->control()->getView();
+}
+

@@ -1,38 +1,82 @@
 pre.nette-dump div {
-    padding-left: 3ex;
-    margin-bottom: 5px;
+	padding-left: 3ex;
+	margin-bottom: 5px;
 }
 pre.nette-dump div div {
-    border-left: 1px solid rgba(0, 0, 0, 0.1);
-    margin-left: 0.5ex;
+	border-left: 1px solid rgba(0, 0, 0, 0.1);
+	margin-left: 0.5ex;
 }
 pre.nette-dump {
-    border: medium none;
-    margin: 0;
-    padding: 0;
+	margin: 0;
+	border: medium none;
+	padding: 0;
 }
 .nette-dump-array, .nette-dump-object {
-    color: #cc2222;
+	color: #cc2222;
 }
 .nette-dump-string {
-    color: #3355dd;
+	color: #3355dd;
 }
 .nette-dump-number {
-    color: #009900;
+	color: #009900;
 }
 .nette-dump-null, .nette-dump-bool {
-    color: #885500;
+	color: #885500;
 }
 .nette-dump-visibility {
-    color: #999999;
-    font-size: 85%;
+	color: #999999;
+	font-size: 85%;
 }
 .nette-dump-indent {
-    display: none;
+	display: none;
 }
 .nette-dump-path {
+	font-weight: bold;
 	color: #4a25c5;
 }
+.nette-dump-row {
+	overflow-x: auto; /* Use horizontal scroller if needed; for Firefox 2, not */
+	white-space: pre-wrap; /* css-3 */
+	white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+	word-wrap: break-word; /* Internet Explorer 5.5+ */
+	margin: 0;
+	padding-left: 15em;
+	padding-top: 2px;
+	padding-bottom: 2px;
+	text-indent: -15em;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+.nette-dump-chosen {
+	background-color: #ccddff;
+}
+.nette-dump-active {
+	background-color: #000066;
+	color: #eeeeee;
+}
+.nette-dump-active .nette-dump-array, .nette-dump-active .nette-dump-object {
+	color: #ff8b8e;
+}
+.nette-dump-active .nette-dump-string {
+	color: #99bbff;
+}
+.nette-dump-active .nette-dump-number {
+	color: #33ff33;
+}
+.nette-dump-active .nette-dump-null, .nette-dump-active .nette-dump-bool {
+	color: #ffeeaa;
+}
+.nette-dump-active .nette-dump-path {
+	color: #bbbbff;
+}
+.nette-dump-active a {
+	color: #ffee66;
+}
+
 hr + hr {
-    display: none;
+	display: none;
 }

@@ -94,7 +94,7 @@ class App
 	private static $currentApp = NULL;
 	private static $lastRuntime = NOW;
 	private static $lastMemory = 0;
-	public static $deepDebug = array();
+	public static $timeDebug = array();
 
 
 	public static function num($val = 0, $decs = 2, $units = '', $delta = FALSE) {
@@ -128,10 +128,11 @@ class App
 			}
 
 			if ($object && isset($object->id)) {
+				$objects = array($object);
 				$path = array($object->id);
 
 				while (isset($object->container->id)) {
-					$object = $object->container;
+					array_unshift($objects, $object = $object->container);
 					$path[] = $object->id;
 				}
 
@@ -140,19 +141,29 @@ class App
 				$text = htmlspecialchars($text);
 			}
 
-			$ddParam = '';
+			$tdParam = '';
 
 			if (TIMEDEBUG) {
-				App::$deepDebug[] = Dumper::dump(App::$currentApp, array('html' => TRUE));
-				$cnt = count(App::$deepDebug);
-				$ddParam = "id=\"ddId_" . $cnt . "\"";
+				$dumpVars = array();
+				foreach($objects as $curObj) {
+					$dumpVars[] = Dumper::dump($curObj, array('html' => TRUE));
+				}
+				App::$timeDebug[] = implode('<hr>', $dumpVars);
+				$cnt = count(App::$timeDebug);
+				$tdParam = "id=\"tdId_" . $cnt . "\"";
 			}
 
-			echo "<pre $ddParam class=\"nette-dump-row\">[" . str_pad(App::runtime(App::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
-					. str_pad(App::memory(App::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $text"
-					. ' [<small><a href="editor://open/?file=' . rawurlencode($file) . "&line=$line"
-					. '"><i>' . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a>"
-					. ($code ? " $code" : '') . '</small>]</pre>';
+			echo "<pre $tdParam class=\"nette-dump-row\">[" . str_pad(App::runtime(App::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
+					. str_pad(App::memory(App::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $text [<small>";
+
+			if (LOCAL) {
+				echo '<a href="editor://open/?file=' . rawurlencode($file) . "&line=$line"
+						. "\" class=\"nette-dump-editor\"><i>" . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a>";
+			} else {
+				echo "<span class=\"nette-dump-editor\"><i>" . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></span>";
+			}
+
+			echo ($code ? " $code" : '') . '</small>]</pre>';
 		}
 	}
 
@@ -162,7 +173,7 @@ class App
 		$vars = func_get_args();
 		echo '<hr>';
 		foreach ($vars as $var) {
-			echo Dumper::dump($var, array('location' => TRUE));
+			echo Dumper::dump($var, array('location' => TRUE, 'loclink' => LOCAL));
 			echo '<hr>';
 		}
 	}

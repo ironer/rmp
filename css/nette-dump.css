@@ -1,3 +1,6 @@
+body {
+	margin: 8px;
+}
 pre.nette-dump div {
 	padding-left: 3ex;
 	margin-bottom: 5px;
@@ -17,6 +20,9 @@ pre.nette-dump {
 .nette-dump-string {
 	color: #3355dd;
 }
+.nette-dump-string b {
+	color: #ff0000;
+}
 .nette-dump-number {
 	color: #009900;
 }
@@ -33,6 +39,9 @@ pre.nette-dump {
 .nette-dump-path {
 	font-weight: bold;
 	color: #4a25c5;
+}
+.nette-dump-editor {
+	color: #0000ee;
 }
 .nette-dump-row {
 	overflow-x: auto; /* Use horizontal scroller if needed; for Firefox 2, not */
@@ -73,10 +82,34 @@ pre.nette-dump {
 .nette-dump-active .nette-dump-path {
 	color: #bbbbff;
 }
-.nette-dump-active a {
+.nette-dump-active .nette-dump-editor {
 	color: #ffee66;
 }
-
+#tdContainer {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 400px;
+	height: 100%;
+	overflow: scroll;
+}
+#tdOuterWrapper {
+	width: 100%;
+	height: 100%;
+	float: left;
+	overflow: hidden;
+}
+#tdInnerWrapper {
+	min-width: 100%;
+	min-height: 100%;
+	float: left;
+	overflow: visible;
+}
+#tdView {
+	position: relative;
+	padding: 8px;
+	overflow: hidden;
+}
 hr + hr {
 	display: none;
 }

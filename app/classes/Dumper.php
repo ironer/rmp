@@ -21,7 +21,8 @@ class Dumper
 			LOCATION = 'location', // show location string? (defaults to false)
 			LOCATION_LINK = 'loclink', // show location string as link (defaults to true)
 			NO_BREAK = 'nobreak', // return dump without line breaks (defaults to false)
-			FORCE_HTML = 'html'; // force HTML output
+			FORCE_HTML = 'html', // force HTML output
+			APP_RECURSION = 'apprecursion'; // force { RECURSION } on all nested objects with class 'App'
 
 	/** @var array */
 	public static $terminalColors = array(
@@ -40,8 +41,6 @@ class Dumper
 	/** @var array */
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
 
-	private static $appRecursion = false;
-
 	/**
 	 * Dumps variable to the output.
 	 * @param $var
@@ -50,8 +49,10 @@ class Dumper
 	 */
 	public static function dump($var, array $options = NULL)
 	{
-		self::$appRecursion = is_object($var) && (get_class($var) !== 'App');
-		$options = (array) $options + array(self::FORCE_HTML => FALSE);
+		$options = (array) $options + array(
+			self::FORCE_HTML => FALSE,
+			self::APP_RECURSION => is_object($var) && (get_class($var) != 'App')
+		);
 
 		if ($options[self::FORCE_HTML] || preg_match('#^Content-Type: text/html#im', implode("\n", headers_list()))) {
 			return self::toHtml($var, $options);
@@ -73,7 +74,7 @@ class Dumper
 	{
 		list($file, $line, $code) = empty($options[self::LOCATION]) ? NULL : self::findLocation();
 		return '<pre class="nette-dump"'
-				. ($file ? ' title="' . htmlspecialchars("$code\nin file " . ($fileTitle = substr($file, strlen(ROOT))) . " on line $line") . '">' : '>')
+//				. ($file ? ' title="' . htmlspecialchars("$code\nin file " . ($fileTitle = substr($file, strlen(ROOT))) . " on line $line") . '">' : '>')
 				. self::dumpVar($var, (array) $options + array(
 					self::DEPTH => 4,
 					self::TRUNCATE => 70,
@@ -83,7 +84,7 @@ class Dumper
 				))
 				. ($file ? '<small>in <' . (empty($options[self::LOCATION_LINK]) ? 'span' : 'a href="editor://open/?file='
 						. rawurlencode($file) . "&amp;line=$line\"" ) . " class=\"nette-dump-editor\"><i>"
-						. htmlspecialchars($fileTitle) . "</i> <b>@$line</b></a></small>" : '') . "</pre>\n";
+						. htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a></small>" : '') . "</pre>\n";
 	}
 
 
@@ -119,7 +120,7 @@ class Dumper
 						$args = array();
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
-								$args[] = self::dumpVar($arg, array(self::FORCE_HTML => TRUE, self::DEPTH => -1, self::TRUNCATE => 10, self::NO_BREAK => TRUE));
+								$args[] = self::dumpVar($arg, array(self::FORCE_HTML => TRUE, self::APP_RECURSION => FALSE, self::DEPTH => -1, self::TRUNCATE => 10, self::NO_BREAK => TRUE));
 							}
 						}
 
@@ -213,15 +214,22 @@ class Dumper
 
 	private static function dumpString(&$var, $options)
 	{
-		if ($options[self::TRUNCATE] && strlen($var) > $options[self::TRUNCATE]) {
-			$retVal = self::encodeString(substr($var, 0, $options[self::TRUNCATE]), TRUE) . '</span> (' . strlen($var) . ')';
+		if ($options[self::TRUNCATE] && ($varLen = strlen($var)) > $options[self::TRUNCATE]) {
+			$retTitle = self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE);
+			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 2048)), TRUE)
+					. '&hellip;"</span> (' . $varLen . ')';
+			$retTitle = '<strong class="nette-dump-title">'
+					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b><br>', '<b>\\t</b>'), $retTitle) . '</strong>';
+			$retClass = ' nette-dump-long';
 		} else {
+			$retTitle = '';
 			$retVal = self::encodeString($var) . '</span>';
+			$retClass = '';
 		}
 		if ($options[self::FORCE_HTML])
 			$retVal = str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b>', '<b>\\t</b>'), $retVal);
 
-		return '<span class="nette-dump-string">' . $retVal . ($options[self::NO_BREAK] ? '' : "\n");
+		return '<span class="nette-dump-string' . $retClass . '">' . $retTitle . $retVal . ($options[self::NO_BREAK] ? '' : "\n");
 
 	}
 
@@ -272,7 +280,7 @@ class Dumper
 		if (empty($fields)) {
 			return $options[self::NO_BREAK] ? $out : "$out\n";
 
-		} elseif (in_array($var, $list, TRUE) || (self::$appRecursion && $varClass === 'App')) {
+		} elseif (in_array($var, $list, TRUE) || ($options[self::APP_RECURSION] && $varClass === 'App')) {
 			return $out . " { <i>RECURSION</i> }" . ($options[self::NO_BREAK] ? '' : "\n");
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
@@ -335,7 +343,7 @@ class Dumper
 		}
 
 		$s = strtr($s, preg_match('#[^\x09\x0A\x0D\x20-\x7E\xA0-\x{10FFFF}]#u', $s) || preg_last_error() ? $binary : $utf);
-		return '"' . htmlSpecialChars($s, ENT_NOQUOTES) . ($truncated ? '&hellip;' : '') . '"';
+		return $truncated ? htmlSpecialChars($s, ENT_NOQUOTES) : '"' . htmlSpecialChars($s, ENT_NOQUOTES) . '"';
 	}
 
 }

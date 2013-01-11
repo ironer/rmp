@@ -24,9 +24,10 @@ if (DEBUG) {
 	echo '<hr>Generovani odpovedi: <b>' . App::runtime() . '</b>'
 			. ' / Max. pouzita pamet: <b>' . App::maxMem() . '</b> / Max. alokovana pamet: <b>' . App::maxMem(TRUE) . '</b>';
 	if (TIMEDEBUG) {
-		echo '/ Zmena logu: <b>&larr;</b> a <b>&rarr;</b> / <a href="' . WEBROOT . '">homepage</a> / <a href="'
+		echo ' / Zmena logu: <b>&larr;</b> a <b>&rarr;</b> / <a href="' . WEBROOT . '">homepage</a> / <a href="'
 				. WEBROOT . "?mail=1\">odeslat email</a>\n";
-		echo "<script>var _tdLogs = " . json_encode(App::$timeDebug) . ";</script>\n";
+		echo "<script>\nvar _tdLogs = " . json_encode(App::$timeDebugData) . ";\n"
+				. "var _tdIndex = " . json_encode(App::$timeDebug) . ";\n</script>\n";
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 	} else {
 		App::dump($app);

@@ -1,7 +1,3 @@
-body {
-	margin: 0;
-	overflow: hidden;
-}
 pre.nette-dump div {
 	padding-left: 3ex;
 	margin-bottom: 5px;
@@ -19,10 +15,26 @@ pre.nette-dump {
 	color: #cc2222;
 }
 .nette-dump-string {
+	position: relative;
 	color: #3355dd;
 }
 .nette-dump-string b {
-	color: #ff0000;
+	color: #ff3344;
+}
+.nette-dump-title {
+	position: absolute;
+	display: none;
+	z-index: 100;
+	font-weight: normal;
+	background: #dff;
+	border: 3px solid #09d;
+	top: 0;
+	left: 0;
+	padding: 8px;
+	text-indent: 0;
+	-moz-box-shadow: 3px 2px 8px #788;
+	-webkit-box-shadow: 3px 2px 8px #788;
+	box-shadow: 3px 2px 8px #788;
 }
 .nette-dump-number {
 	color: #009900;

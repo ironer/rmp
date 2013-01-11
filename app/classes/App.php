@@ -94,8 +94,10 @@ class App
 	private static $currentApp = NULL;
 	private static $lastRuntime = NOW;
 	private static $lastMemory = 0;
-	public static $timeDebug = array();
 
+	public static $timeDebug = array();
+	public static $timeDebugData = array();
+	private static $timeDebugMD5 = array();
 
 	public static function num($val = 0, $decs = 2, $units = '', $delta = FALSE) {
 		return ($delta && ($val = round($val, $decs)) > 0 ? '+' : '') . number_format($val, $decs, ',', ' ') . ($units ? " $units" : '');
@@ -148,9 +150,15 @@ class App
 				foreach($objects as $curObj) {
 					$dumpVars[] = Dumper::dump($curObj, array('html' => TRUE));
 				}
-				App::$timeDebug[] = implode('<hr>', $dumpVars);
-				$cnt = count(App::$timeDebug);
-				$tdParam = "id=\"tdId_" . $cnt . "\"";
+				$dump = implode('<hr>', $dumpVars);
+				$dumpMD5 = md5($dump);
+				if (isset(App::$timeDebugMD5[$dumpMD5])) {
+					App::$timeDebug[] = App::$timeDebugMD5[$dumpMD5];
+				} else {
+					App::$timeDebug[] = App::$timeDebugMD5[$dumpMD5] = count(App::$timeDebugData);
+					App::$timeDebugData[] = $dump;
+				}
+				$tdParam = "id=\"tdId_" . count(App::$timeDebug) . "\"";
 			}
 
 			echo "<pre $tdParam class=\"nette-dump-row\">[" . str_pad(App::runtime(App::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
@@ -173,7 +181,7 @@ class App
 		$vars = func_get_args();
 		echo '<hr>';
 		foreach ($vars as $var) {
-			echo Dumper::dump($var, array('location' => TRUE, 'loclink' => LOCAL));
+			echo Dumper::dump($var, array('location' => TRUE, 'loclink' => LOCAL, 'html' => TRUE));
 			echo '<hr>';
 		}
 	}

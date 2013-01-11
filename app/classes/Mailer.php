@@ -99,46 +99,11 @@ class Mailer
 		}
 
 		$headers = implode("\n", $this->headers);
-/*
-        require_once(CLASSES . '/nSMTPMailer/SmtpClient.php');
-        
-        $client = new SMTPClient();
-        
-        $client->setConnectionInfo($this->SmtpServer);
-        $client->setLoginInfo($this->SmtpUser, $this->SmtpPass);
-        
-        $client->setFrom($this->sendermail);
-        
-        $recipients = array($this->recipientmail);
-        $client->setRecipients($recipients);
-        
-        $client->setBody($this->body);
-        
-        try {
-            $client->send();
-            $undelivered = $client->getUndeliveredRecipients();
-            if (empty($undelivered))
-                App::lg("Email byl úspěšně odeslán", $this);
-            else
-                App::lg('Email se neodeslal na tyto adresy: ' . implode (',', $undelivered), $this);
-        } catch (InvalidStateException $e) {
-                App::lg('Email se vůbec nepovedlo odeslat', $this);
-        }
-*/
 
-
-
-
-
-//        @mail($this->recipient, $this->subject, $this->body, $headers, $this->additional);
         $result = $this->SMTPmail($this->sender, $this->recipient, $this->subject, $headers, $this->body);
         
         App::dump($result);
         
-		//App::lg("@mail($this->recipient, $this->subject, $this->body, $headers, $this->additional)", $this);
-
-		//mail($this->recipient, $this->subject, $this->body, $headers, $this->additional);
-
 		//zpracovat POP3
 
 
@@ -176,44 +141,32 @@ class Mailer
             
             $mail = "To: ".$to."\r\nSubject:".$subject."\r\n".$headers."\r\n\r\n".$body."\r\n.\r\n";
             
-            @fwrite ($SMTPIN, "EHLO localhost\r\n"); 
-            $talk['hello'] = "EHLO ".$_SERVER['HTTP_HOST'];
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-            @fwrite($SMTPIN, "AUTH LOGIN\r\n");
-            $talk['res'] = "AUTH LOGIN";
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-            @fwrite($SMTPIN, base64_encode($this->SmtpUser)."\r\n");
-            $talk['user'] = base64_encode($this->SmtpUser);
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-            @fwrite($SMTPIN, base64_encode($this->SmtpPass)."\r\n");
-            $talk['pass'] = base64_encode($this->SmtpPass);
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-
-            @fwrite ($SMTPIN, "MAIL FROM: <".$this->sendermail.">  SIZE=".strlen($mail)." BODY=8BITMIME\n"); 
-            $talk['from'] = "MAIL FROM: <".$this->sendermail.">  SIZE=".strlen($mail)." BODY=8BITMIME";
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-            @fwrite ($SMTPIN, "RCPT TO: <".$this->recipientmail.">\r\n"); 
-            $talk['to'] = "RCPT TO: <".$this->recipientmail.">";
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-            @fwrite($SMTPIN, "DATA\r\n");
-            $talk['data'] = 'DATA';
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-            @fwrite($SMTPIN, $mail);
-            $talk['send'] = "To: ".$to.">\nSubject:".$subject."\n".$headers."\n\n".$body."\n\n";
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
-
-            //CLOSE CONNECTION AND EXIT ... 
-            fwrite ($SMTPIN, "QUIT\n"); 
-            $talk['quit'] = 'QUIT';
-            $i=0; while(($line=fgets($SMTPIN,256))) {$talk[] = rtrim($line); if ($i>15 || strlen($line)<3 || substr($line,3,1) == ' ') {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
+            $this->sockTalk($SMTPIN, '', $talk);
+            $this->sockTalk($SMTPIN, 'EHLO ' . $_SERVER['HTTP_HOST'], $talk);
+            $this->sockTalk($SMTPIN, 'AUTH LOGIN', $talk);
+            $this->sockTalk($SMTPIN, base64_encode($this->SmtpUser), $talk);
+            $this->sockTalk($SMTPIN, base64_encode($this->SmtpPass), $talk);
+            $this->sockTalk($SMTPIN, 'MAIL FROM: <' . $this->sendermail . '>  SIZE=' . strlen($mail) . ' BODY=8BITMIME', $talk);
+            $this->sockTalk($SMTPIN, 'RCPT TO: <' . $this->recipientmail . '>', $talk);
+            $this->sockTalk($SMTPIN, 'DATA', $talk);
+            $this->sockTalk($SMTPIN, $mail, $talk);
+            $this->sockTalk($SMTPIN, 'QUIT', $talk);
             fclose($SMTPIN); 
             
-            // 
-        
         } 
         return $talk;
+        
 
 } 
+    
+    private function sockTalk($cocket, $command,&$talk) {
+        if (!empty($command)) {
+            @fwrite ($cocket, $command . "\r\n");
+            $talk[] = $command;
+        }
+        $i=0; while(($line=fgets($cocket, 256))) {$talk[] = rtrim($line); if (strlen($line)<3 || substr($line,3,1) == ' ') break; if ($i>15) {App::lg('Chyba čtení odpovědi',$this); break 1;}; $i++;}
+
+    }
     
     private function AltBase64($text) {
         

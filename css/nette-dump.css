@@ -1,5 +1,6 @@
 body {
-	margin: 8px;
+	margin: 0;
+	overflow: hidden;
 }
 pre.nette-dump div {
 	padding-left: 3ex;
@@ -44,10 +45,10 @@ pre.nette-dump {
 	color: #0000ee;
 }
 .nette-dump-row {
-	overflow-x: auto; /* Use horizontal scroller if needed; for Firefox 2, not */
-	white-space: pre-wrap; /* css-3 */
-	white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
-	word-wrap: break-word; /* Internet Explorer 5.5+ */
+	overflow-x: auto;
+	white-space: pre-wrap;
+	white-space: -moz-pre-wrap !important;
+	word-wrap: break-word;
 	margin: 0;
 	padding-left: 15em;
 	padding-top: 2px;
@@ -86,7 +87,7 @@ pre.nette-dump {
 	color: #ffee66;
 }
 #tdContainer {
-	position: fixed;
+	position: absolute;
 	top: 0;
 	left: 0;
 	width: 400px;
@@ -109,6 +110,15 @@ pre.nette-dump {
 	position: relative;
 	padding: 8px;
 	overflow: hidden;
+}
+#logContainer {
+	position: relative;
+	height: 100%;
+	overflow: scroll;
+}
+#logView {
+	float: left;
+	padding: 8px;
 }
 hr + hr {
 	display: none;

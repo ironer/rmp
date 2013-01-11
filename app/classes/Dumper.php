@@ -1,8 +1,6 @@
 <?php
 
-echo "<style>\n";
-readfile(CSS . '/nette-dump.css');
-echo "</style>\n";
+echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/nette-dump.css\">\n";
 
 /**
  * Copyright (c) 2004 David Grudl (http://davidgrudl.com)

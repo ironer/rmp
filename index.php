@@ -10,7 +10,6 @@ define('APP', ROOT . "/app");
 define('WEBPATH', (strlen($_webdir = dirname($_SERVER['SCRIPT_NAME'])) === 1 ? '' : $_webdir)); unset($_webdir);
 define('WEBROOT', (empty($_SERVER['HTTPS']) ? 'http://' : 'https://') . $_SERVER['HTTP_HOST'] . WEBPATH);
 
-
 try {
 	$app = require_once(APP . '/mlmplus.php');
 	$app->go();
@@ -26,12 +25,12 @@ if (DEBUG) {
 			. ' / Max. pouzita pamet: <b>' . App::maxMem() . '</b> / Max. alokovana pamet: <b>' . App::maxMem(TRUE) . '</b>';
 	if (TIMEDEBUG) {
 		echo '/ Zmena logu: <b>&larr;</b> a <b>&rarr;</b> / <a href="' . WEBROOT . '">homepage</a> / <a href="'
-				. WEBROOT . '?mail=1">odeslat email</a> / <span id="deb"></span>';
-		require_once(SERVICES . '/timedebug.php');
+				. WEBROOT . "?mail=1\">odeslat email</a>\n";
+		echo "<script>var _tdLogs = " . json_encode(App::$timeDebug) . ";</script>\n";
+		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 	} else {
 		App::dump($app);
 	}
 }
 
-// TO DO: Prohlizec objektu do vedlejsiho okna
 

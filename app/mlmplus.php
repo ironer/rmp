@@ -7,11 +7,11 @@ define('ROUTERS', APP . '/routers');
 define('SERVICES', APP . '/services');
 define('VIEWS', APP . '/views');
 
-define('CSS', ROOT . '/css');
-define('IMG', ROOT . '/img');
-define('JS', ROOT . '/js');
-define('LOGS', ROOT . '/logs');
-define('TEMP', ROOT . '/temp');
+define('CSS', '/css');
+define('IMG', '/img');
+define('JS', '/js');
+define('LOGS', '/logs');
+define('TEMP', '/temp');
 
 require_once(CLASSES . '/App.php');
 $app = new App('MLM+', null, false, 'adasdasssssssssssssdsdsdsdadas', array(), 178);

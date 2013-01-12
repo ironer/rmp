@@ -52,7 +52,7 @@ var _tdTitle = null;
 var _tdHideTimeout = null;
 var _tdPosition = [];
 var _tdWindowSize = _tdGetWindowSize();
-var _tdSpaceX, _tdSpaceY, _tdWidthDif, _tdCheckWidthDif, _tdTitleRows;
+var _tdNext, _tdSpaceX, _tdSpaceY, _tdWidthDif, _tdCheckWidthDif, _tdTitleRows;
 
 _tdShowLog(1);
 
@@ -101,7 +101,7 @@ function _tdShowTitle(e) {
 		_tdTitle.style.zIndex = 1000;
 		if (!_tdTitle.hasOwnProperty('oriWidth')) {
 			_tdTitle.oriWidth = _tdTitle.clientWidth - 16;
-			_tdTitle.oriHeight = _tdTitle.clientHeight - 16;
+			_tdTitle.oriHeight = _tdTitle.clientHeight;
 			_tdTitleRows = _tdTitle.getElementsByTagName('i');
 			for (var i = 0, j = _tdTitleRows.length; ++i < j; ++i)
 				_tdTitleRows[i].className = "nette-dump-even";
@@ -202,10 +202,14 @@ document.onkeydown = function(e) {
 
 	if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
 		if (e.keyCode == 37 && _tdActive > 1) {
-			_tdShowLog(_tdSelected() ? _tdGetPrev() : _tdActive - 1);
+			_tdNext = _tdSelected() ? _tdGetPrev() : _tdActive - 1;
+			if (_tdNext === _tdActive) return true;
+			_tdShowLog(_tdNext);
 			return false;
 		} else if (e.keyCode == 39 && _tdActive < _tdIndex.length) {
-			_tdShowLog(_tdSelected() ? _tdGetNext() : _tdActive + 1);
+			_tdNext = _tdSelected() ? _tdGetNext() : _tdActive + 1;
+			if (_tdNext === _tdActive) return true;
+			_tdShowLog(_tdNext);
 			return false;
 		} else if (e.keyCode == 38 && _tdTitle) {
 			_tdTitle.scrollTop = 16 * parseInt((_tdTitle.scrollTop - 16) / 16);

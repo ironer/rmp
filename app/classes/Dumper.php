@@ -217,7 +217,7 @@ class Dumper
 		if ($options[self::TRUNCATE] && ($varLen = strlen($var)) > $options[self::TRUNCATE]) {
 			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 2048)), TRUE)
 					. '&hellip;"</span> (' . $varLen . ')';
-			$retTitle = TIMEDEBUG ? '<strong class="nette-dump-title"><i>'
+			$retTitle = TIMEDEBUG ? '<strong class="nette-dump-title nette-dump-color"><i>'
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE))
 					. '</i></strong>' : '';

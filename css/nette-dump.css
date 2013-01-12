@@ -12,14 +12,14 @@ pre.nette-dump {
 	padding: 0;
 }
 .nette-dump-array, .nette-dump-object {
-	color: #cc2222;
+	color: #c22;
 }
 .nette-dump-string {
 	position: relative;
-	color: #3355dd;
+	color: #35d;
 }
 .nette-dump-string b {
-	color: #ff3344;
+	color: #f34;
 }
 .nette-dump-title {
 	position: absolute;
@@ -51,13 +51,16 @@ pre.nette-dump {
 	padding-left: 31px;
 	line-height: 16px;
 	font-size: 13px;
-	color: #35d;
+	color: #129;
 }
-i.nette-dump-even {
-	color: #c53;
+.nette-dump-title i b {
+	color: #e23;
 }
-i.nette-dump-even b {
-	color: #633;
+.nette-dump-color i.nette-dump-even {
+	color: #921;
+}
+.nette-dump-color i.nette-dump-even b {
+	color: #000;
 }
 .nette-dump-number {
 	color: #090;

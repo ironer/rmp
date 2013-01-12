@@ -218,8 +218,9 @@ class Dumper
 			$retTitle = self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE);
 			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 2048)), TRUE)
 					. '&hellip;"</span> (' . $varLen . ')';
-			$retTitle = '<strong class="nette-dump-title">'
-					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b><br>', '<b>\\t</b>'), $retTitle) . '</strong>';
+			$retTitle = '<strong class="nette-dump-title"><i>'
+					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'), $retTitle)
+					. '</i></strong>';
 			$retClass = ' nette-dump-long';
 		} else {
 			$retTitle = '';

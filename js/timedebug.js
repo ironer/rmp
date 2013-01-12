@@ -51,6 +51,7 @@ var _tdTitle = null;
 var _tdHideTimeout = null;
 var _tdPosition = [];
 var _tdWindowSize = _tdGetWindowSize();
+var _tdSpaceX, _tdSpaceY;
 
 _tdShowLog(1);
 
@@ -81,6 +82,7 @@ function _tdSetHovers(el) {
 
 function _tdShowTitle(e) {
 	e = e || window.event;
+	_tdStopPropagation(e);
 
 	if (_tdTitle && _tdTitle !== this.tdTitle) {
 		_tdHide();
@@ -92,25 +94,34 @@ function _tdShowTitle(e) {
 
 	if (_tdTitle === null) {
 		_tdTitle = this.tdTitle;
-		_tdTitle.style.display = 'table-cell';
+		_tdTitle.style.display = 'block';
 		_tdTitle.style.position = 'fixed';
 		_tdTitle.style.zIndex = 1000;
 		if (!_tdTitle.hasOwnProperty('oriWidth')) {
-			_tdTitle.oriWidth = _tdTitle.clientWidth
+			_tdTitle.oriWidth = _tdTitle.clientWidth - 16;
+			_tdTitle.oriHeight = _tdTitle.clientHeight - 16;
 		}
-		_tdTitle.focus();
 	}
 
 	_tdPosition = [(e.pageX || e.clientX) + 20, (e.pageY || e.clientY) - 5];
 	_tdTitle.style.left =  _tdPosition[0] + 'px';
 	_tdTitle.style.top = _tdPosition[1] + 'px';
+	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < _tdTitle.oriWidth) _tdTitle.style.width = _tdSpaceX + 'px';
+	else _tdTitle.style.width = 'auto';
+	if ((_tdSpaceY = (_tdWindowSize[1] - _tdPosition[1] - 50)) < _tdTitle.clientHeight || _tdSpaceY < _tdTitle.oriHeight) {
+		_tdTitle.style.height = _tdSpaceY + 'px';
+		// TODO: roztahnout nasirku pokud je to potreba kvuli scrollbaru
+		// TODO: osetrit dumpovani stringu pro normalni debug
+		// TODO: opravit barsu textu v malem hoveru
+	}
+	else _tdTitle.style.height = 'auto';
 }
 
 function _tdHideTitle(e) {
 	e = e || window.event;
-
+	_tdStopPropagation(e);
 	if (_tdHideTimeout) window.clearTimeout(_tdHideTimeout);
-	_tdHideTimeout = window.setTimeout('_tdHide()', 300);
+	_tdHideTimeout = window.setTimeout(_tdHide, 300);
 }
 
 function _tdHide() {
@@ -161,6 +172,10 @@ document.onkeydown = function(e) {
 		} else if (e.keyCode == 39 && _tdActive < _tdIndex.length) {
 			_tdShowLog(_tdSelected() ? _tdGetNext() : _tdActive + 1);
 			return false;
+		} else if (e.keyCode == 38 && _tdTitle) {
+			_tdTitle.scrollTop = _tdTitle.scrollTop - 28;
+		} else if (e.keyCode == 40 && _tdTitle) {
+			_tdTitle.scrollTop = _tdTitle.scrollTop + 28;
 		}
 	}
 	return true;

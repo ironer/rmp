@@ -26,7 +26,7 @@ pre.nette-dump {
 	display: none;
 	z-index: 100;
 	font-weight: normal;
-	background: #dff;
+	background: #eff;
 	border: 3px solid #09d;
 	top: 0;
 	left: 0;
@@ -35,6 +35,19 @@ pre.nette-dump {
 	-moz-box-shadow: 3px 2px 8px #788;
 	-webkit-box-shadow: 3px 2px 8px #788;
 	box-shadow: 3px 2px 8px #788;
+	white-space: pre-wrap;
+	white-space: -moz-pre-wrap !important;
+	word-wrap: break-word;
+	overflow-x: hidden;
+	overflow-y: auto;
+	outline: 0;
+}
+.nette-dump-title i {
+	display: block;
+	position: relative;
+	font-style: normal;
+	text-indent: -30px;
+	padding-left: 30px;
 }
 .nette-dump-number {
 	color: #009900;

@@ -47,6 +47,7 @@ document.body.appendChild(_tdContainer);
 var _tdChosen = [];
 _tdChosen.length = _tdRows.length;
 var _tdActive = 0;
+var _tdShownTitles = [];
 var _tdTitle = null;
 var _tdHideTimeout = null;
 var _tdPosition = [];
@@ -105,12 +106,13 @@ function _tdShowTitle(e) {
 			for (var i = 0, j = _tdTitleRows.length; ++i < j; ++i)
 				_tdTitleRows[i].className = "nette-dump-even";
 		}
+		_tdShownTitles.push(_tdTitle);
 	}
 
 	if (_tdTitle === null) return true;
 
 	_tdPosition = [(e.pageX || e.clientX) + 20, (e.pageY || e.clientY) - 5];
-	_tdTitle.style.left =  _tdPosition[0] + 'px';
+	_tdTitle.style.left = _tdPosition[0] + 'px';
 	_tdTitle.style.top = _tdPosition[1] + 'px';
 
 	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < _tdTitle.oriWidth) {
@@ -122,19 +124,22 @@ function _tdShowTitle(e) {
 	}
 
 	if ((_tdSpaceY = (_tdWindowSize[1] - _tdPosition[1] - 50)) < _tdTitle.clientHeight || _tdSpaceY < _tdTitle.oriHeight) {
-		_tdTitle.style.height = _tdSpaceY + 'px';
+		_tdTitle.style.height = 16 * parseInt(_tdSpaceY / 16) + 'px';
 		if (_tdCheckWidthDif) {
 			_tdWidthDif = Math.max(_tdTitle.oriWidth + 16 - _tdTitle.clientWidth, 0);
 			if (_tdWidthDif) _tdTitle.style.width = _tdTitle.oriWidth + _tdWidthDif + 1;
 		}
 
-		// TODO: udelat menu oken(lt drag, rb resize, close, select content)
+
+		// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all), dvojklik + smer pro aktivaci, klik pro zruseni
+		// TODO: escape pro zavreni vsech oken
 		// TODO: dat do title pole posilane do metod
 		// TODO: udelat resizovani time debugu
 		// TODO: udelat fullwidth mod time debugu
 	} else {
 		_tdTitle.style.height = 'auto';
 	}
+
 	return false;
 }
 
@@ -151,6 +156,8 @@ function _tdHide() {
 		_tdHideTimeout = null;
 	}
 	if (_tdTitle !== null) {
+		var i = _tdShownTitles.indexOf(_tdTitle);
+		if (i !== -1) _tdShownTitles.splice(i, 1);
 		_tdTitle.style.display = 'none';
 		_tdTitle = null;
 	}
@@ -202,10 +209,10 @@ document.onkeydown = function(e) {
 			_tdShowLog(_tdSelected() ? _tdGetNext() : _tdActive + 1);
 			return false;
 		} else if (e.keyCode == 38 && _tdTitle) {
-			_tdTitle.scrollTop = _tdTitle.scrollTop - 32;
+			_tdTitle.scrollTop = 16 * parseInt((_tdTitle.scrollTop - 16) / 16);
 			return false;
 		} else if (e.keyCode == 40 && _tdTitle) {
-			_tdTitle.scrollTop = _tdTitle.scrollTop + 32;
+			_tdTitle.scrollTop = 16 * parseInt((_tdTitle.scrollTop + 16) / 16);
 			return false;
 		}
 	}

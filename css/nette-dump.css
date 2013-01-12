@@ -26,11 +26,12 @@ pre.nette-dump {
 	display: none;
 	z-index: 100;
 	font-weight: normal;
-	background: #eff;
-	border: 3px solid #08d;
+	background: #def;
+	border-top: 8px solid #def;
+	border-bottom: 8px solid #def;
 	top: 0;
 	left: 0;
-	padding: 8px;
+	padding: 0 8px;
 	text-indent: 0;
 	-moz-box-shadow: 3px 2px 8px #788;
 	-webkit-box-shadow: 3px 2px 8px #788;

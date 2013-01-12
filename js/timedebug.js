@@ -132,7 +132,6 @@ function _tdShowTitle(e) {
 
 
 		// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all), dvojklik + smer pro aktivaci, klik pro zruseni
-		// TODO: escape pro zavreni vsech oken
 		// TODO: dat do title pole posilane do metod
 		// TODO: udelat resizovani time debugu
 		// TODO: udelat fullwidth mod time debugu
@@ -213,6 +212,17 @@ document.onkeydown = function(e) {
 			return false;
 		} else if (e.keyCode == 40 && _tdTitle) {
 			_tdTitle.scrollTop = 16 * parseInt((_tdTitle.scrollTop + 16) / 16);
+			return false;
+		} else if (e.keyCode == 27 && _tdShownTitles.length) {
+			if (_tdHideTimeout) {
+				window.clearTimeout(_tdHideTimeout);
+				_tdHideTimeout = null;
+			}
+			for (var i = _tdShownTitles.length; i-- > 0;) {
+				_tdShownTitles[i].style.display = 'none';
+			}
+			_tdShownTitles.length = 0;
+			_tdTitle = null;
 			return false;
 		}
 	}

@@ -46,8 +46,10 @@ pre.nette-dump {
 	display: block;
 	position: relative;
 	font-style: normal;
-	text-indent: -30px;
-	padding-left: 30px;
+	text-indent: -31px;
+	padding-left: 31px;
+	line-height: 16px;
+	font-size: 13px;
 }
 .nette-dump-number {
 	color: #009900;

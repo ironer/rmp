@@ -51,7 +51,7 @@ var _tdTitle = null;
 var _tdHideTimeout = null;
 var _tdPosition = [];
 var _tdWindowSize = _tdGetWindowSize();
-var _tdSpaceX, _tdSpaceY;
+var _tdSpaceX, _tdSpaceY, _tdWidthDif, _tdCheckWidthDif;
 
 _tdShowLog(1);
 
@@ -106,13 +106,24 @@ function _tdShowTitle(e) {
 	_tdPosition = [(e.pageX || e.clientX) + 20, (e.pageY || e.clientY) - 5];
 	_tdTitle.style.left =  _tdPosition[0] + 'px';
 	_tdTitle.style.top = _tdPosition[1] + 'px';
-	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < _tdTitle.oriWidth) _tdTitle.style.width = _tdSpaceX + 'px';
-	else _tdTitle.style.width = 'auto';
+	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < _tdTitle.oriWidth) {
+		_tdTitle.style.width = _tdSpaceX + 'px';
+		_tdCheckWidthDif = false;
+	} else {
+		_tdTitle.style.width = 'auto';
+		_tdCheckWidthDif = true;
+	}
 	if ((_tdSpaceY = (_tdWindowSize[1] - _tdPosition[1] - 50)) < _tdTitle.clientHeight || _tdSpaceY < _tdTitle.oriHeight) {
 		_tdTitle.style.height = _tdSpaceY + 'px';
-		// TODO: roztahnout nasirku pokud je to potreba kvuli scrollbaru
+		if (_tdCheckWidthDif) {
+			_tdWidthDif = Math.max(_tdTitle.oriWidth + 16 - _tdTitle.clientWidth, 0);
+			if (_tdWidthDif) _tdTitle.style.width = _tdTitle.oriWidth + _tdWidthDif;
+		}
+
 		// TODO: osetrit dumpovani stringu pro normalni debug
-		// TODO: opravit barsu textu v malem hoveru
+		// TODO: opravit barvu textu v malem hoveru
+		// TODO: udelat resizovani time debugu
+		// TODO: udelat fullwidth mod time debugu
 	}
 	else _tdTitle.style.height = 'auto';
 }
@@ -173,9 +184,9 @@ document.onkeydown = function(e) {
 			_tdShowLog(_tdSelected() ? _tdGetNext() : _tdActive + 1);
 			return false;
 		} else if (e.keyCode == 38 && _tdTitle) {
-			_tdTitle.scrollTop = _tdTitle.scrollTop - 28;
+			_tdTitle.scrollTop = _tdTitle.scrollTop - 32;
 		} else if (e.keyCode == 40 && _tdTitle) {
-			_tdTitle.scrollTop = _tdTitle.scrollTop + 28;
+			_tdTitle.scrollTop = _tdTitle.scrollTop + 32;
 		}
 	}
 	return true;

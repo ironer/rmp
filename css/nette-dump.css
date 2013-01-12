@@ -50,16 +50,22 @@ pre.nette-dump {
 	padding-left: 31px;
 	line-height: 16px;
 	font-size: 13px;
-	color: #3355dd;
+	color: #35d;
+}
+i.nette-dump-even {
+	color: #c53;
+}
+i.nette-dump-even b {
+	color: #633;
 }
 .nette-dump-number {
-	color: #009900;
+	color: #090;
 }
 .nette-dump-null, .nette-dump-bool {
-	color: #885500;
+	color: #850;
 }
 .nette-dump-visibility {
-	color: #999999;
+	color: #999;
 	font-size: 85%;
 }
 .nette-dump-indent {
@@ -70,7 +76,7 @@ pre.nette-dump {
 	color: #4a25c5;
 }
 .nette-dump-editor {
-	color: #0000ee;
+	color: #00e;
 }
 .nette-dump-row {
 	overflow-x: auto;
@@ -90,29 +96,29 @@ pre.nette-dump {
 	user-select: none;
 }
 .nette-dump-chosen {
-	background-color: #ccddff;
+	background-color: #cdf;
 }
 .nette-dump-active {
-	background-color: #000066;
-	color: #eeeeee;
+	background-color: #006;
+	color: #eee;
 }
 .nette-dump-active .nette-dump-array, .nette-dump-active .nette-dump-object {
 	color: #ff8b8e;
 }
 .nette-dump-active .nette-dump-string {
-	color: #99bbff;
+	color: #9bf;
 }
 .nette-dump-active .nette-dump-number {
-	color: #33ff33;
+	color: #3f3;
 }
 .nette-dump-active .nette-dump-null, .nette-dump-active .nette-dump-bool {
-	color: #ffeeaa;
+	color: #fea;
 }
 .nette-dump-active .nette-dump-path {
-	color: #bbbbff;
+	color: #bbf;
 }
 .nette-dump-active .nette-dump-editor {
-	color: #ffee66;
+	color: #fe6;
 }
 #tdContainer {
 	position: absolute;

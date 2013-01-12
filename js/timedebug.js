@@ -51,7 +51,7 @@ var _tdTitle = null;
 var _tdHideTimeout = null;
 var _tdPosition = [];
 var _tdWindowSize = _tdGetWindowSize();
-var _tdSpaceX, _tdSpaceY, _tdWidthDif, _tdCheckWidthDif;
+var _tdSpaceX, _tdSpaceY, _tdWidthDif, _tdCheckWidthDif, _tdTitleRows;
 
 _tdShowLog(1);
 
@@ -101,6 +101,9 @@ function _tdShowTitle(e) {
 		if (!_tdTitle.hasOwnProperty('oriWidth')) {
 			_tdTitle.oriWidth = _tdTitle.clientWidth - 16;
 			_tdTitle.oriHeight = _tdTitle.clientHeight - 16;
+			_tdTitleRows = _tdTitle.getElementsByTagName('i');
+			for (var i = 0, j = _tdTitleRows.length; ++i < j; ++i)
+				_tdTitleRows[i].className = "nette-dump-even";
 		}
 	}
 
@@ -125,8 +128,7 @@ function _tdShowTitle(e) {
 			if (_tdWidthDif) _tdTitle.style.width = _tdTitle.oriWidth + _tdWidthDif + 1;
 		}
 
-		// TODO: udelat prepinani oken
-		// TODO: obarvit kazde druhe i-cko
+		// TODO: udelat menu oken(lt drag, rb resize, close, select content)
 		// TODO: dat do title pole posilane do metod
 		// TODO: udelat resizovani time debugu
 		// TODO: udelat fullwidth mod time debugu

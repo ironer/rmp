@@ -27,7 +27,7 @@ pre.nette-dump {
 	z-index: 100;
 	font-weight: normal;
 	background: #eff;
-	border: 3px solid #09d;
+	border: 3px solid #08d;
 	top: 0;
 	left: 0;
 	padding: 8px;
@@ -50,6 +50,7 @@ pre.nette-dump {
 	padding-left: 31px;
 	line-height: 16px;
 	font-size: 13px;
+	color: #3355dd;
 }
 .nette-dump-number {
 	color: #009900;

@@ -76,6 +76,7 @@ function _tdSetHovers(el) {
 			_titleSpan.tdTitle = _titleStrong;
 			_titleSpan.onmousemove = _tdShowTitle;
 			_titleSpan.onmouseout = _tdHideTitle;
+			_titleSpan.onclick = _tdPinTitle;
 		}
 	}
 }
@@ -92,7 +93,7 @@ function _tdShowTitle(e) {
 		_tdHideTimeout = null;
 	}
 
-	if (_tdTitle === null) {
+	if (_tdTitle === null && this.tdTitle.style.display != 'block')  {
 		_tdTitle = this.tdTitle;
 		_tdTitle.style.display = 'block';
 		_tdTitle.style.position = 'fixed';
@@ -103,9 +104,12 @@ function _tdShowTitle(e) {
 		}
 	}
 
+	if (_tdTitle === null) return true;
+
 	_tdPosition = [(e.pageX || e.clientX) + 20, (e.pageY || e.clientY) - 5];
 	_tdTitle.style.left =  _tdPosition[0] + 'px';
 	_tdTitle.style.top = _tdPosition[1] + 'px';
+
 	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < _tdTitle.oriWidth) {
 		_tdTitle.style.width = _tdSpaceX + 'px';
 		_tdCheckWidthDif = false;
@@ -113,19 +117,23 @@ function _tdShowTitle(e) {
 		_tdTitle.style.width = 'auto';
 		_tdCheckWidthDif = true;
 	}
+
 	if ((_tdSpaceY = (_tdWindowSize[1] - _tdPosition[1] - 50)) < _tdTitle.clientHeight || _tdSpaceY < _tdTitle.oriHeight) {
 		_tdTitle.style.height = _tdSpaceY + 'px';
 		if (_tdCheckWidthDif) {
 			_tdWidthDif = Math.max(_tdTitle.oriWidth + 16 - _tdTitle.clientWidth, 0);
-			if (_tdWidthDif) _tdTitle.style.width = _tdTitle.oriWidth + _tdWidthDif;
+			if (_tdWidthDif) _tdTitle.style.width = _tdTitle.oriWidth + _tdWidthDif + 1;
 		}
 
-		// TODO: osetrit dumpovani stringu pro normalni debug
-		// TODO: opravit barvu textu v malem hoveru
+		// TODO: udelat prepinani oken
+		// TODO: obarvit kazde druhe i-cko
+		// TODO: dat do title pole posilane do metod
 		// TODO: udelat resizovani time debugu
 		// TODO: udelat fullwidth mod time debugu
+	} else {
+		_tdTitle.style.height = 'auto';
 	}
-	else _tdTitle.style.height = 'auto';
+	return false;
 }
 
 function _tdHideTitle(e) {
@@ -144,6 +152,14 @@ function _tdHide() {
 		_tdTitle.style.display = 'none';
 		_tdTitle = null;
 	}
+}
+
+function _tdPinTitle() {
+	if (_tdHideTimeout) {
+		window.clearTimeout(_tdHideTimeout);
+		_tdHideTimeout = null;
+	}
+	_tdTitle = null;
 }
 
 function _tdMouseClick(e) {
@@ -185,8 +201,10 @@ document.onkeydown = function(e) {
 			return false;
 		} else if (e.keyCode == 38 && _tdTitle) {
 			_tdTitle.scrollTop = _tdTitle.scrollTop - 32;
+			return false;
 		} else if (e.keyCode == 40 && _tdTitle) {
 			_tdTitle.scrollTop = _tdTitle.scrollTop + 32;
+			return false;
 		}
 	}
 	return true;

@@ -25,23 +25,29 @@ pre.nette-dump {
 	position: absolute;
 	display: none;
 	z-index: 100;
-	font-weight: normal;
 	background: #def;
 	border-top: 8px solid #def;
 	border-bottom: 8px solid #def;
 	top: 0;
 	left: 0;
-	padding: 0 8px;
-	text-indent: 0;
 	-moz-box-shadow: 3px 2px 8px #788;
 	-webkit-box-shadow: 3px 2px 8px #788;
 	box-shadow: 3px 2px 8px #788;
-	white-space: pre-wrap;
-	white-space: -moz-pre-wrap !important;
-	word-wrap: break-word;
+	padding: 0;
+	text-indent: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
 	outline: 0;
+}
+.nette-dump-inner {
+	display: block;
+	position: relative;
+	font-weight: normal;
+	white-space: pre-wrap;
+	white-space: -moz-pre-wrap !important;
+	word-wrap: break-word;
+	padding: 0 8px;
+	overflow: hidden;
 }
 .nette-dump-title i {
 	display: block;

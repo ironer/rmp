@@ -72,9 +72,10 @@ function _tdShowLog(id) {
 function _tdSetHovers(el) {
 	_titleStrongs = el.getElementsByTagName('strong');
 	for (var i = _titleStrongs.length; i-- > 0;) {
-		if (_tdHasClass(_titleStrong = _titleStrongs[i], 'nette-dump-title')) {
-			_titleSpan = _titleStrong.parentNode;
-			_titleSpan.tdTitle = _titleStrong;
+		if (_tdHasClass(_titleStrong = _titleStrongs[i], 'nette-dump-inner')) {
+			_titleSpan = _titleStrong.parentNode.parentNode;
+			_titleSpan.tdTitle = _titleStrong.parentNode;
+			_titleSpan.tdTitle.tdInner = _titleStrong;
 			_titleSpan.onmousemove = _tdShowTitle;
 			_titleSpan.onmouseout = _tdHideTitle;
 			_titleSpan.onclick = _tdPinTitle;
@@ -98,9 +99,8 @@ function _tdShowTitle(e) {
 		_tdTitle = this.tdTitle;
 		_tdTitle.style.display = 'block';
 		_tdTitle.style.position = 'fixed';
-		_tdTitle.style.zIndex = 1000;
 		if (!_tdTitle.hasOwnProperty('oriWidth')) {
-			_tdTitle.oriWidth = _tdTitle.clientWidth - 16;
+			_tdTitle.oriWidth = _tdTitle.clientWidth;
 			_tdTitle.oriHeight = _tdTitle.clientHeight;
 			_tdTitleRows = _tdTitle.getElementsByTagName('i');
 			for (var i = 0, j = _tdTitleRows.length; ++i < j; ++i)
@@ -112,10 +112,11 @@ function _tdShowTitle(e) {
 	if (_tdTitle === null) return true;
 
 	_tdPosition = [(e.pageX || e.clientX) + 20, (e.pageY || e.clientY) - 5];
+
+	_tdAutosize();
+
 	_tdTitle.style.left = _tdPosition[0] + 'px';
 	_tdTitle.style.top = _tdPosition[1] + 'px';
-	
-	_tdAutosize();
 
 	// TODO: otevrene titulky by mely reagovat na resize okna (udelat prepocetni funkci na rozmer zvlast)
 
@@ -134,8 +135,9 @@ function _tdShowTitle(e) {
 
 function _tdAutosize(el) {
 	el = el || _tdTitle;
-	
-	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < el.oriWidth) {
+	_tdSpaceX = Math.max(_tdWindowSize[0] - _tdPosition[0] - 50, 0);
+
+	if (_tdSpaceX < el.oriWidth) {
 		el.style.width = _tdSpaceX + 'px';
 		_tdCheckWidthDif = false;
 	} else {
@@ -143,10 +145,12 @@ function _tdAutosize(el) {
 		_tdCheckWidthDif = true;
 	}
 
-	if ((_tdSpaceY = (_tdWindowSize[1] - _tdPosition[1] - 50)) < el.clientHeight || _tdSpaceY < el.oriHeight) {
-		el.style.height = 16 * parseInt(_tdSpaceY / 16) + 'px';
+	_tdSpaceY = 16 * parseInt(Math.max(_tdWindowSize[1] - _tdPosition[1] - 50, 0) / 16);
+
+	if (_tdSpaceY < el.tdInner.clientHeight || _tdSpaceY < el.oriHeight) {
+		el.style.height = _tdSpaceY + 'px';
 		if (_tdCheckWidthDif) {
-			_tdWidthDif = Math.max(el.oriWidth + 16 - el.clientWidth, 0);
+			_tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0);
 			if (_tdWidthDif) el.style.width = el.oriWidth + _tdWidthDif + 1;
 		}
 	} else {

@@ -50,7 +50,6 @@ var _tdActive = 0;
 var _tdShownTitles = [];
 var _tdTitle = null;
 var _tdHideTimeout = null;
-var _tdPosition = [];
 var _tdWindowSize = _tdGetWindowSize();
 var _tdNext, _tdSpaceX, _tdSpaceY, _tdWidthDif, _tdCheckWidthDif, _tdTitleRows;
 
@@ -111,16 +110,12 @@ function _tdShowTitle(e) {
 
 	if (_tdTitle === null) return true;
 
-	_tdPosition = [(e.pageX || e.clientX) + 20, (e.pageY || e.clientY) - 5];
+	_tdTitle.style.left = (_tdTitle.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
+	_tdTitle.style.top = (_tdTitle.tdTop = (e.pageY || e.clientY) - 5) + 'px';
 
 	_tdAutosize();
 
-	_tdTitle.style.left = _tdPosition[0] + 'px';
-	_tdTitle.style.top = _tdPosition[1] + 'px';
-
-	// TODO: otevrene titulky by mely reagovat na resize okna (udelat prepocetni funkci na rozmer zvlast)
-
-	// TODO: aktivator lokalniho menu pod kurzorem <Alt> nebo podrzeni leveho mys
+	// TODO: aktivator lokalniho menu pod kurzorem (<Alt> nebo podrzeni leveho mysitka)
 	// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all)
 	// TODO: moznost zapinat a vypinat sude podbarveni
 	// TODO: minihra - zavirani title s danou velikosti
@@ -135,7 +130,8 @@ function _tdShowTitle(e) {
 
 function _tdAutosize(el) {
 	el = el || _tdTitle;
-	_tdSpaceX = Math.max(_tdWindowSize[0] - _tdPosition[0] - 50, 0);
+	_tdSpaceX = Math.max(_tdWindowSize[0] - el.tdLeft - 50, 0);
+	_tdSpaceY = 16 * parseInt(Math.max(_tdWindowSize[1] - el.tdTop - 50, 0) / 16);
 
 	if (_tdSpaceX < el.oriWidth) {
 		el.style.width = _tdSpaceX + 'px';
@@ -144,8 +140,6 @@ function _tdAutosize(el) {
 		el.style.width = 'auto';
 		_tdCheckWidthDif = true;
 	}
-
-	_tdSpaceY = 16 * parseInt(Math.max(_tdWindowSize[1] - _tdPosition[1] - 50, 0) / 16);
 
 	if (_tdSpaceY < el.tdInner.clientHeight || _tdSpaceY < el.oriHeight) {
 		el.style.height = _tdSpaceY + 'px';
@@ -257,6 +251,7 @@ function _tdResizeWrapper() {
 	if (viewWidth > _tdOuterWrapper.clientWidth) _tdOuterWrapper.style.width =  viewWidth + 'px';
 	if (viewHeight > _tdOuterWrapper.clientHeight) _tdOuterWrapper.style.height = viewHeight + 'px';
 	_tdWindowSize = _tdGetWindowSize();
+	for (var i = _tdShownTitles.length; i-- > 0;) _tdAutosize(_tdShownTitles[i]);
 }
 
 function _tdSelected() {

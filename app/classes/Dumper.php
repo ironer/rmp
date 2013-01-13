@@ -73,8 +73,7 @@ class Dumper
 	public static function toHtml($var, array $options = NULL)
 	{
 		list($file, $line, $code) = empty($options[self::LOCATION]) ? NULL : self::findLocation();
-		return '<pre class="nette-dump"'
-//				. ($file ? ' title="' . htmlspecialchars("$code\nin file " . ($fileTitle = substr($file, strlen(ROOT))) . " on line $line") . '">' : '>')
+		return '<pre class="nette-dump">'
 				. self::dumpVar($var, (array) $options + array(
 					self::DEPTH => 4,
 					self::TRUNCATE => 70,
@@ -84,7 +83,7 @@ class Dumper
 				))
 				. ($file ? '<small>in <' . (empty($options[self::LOCATION_LINK]) ? 'span' : 'a href="editor://open/?file='
 						. rawurlencode($file) . "&amp;line=$line\"" ) . " class=\"nette-dump-editor\"><i>"
-						. htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a></small>" : '') . "</pre>\n";
+						. htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a> $code</small>" : '') . "</pre>\n";
 	}
 
 
@@ -221,16 +220,14 @@ class Dumper
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE))
 					. '</i></strong>' : '';
-			$retClass = ' nette-dump-long';
 		} else {
 			$retTitle = '';
 			$retVal = self::encodeString($var) . '</span>';
-			$retClass = '';
 		}
 		if ($options[self::FORCE_HTML])
 			$retVal = str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b>', '<b>\\t</b>'), $retVal);
 
-		return '<span class="nette-dump-string' . $retClass . '">' . $retTitle . $retVal . ($options[self::NO_BREAK] ? '' : "\n");
+		return '<span class="nette-dump-string">' . $retTitle . $retVal . ($options[self::NO_BREAK] ? '' : "\n");
 
 	}
 

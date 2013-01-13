@@ -114,32 +114,44 @@ function _tdShowTitle(e) {
 	_tdPosition = [(e.pageX || e.clientX) + 20, (e.pageY || e.clientY) - 5];
 	_tdTitle.style.left = _tdPosition[0] + 'px';
 	_tdTitle.style.top = _tdPosition[1] + 'px';
+	
+	_tdAutosize();
 
-	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < _tdTitle.oriWidth) {
-		_tdTitle.style.width = _tdSpaceX + 'px';
+	// TODO: otevrene titulky by mely reagovat na resize okna (udelat prepocetni funkci na rozmer zvlast)
+
+	// TODO: aktivator lokalniho menu pod kurzorem <Alt> nebo podrzeni leveho mys
+	// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all)
+	// TODO: moznost zapinat a vypinat sude podbarveni
+	// TODO: minihra - zavirani title s danou velikosti
+
+	// TODO: dat do title pole posilane do metod
+
+	// TODO: udelat resizovani time debugu
+	// TODO: udelat fullwidth mod time debugu
+
+	return false;
+}
+
+function _tdAutosize(el) {
+	el = el || _tdTitle;
+	
+	if ((_tdSpaceX = (_tdWindowSize[0] - _tdPosition[0] - 50)) < el.oriWidth) {
+		el.style.width = _tdSpaceX + 'px';
 		_tdCheckWidthDif = false;
 	} else {
-		_tdTitle.style.width = 'auto';
+		el.style.width = 'auto';
 		_tdCheckWidthDif = true;
 	}
 
-	if ((_tdSpaceY = (_tdWindowSize[1] - _tdPosition[1] - 50)) < _tdTitle.clientHeight || _tdSpaceY < _tdTitle.oriHeight) {
-		_tdTitle.style.height = 16 * parseInt(_tdSpaceY / 16) + 'px';
+	if ((_tdSpaceY = (_tdWindowSize[1] - _tdPosition[1] - 50)) < el.clientHeight || _tdSpaceY < el.oriHeight) {
+		el.style.height = 16 * parseInt(_tdSpaceY / 16) + 'px';
 		if (_tdCheckWidthDif) {
-			_tdWidthDif = Math.max(_tdTitle.oriWidth + 16 - _tdTitle.clientWidth, 0);
-			if (_tdWidthDif) _tdTitle.style.width = _tdTitle.oriWidth + _tdWidthDif + 1;
+			_tdWidthDif = Math.max(el.oriWidth + 16 - el.clientWidth, 0);
+			if (_tdWidthDif) el.style.width = el.oriWidth + _tdWidthDif + 1;
 		}
-
-
-		// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all), dvojklik + smer pro aktivaci, klik pro zruseni
-		// TODO: dat do title pole posilane do metod
-		// TODO: udelat resizovani time debugu
-		// TODO: udelat fullwidth mod time debugu
 	} else {
-		_tdTitle.style.height = 'auto';
+		el.style.height = 'auto';
 	}
-
-	return false;
 }
 
 function _tdHideTitle(e) {

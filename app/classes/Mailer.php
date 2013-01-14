@@ -3,13 +3,13 @@
 class Mailer
 {
 
-	const FROM        = 'from',      //jméno odesílatele
-			TO          = 'to',        //jméno příjemce
+    const   FROM        = 'from',           //jméno odesílatele
+            TO          = 'to',             //jméno příjemce
 			BCC         = 'bcc',            //příjemci skrytých kopií (pole polí s jménem a emailems)
-			REPLY_TO    = 'reply',       //email příjemce
+			REPLY_TO    = 'reply',          //email příjemce
 			SUBJECT     = 'subject',        //předmět emailu
-			TEXT        = 'text',   	   //textová verze emailu
-			HTML        = 'html',   	   //HTML verze emailu
+			TEXT        = 'text',   	    //textová verze emailu
+			HTML        = 'html',   	    //HTML verze emailu
 			CHARSET     = 'charset',        //kódování e-mailu
 
 			EOL = "\r\n";
@@ -71,7 +71,45 @@ class Mailer
 	}
 
 
-	public function prepare($params) {
+    public function prepare($params) {
+        
+        $email = array();
+        
+        foreach ($params as $key=>$param) {
+            
+            switch ($key) {
+                
+                case self::TO:
+                case self::BCC:
+                
+                    foreach ($param as $user) {
+                        
+                        $index = $this->indexes[$key]++;
+                        $this->data[$key][$index] = $user;
+                        $email[$key][] = $index;
+                        
+                    }
+                break;
+                
+                default:
+                    
+                    $index = $this->indexes[$key]++;
+                    $this->data[$key][$index] = $params[$key];
+                    $email[$key][] = $index;
+                    
+                break;
+                    
+            }
+            
+        }
+        
+        App::dump($email);
+        App::dump($this->data);
+            
+    }
+    
+
+	public function old_prepare($params) {
 
 		//zpracování odesílatele a příjemců
 
@@ -234,7 +272,16 @@ class Mailer
 
 	}
 
+    
+    private function encodeUser($user) {
 
+		if (!empty($user[1]))
+			$this->sender = '"'.$this->AltBase64($user[1]).'" <'.$user[0].'>';
+		else
+			$this->sender = '<'.$user[0].'>';
+        
+    }
+    
 	private function normaliza($string){
 		$table = array('À'=>'A','Á'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A','Å'=>'A','Æ'=>'A','Þ'=>'B','Ç'=>'C','Ć'=>'C','Č'=>'C','Ð'=>'Dj',
 			'Ď'=>'D','È'=>'E','É'=>'E','Ê'=>'E','Ë'=>'E','Ě'=>'E','Ì'=>'I','Í'=>'I','Î'=>'I','Ï'=>'I','Ľ'=>'L',

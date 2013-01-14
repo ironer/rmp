@@ -28,6 +28,7 @@ if (DEBUG) {
 				. WEBROOT . "?mail=1\">odeslat email</a>\n";
 		echo "<script>\nvar _tdLogs = " . json_encode(App::$timeDebugData) . ";\n"
 				. "var _tdIndex = " . json_encode(App::$timeDebug) . ";\n</script>\n";
+		echo "<script src=\"" . WEBROOT . JS . "/vendor/jak.comp.js\"></script>\n";
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 	} else {
 		App::dump($app);

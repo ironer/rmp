@@ -78,8 +78,16 @@ function _tdSetHovers(el) {
 			_titleSpan.onmousemove = _tdShowTitle;
 			_titleSpan.onmouseout = _tdHideTitle;
 			_titleSpan.onclick = _tdPinTitle;
+			_titleSpan.tdTitle.onmousedown = _tdMoveTitle;
 		}
 	}
+}
+
+function _tdMoveTitle(e) {
+	e = e || window.event;
+	_tdStopPropagation(e);
+
+
 }
 
 function _tdShowTitle(e) {
@@ -277,6 +285,12 @@ function _tdStopPropagation(e) {
 	e = e || window.event;
 	if (e.stopPropagation) e.stopPropagation();
 	else e.cancelBubble = true;
+}
+
+function _tdCancelDef(e) {
+	e = e || window.event;
+	if (e.preventDefault) e.preventDefault();
+	else e.returnValue = false;
 }
 
 function _tdHasClass(el, classes) {

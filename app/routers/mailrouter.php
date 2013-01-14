@@ -3,7 +3,7 @@
 require_once(CLASSES . '/Router.php');
 $router = new Router($this->router, $this);
 
-require_once(CLASSES . '/Mailer.php');
+require_once(CLASSES . '/Mailer2.php');
 
 
 $params = array(
@@ -19,9 +19,9 @@ $params['body_text'] = strip_tags(str_replace('<br />',"\r\n",$params['body_html
 
 
 
-$mailer = new Mailer('mailer1', $this);
+$mailer2 = new Mailer2('mailer2', $this);
 
-$mailer->prepare($params)->go();
+$mailer2->prepare($params)->go();
 
 //$mailer->go('admin@essensworld.com','Admin Štefan');
 

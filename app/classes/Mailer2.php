@@ -18,17 +18,14 @@ class Mailer2
 
 	public $id;
 	public $container;
-	private $sender = '';
-	private $sendermail = '';
-	private $recipient = '';
-	private $recipientmail = '';
+
+	private $sender;
+	private $sendermail;
+	private $recipient;
 	private $bcc = '';
 	private $recipientmails = array();
-	private $subject = '';
-	private $text = '';
-	private $html = '';
-	private $attachments = '';
-	private $body = '';
+	private $subject;
+	private $body;
 	private $headers = array();
 	private $additional = '';
 	private $boundary;
@@ -50,28 +47,16 @@ class Mailer2
 	}
 
 
-	public function setMail(array $params = NULL) {
-		$params = (array) $params + array(
-			self::FROM_NAME => '',
-			self::FROM_EMAIL => self::$SmtpUser,
-			self::TO_NAME => '',
-			self::TO_EMAIL => '',
-			self::BCC => array(),
-			self::REPLY_TO => self::$SmtpUser,
-			self::SUBJECT => '',
-			self::BODY_TEXT => '',
-			self::BODY_HTML => '',
-			self::CHARSET => 'utf8'
-		);
+	public function prepare($params) {
+
 		//zpracování odesílatele a příjemců
 
-		if(!isset($params[self::TO_EMAIL], $params[self::SUBJECT]) && empty($params[self::BODY_TEXT]) && empty())
 		if (!empty($params[self::FROM_NAME]))
-			$this->sender = '"'.self::altBase64($params[self::FROM_NAME]).'" <'.$params[self::FROM_EMAIL].'>';
+			$this->sender = '"'.$this->AltBase64($params[self::FROM_NAME]).'" <'.$params[self::FROM_EMAIL].'>';
 		else
 			$this->sender = '<'.$params[self::FROM_EMAIL].'>';
 		if (!empty($params[self::TO_NAME]))
-			$this->recipient = '"'.self::altBase64($params[self::TO_NAME]).'" <'.$params[self::TO_EMAIL].'>';
+			$this->recipient = '"'.$this->AltBase64($params[self::TO_NAME]).'" <'.$params[self::TO_EMAIL].'>';
 		else
 			$this->recipient = '<'.$params[self::TO_EMAIL].'>';
 		$this->sendermail = $params[self::FROM_EMAIL];
@@ -83,7 +68,7 @@ class Mailer2
 				if ($this->bcc != '') $this->bcc .= ',';
 
 				if (!empty($bcc[1]))
-					$this->bcc .= '"'.self::altBase64($bcc[1]).'" <'.$bcc[0].'>';
+					$this->bcc .= '"'.$this->AltBase64($bcc[1]).'" <'.$bcc[0].'>';
 				else
 					$this->bcc .= '<'.$bcc[0].'>';
 
@@ -98,7 +83,7 @@ class Mailer2
 
 		//příprava obsahu mailu
 
-		$this->subject = self::altBase64($params[self::SUBJECT]);
+		$this->subject = $this->AltBase64($params[self::SUBJECT]);
 		$this->headers[] = 'From: ' . $this->sender;
 		if (!empty($params[self::REPLY_TO]))
 			$this->headers[] = 'Reply-To: ' . $params[self::REPLY_TO];
@@ -108,7 +93,7 @@ class Mailer2
 
 		if (!empty($params[self::BODY_HTML])) { //vytvořit MIME mail
 
-			$this->boundary = md5(microtime(TRUE));
+			$this->boundary = md5(microtime(true));
 			$this->headers[] = 'MIME-Version: 1.0';
 			$this->headers[] = 'Content-Type: multipart/alternative;'."\n\t".'boundary="'.$this->boundary.'"';
 			$body = "This is a MIME encoded message.\n\n";
@@ -130,9 +115,12 @@ class Mailer2
 
 	public function go($recipient_email='',$recipient_name='')
 	{
+
+		App::lg("Send mail...", $this);
+
 		if ($recipient_email != '') {
 
-			if (!empty($recipient_name)) $this->recipient = '"'.self::altBase64($recipient_name).'" <'.$recipient_email.'>'; else $this->recipient = '<'.$recipient_email.'>';
+			if (!empty($recipient_name)) $this->recipient = '"'.$this->AltBase64($recipient_name).'" <'.$recipient_email.'>'; else $this->recipient = '<'.$recipient_email.'>';
 			$this->recipientmail = array($recipient_email);
 
 			unset($this->bcc); //zrušit příjemce skrytých kopií, aby se jim mail neposílal znovu
@@ -149,7 +137,6 @@ class Mailer2
 
 
 
-		App::lg("Email: $this->subject", $this);
 
 		return $this->id;
 	}
@@ -162,12 +149,7 @@ class Mailer2
 		if ($type == 'text/plain' || $type == 'text/html') {
 
 			$quoted = quoted_printable_encode($part);
-			if ($part != $quoted) {
-				$part = $quoted;
-				$coded = TRUE;
-			} else {
-				$coded = FALSE;
-			}
+			if ($part != $quoted) {$part = $quoted; $coded = true;} else $coded = false;
 
 			$this->body .= 'Content-Type: ' . $type . ';' . "\n\t" . 'charset="UTF-8"' . (($coded) ? "\n" . 'Content-Transfer-Encoding: quoted-printable' : '') . "\n\n" . $part;
 
@@ -175,7 +157,10 @@ class Mailer2
 
 			$part = base64_encode($part);
 			$this->body .= 'Content-Type: ' . $type . "\n" . 'Content-Transfer-Encoding: base64' . "\n\n" . $part;
+
 		}
+
+
 	}
 
 
@@ -199,8 +184,9 @@ class Mailer2
 
 		}
 		return $talk;
-	}
 
+
+	}
 
 	private function sockTalk($socket, $command, &$talk) {
 		if (!empty($command)) {
@@ -210,11 +196,13 @@ class Mailer2
 			}
 			$talk[] = $command;
 		}
-		$talk[] = socket_read($socket, 512);
+
+		$talk[] = socket_read($socket,512);
+
 	}
 
+	private function AltBase64($text) {
 
-	private static function altBase64($text) {
 		$quoted = quoted_printable_encode($text);
 
 		if ($text != $quoted) return '=?UTF-8?B?' . base64_encode($text) . '?=';
@@ -223,16 +211,17 @@ class Mailer2
 	}
 
 
-	private static function normaliza($string) {
-		 static $table = array('À'=>'A','Á'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A','Å'=>'A','Æ'=>'A','Þ'=>'B','Ç'=>'C','Ć'=>'C','Č'=>'C',
-			'Ð'=>'Dj','Ď'=>'D','È'=>'E','É'=>'E','Ê'=>'E','Ë'=>'E','Ě'=>'E','Ì'=>'I','Í'=>'I','Î'=>'I','Ï'=>'I','Ľ'=>'L',
-			'Ĺ'=>'L','Ñ'=>'N','Ň'=>'N','Ò'=>'O','Ó'=>'O','Ô'=>'O','Õ'=>'O','Ö'=>'O','Ő'=>'O','Ø'=>'O','Ř'=>'R','Ŕ'=>'R',
-			'Š'=>'S','ß'=>'Ss','Ť'=>'T','Ù'=>'U','Ú'=>'U','Û'=>'U','Ü'=>'U','Ů'=>'U','Ű'=>'U','Ý'=>'Y','Ÿ'=>'Y','Ž'=>'Z',
-			'à'=>'a','á'=>'a','â'=>'a','ã'=>'a','ä'=>'a','å'=>'a','æ'=>'a','þ'=>'b','ç'=>'c','ć'=>'c','č'=>'c','ð'=>'dj',
-			'ď'=>'d','è'=>'e','é'=>'e','ê'=>'e','ë'=>'e','ě'=>'e','ì'=>'i','í'=>'i','î'=>'i','ï'=>'i','ľ'=>'l','ĺ'=>'l',
-			'ñ'=>'n','ň'=>'n','ò'=>'o','ó'=>'o','ô'=>'o','õ'=>'o','ö'=>'o','ő'=>'o','ø'=>'o','ř'=>'r','ŕ'=>'r','š'=>'s',
-			'ß'=>'ss','ť'=>'t','ù'=>'u','ú'=>'u','û'=>'u','ü'=>'u','ů'=>'u','ű'=>'u','ý'=>'y','ÿ'=>'y','ž'=>'z');
-		return preg_replace('/[^(\x20-\x7F)]*/','?',strtr($string, self::$table));
+	private function normaliza($string){
+		$table = array('À'=>'A','Á'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A','Å'=>'A','Æ'=>'A','Þ'=>'B','Ç'=>'C','Ć'=>'C','Č'=>'C','Ð'=>'Dj',
+			'Ď'=>'D','È'=>'E','É'=>'E','Ê'=>'E','Ë'=>'E','Ě'=>'E','Ì'=>'I','Í'=>'I','Î'=>'I','Ï'=>'I','Ľ'=>'L',
+			'Ĺ'=>'L','Ñ'=>'N','Ň'=>'N','Ò'=>'O','Ó'=>'O','Ô'=>'O','Õ'=>'O','Ö'=>'O','Ő'=>'O','Ø'=>'O','Ř'=>'R',
+			'Ŕ'=>'R','Š'=>'S','ß'=>'Ss','Ť'=>'T','Ù'=>'U','Ú'=>'U','Û'=>'U','Ü'=>'U','Ů'=>'U','Ű'=>'U','Ý'=>'Y',
+			'Ÿ'=>'Y','Ž'=>'Z','à'=>'a','á'=>'a','â'=>'a','ã'=>'a','ä'=>'a','å'=>'a','æ'=>'a','þ'=>'b','ç'=>'c','ć'=>'c',
+			'č'=>'c','ð'=>'dj','ď'=>'d','è'=>'e','é'=>'e','ê'=>'e','ë'=>'e','ě'=>'e','ì'=>'i','í'=>'i','î'=>'i',
+			'ï'=>'i','ľ'=>'l','ĺ'=>'l','ñ'=>'n','ň'=>'n','ò'=>'o','ó'=>'o','ô'=>'o','õ'=>'o','ö'=>'o','ő'=>'o',
+			'ø'=>'o','ř'=>'r','ŕ'=>'r','š'=>'s','ß'=>'ss','ť'=>'t','ù'=>'u','ú'=>'u','û'=>'u','ü'=>'u','ů'=>'u',
+			'ű'=>'u','ý'=>'y','ÿ'=>'y','ž'=>'z');
+		return preg_replace('/[^(\x20-\x7F)]*/','?',strtr($string, $table));
 	}
 
 }

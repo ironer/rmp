@@ -3,15 +3,13 @@
 class Mailer
 {
 
-	const FROM_NAME   = 'from_name',      //jméno odesílatele
-			FROM_EMAIL  = 'from_email',     //email odesílatele
-			TO_NAME     = 'to_name',        //jméno příjemce
-			TO_EMAIL    = 'to_email',       //email příjemce
+	const FROM        = 'from',      //jméno odesílatele
+			TO          = 'to',        //jméno příjemce
 			BCC         = 'bcc',            //příjemci skrytých kopií (pole polí s jménem a emailems)
-			REPLY_TO    = 'reply_to',       //email příjemce
+			REPLY_TO    = 'reply',       //email příjemce
 			SUBJECT     = 'subject',        //předmět emailu
-			BODY_TEXT   = 'body_text',      //textová verze emailu
-			BODY_HTML   = 'body_html',      //HTML verze emailu
+			TEXT        = 'text',   	   //textová verze emailu
+			HTML        = 'html',   	   //HTML verze emailu
 			CHARSET     = 'charset',        //kódování e-mailu
 
 			EOL = "\r\n";
@@ -19,21 +17,47 @@ class Mailer
 	public $id;
 	public $container;
 
-	private $sender;
-	private $sendermail;
-	private $recipient;
-	private $bcc = '';
-	private $recipientmails = array();
-	private $subject;
-	private $body;
-	private $headers = array();
-	private $additional = '';
-	private $boundary;
+	private $indexes = array(
+		'from' => 0,
+		'reply' => 0,
+		'to' => 0,
+		'bcc' => 0,
+		'subject' => 0,
+		'text' => 0,
+		'html' => 0,
+		'attachments' => 0
+	);
 
-	private static $SmtpServer="essensmail-cz-ham.zarea.net";
-	private static $SmtpPort="25"; //default
-	private static $SmtpUser="info@essensmail.com";
-	private static $SmtpPass="essensinf0";
+	private $data = array(
+		'from' => array(),
+		'reply' => array(),
+		'to' => array(),
+		'bcc' => array(),
+		'subject' => array(),
+		'text' => array(),
+		'html' => array(),
+		'attachments' => array()
+	);
+
+	private $emails = array(array('from'=>0, 'to'=>0, 'bcc'=>array(0,1,2,3)));
+
+	private $encoded = array(
+		'fromName' => '',
+		'fromEmail' => '',
+		'toName' => '',
+		'toEmail' => '',
+		'reply' => '',
+		'bcc' => '',
+		'subject' => '',
+		'text' => '',
+		'html' => '',
+		'attachments' => array()
+	);
+	
+	private static $SmtpServer = "essensmail-cz-ham.zarea.net";
+	private static $SmtpPort = "25"; //default
+	private static $SmtpUser = "info@essensmail.com";
+	private static $SmtpPass = "essensinf0";
 
 	public function __construct($_id, $_container)
 	{

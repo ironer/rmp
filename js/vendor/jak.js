@@ -1,7 +1,7 @@
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Deklarace "jmenného prostoru" knihoven JAK. Dále obsahuje rozšíření
@@ -20,19 +20,19 @@
  * deklarací při použití slovníků, nebo konfigurací.
  */
 if (typeof(window.JAK) != 'object'){
-	window.JAK = {NAME: "JAK", _idCnt: 0};
+	window.JAK = {NAME: "JAK"};
 };
 
 /**
- * generátor unikátních ID
+ * generátor unikatních ID
  * @static
  * @returns {string} unikátní ID
  */
-JAK.idGenerator = function() {
-	this._idCnt = (this._idCnt < 10000000 ? this._idCnt : 0);
-	var id = 'm' + new Date().getTime().toString(16) + 'm' + this._idCnt.toString(16);
-	this._idCnt++;
-	return id;
+JAK.idGenerator = function(){
+	this.idCnt = this.idCnt < 10000000 ? this.idCnt : 0;
+	var ids = 'm' +  new Date().getTime().toString(16) +  'm' + this.idCnt.toString(16);
+	this.idCnt++;
+	return ids;
 };
 
 if (!Function.prototype.bind) {
@@ -59,30 +59,18 @@ if (!Date.now) {
 	Date.now = function() { return +(new Date); }
 }
 
-if (!Object.create) {
-	/**
-	 * Object.create dle ES5 - https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/Object/create
-	 */
-	Object.create = function (o) {
-		if (arguments.length > 1) { throw new Error("Object.create polyfill only accepts the first parameter"); }
-		var tmp = function() {};
-		tmp.prototype = o;
-		return new tmp();
-	};
-}
-
 /**
  * rozšíření polí v JS 1.6 dle definice na http://dev.mozilla.org
  */
 if (!Array.prototype.indexOf) {
 	Array.prototype.indexOf = function(item, from) {
-		var len = this.length;
-		var i = from || 0;
-		if (i < 0) { i += len; }
-		for (;i<len;i++) {
+	    var len = this.length;
+	    var i = from || 0;
+	    if (i < 0) { i += len; }
+	    for (;i<len;i++) {
 			if (i in this && this[i] === item) { return i; }
-		}
-		return -1;
+	    }
+	    return -1;
 	}
 }
 if (!Array.indexOf) {
@@ -91,13 +79,13 @@ if (!Array.indexOf) {
 
 if (!Array.prototype.lastIndexOf) {
 	Array.prototype.lastIndexOf = function(item, from) {
-		var len = this.length;
+	    var len = this.length;
 		var i = (from === undefined ? len-1 : from);
 		if (i < 0) { i += len; }
-		for (;i>-1;i--) {
+	    for (;i>-1;i--) {
 			if (i in this && this[i] === item) { return i; }
-		}
-		return -1;
+	    }
+	    return -1;
 	}
 }
 if (!Array.lastIndexOf) {
@@ -112,8 +100,8 @@ if (!Array.lastIndexOf) {
 
 if (!Array.prototype.forEach) {
 	Array.prototype.forEach = function(cb, _this) {
-		var len = this.length;
-		for (var i=0;i<len;i++) {
+	    var len = this.length;
+	    for (var i=0;i<len;i++) {
 			if (i in this) { cb.call(_this, this[i], i, this); }
 		}
 	}
@@ -124,11 +112,11 @@ if (!Array.forEach) {
 
 if (!Array.prototype.every) {
 	Array.prototype.every = function(cb, _this) {
-		var len = this.length;
-		for (var i=0;i<len;i++) {
+	    var len = this.length;
+	    for (var i=0;i<len;i++) {
 			if (i in this && !cb.call(_this, this[i], i, this)) { return false; }
-		}
-		return true;
+	    }
+	    return true;
 	}
 }
 if (!Array.every) {
@@ -165,14 +153,14 @@ if (!Array.map) {
 if (!Array.prototype.filter) {
 	Array.prototype.filter = function(cb, _this) {
 		var len = this.length;
-		var res = [];
-		for (var i=0;i<len;i++) {
-			if (i in this) {
-				var val = this[i]; // in case fun mutates this
-				if (cb.call(_this, val, i, this)) { res.push(val); }
+	    var res = [];
+			for (var i=0;i<len;i++) {
+				if (i in this) {
+					var val = this[i]; // in case fun mutates this
+					if (cb.call(_this, val, i, this)) { res.push(val); }
+				}
 			}
-		}
-		return res;
+	    return res;
 	}
 }
 if (!Array.filter) {
@@ -189,7 +177,7 @@ String.prototype.lpad = function(character, count) {
 	var s = "";
 	while (s.length < (cnt - this.length)) { s += ch; }
 	s = s.substring(0, cnt-this.length);
-	return s+this.toString();
+	return s+this;
 }
 
 
@@ -203,7 +191,7 @@ String.prototype.rpad = function(character, count) {
 	var s = "";
 	while (s.length < (cnt - this.length)) { s += ch; }
 	s = s.substring(0, cnt-this.length);
-	return this.toString()+s;
+	return this+s;
 }
 
 /**
@@ -214,74 +202,6 @@ String.prototype.trim = function() {
 }
 if (!String.trim) {
 	String.trim = function(obj) { return String.prototype.trim.call(obj);}
-}
-
-/**
- * porovnani retezcu na zaklade znaku z ceske abecedy
- */
-String.prototype.CS_ALPHABET = "0123456789AÁBCČDĎEĚÉFGHCHIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽaábcčdďeěéfghchiíjklmnňoópqrřsštťuúůvwxyýzž";
-
-String.prototype.localeCSCompare = function(value) {
-	value += ""; // explicitne prevedeme na string
-	if (this+"" === value) { return 0; } // pokud jsou retezce totozne, neni co resit, vracime 0
-
-	/* chceme vzdy jako parametr zpracovavat primarne kratsi retezec */
-	if (this.length < value.length) { return -value.localeCSCompare(this); }
-
-	/* zjistime, ktery retezec je kratsi a pomoci nej se bude cyklus ridit */
-	var i = 0;
-	var j = 0;
-	var length = value.length;
-	var charValue = '';
-	var charThis = '';
-	var indexValue = 0;
-	var indexThis = 0;
-
-	while (i < length) {
-		/* nacteme vzdy jeden znak z kazdeho z retezcu */
-		charValue = value.charAt(i);
-		charThis = this.charAt(j);
-
-		/* c je podezrely znak, protoze po nem muze nasledovat h a mame najednou znak ch */
-		if (charThis.toLowerCase() == 'c') {
-			var tempString = this.substring(j, j + 2);
-			if (tempString == "ch" || tempString == "CH") {
-				j++;
-				charThis = tempString;
-			}
-		}
-
-		/* to stejne plati i pro druhy retezec, c je podezrely znak pouze v pripade, ze neni na konci retezce */
-		if (charValue.toLowerCase() == 'c') {
-			var tempString = value.substring(i, i + 2);
-			if (tempString == "ch" || tempString == "CH") {
-				i++;
-				charValue = tempString;
-			}
-		}
-
-		/* zjistime si, kde se v nasi abecede nachazi */
-		indexValue = this.CS_ALPHABET.indexOf(charValue);
-		indexThis = this.CS_ALPHABET.indexOf(charThis);
-
-		/* pokud jsme narazili na ruzne znaky, koncime */
-		if (charValue != charThis) { break; }
-
-		/* jinak zvetsime o jednicku a pokracujeme */
-		i++; j++;
-	}
-
-	if (i == length) { return 1; } /* zadny rozdil => this je nadmnozina value */
-
-	if (indexValue == indexThis) { /* oba mimo abecedu */
-		return charThis.localeCompare(charValue);
-	} else if (indexThis == -1) { /* tento mimo abecedu */
-		return -1;
-	} else if (indexValue == -1) { /* druhy mimo abecedu */
-		return 1;
-	} else {
-		return indexThis - indexValue; /* rozdil indexu v abecede */
-	}
 }
 
 /**
@@ -299,13 +219,13 @@ if (!Date.prototype.toISOString) {
 
 		Date.prototype.toISOString = function() {
 			return this.getUTCFullYear()
-					+ '-' + pad( this.getUTCMonth() + 1 )
-					+ '-' + pad( this.getUTCDate() )
-					+ 'T' + pad( this.getUTCHours() )
-					+ ':' + pad( this.getUTCMinutes() )
-					+ ':' + pad( this.getUTCSeconds() )
-					+ '.' + String( (this.getUTCMilliseconds()/1000).toFixed(3) ).slice( 2, 5 )
-					+ 'Z';
+				+ '-' + pad( this.getUTCMonth() + 1 )
+				+ '-' + pad( this.getUTCDate() )
+				+ 'T' + pad( this.getUTCHours() )
+				+ ':' + pad( this.getUTCMinutes() )
+				+ ':' + pad( this.getUTCSeconds() )
+				+ '.' + String( (this.getUTCMilliseconds()/1000).toFixed(3) ).slice( 2, 5 )
+				+ 'Z';
 		};
 	}());
 }
@@ -345,7 +265,7 @@ Date.prototype.format = function(str) {
 				} else {
 					escape = true;
 				}
-				break;
+			break;
 			case "d": result += this.getDate().toString().lpad(); break;
 			case "j": result += this.getDate(); break;
 			case "w": result += this.getDay(); break;
@@ -353,7 +273,7 @@ Date.prototype.format = function(str) {
 			case "S":
 				var d = this.getDate();
 				result += suffixes[d] || "th";
-				break;
+			break;
 			case "D": result += this._dayNamesShort[(this.getDay() || 7)-1]; break;
 			case "l": result += this._dayNames[(this.getDay() || 7)-1]; break;
 			case "z":
@@ -363,16 +283,16 @@ Date.prototype.format = function(str) {
 				d.setMonth(0);
 				var diff = t - d.getTime();
 				result += diff / (1000 * 60 * 60 * 24);
-				break;
+			break;
 
 			case "W":
 				var d = new Date(this.getFullYear(), this.getMonth(), this.getDate());
 				var day = d.getDay() || 7;
 				d.setDate(d.getDate() + (4-day));
 				var year = d.getFullYear();
-				var day = Math.floor((d.getTime() - new Date(year, 0, 1, -6).getTime()) / (1000 * 60 * 60 * 24));
+				var day = Math.floor((d.getTime() - new Date(year, 0, 1, -6)) / (1000 * 60 * 60 * 24));
 				result += (1 + Math.floor(day / 7)).toString().lpad();
-				break;
+			break;
 
 			case "m": result += (this.getMonth()+1).toString().lpad(); break;
 			case "n": result += (this.getMonth()+1); break;
@@ -389,7 +309,7 @@ Date.prototype.format = function(str) {
 					d = new Date(t);
 				} while (m == d.getMonth());
 				result += day;
-				break;
+			break;
 
 			case "L":
 				var d = new Date(this.getTime());
@@ -397,7 +317,7 @@ Date.prototype.format = function(str) {
 				d.setMonth(1);
 				d.setDate(29);
 				result += (d.getMonth() == 1 ? "1" : "0");
-				break;
+			break;
 			case "Y": result += this.getFullYear().toString().lpad(); break;
 			case "y": result += this.getFullYear().toString().lpad().substring(2); break;
 
@@ -419,7 +339,7 @@ Date.prototype.format = function(str) {
 				if (ch == "P") { o += ":"; }
 				o += "00";
 				result += (base >= 0 ? "+" : "-")+o;
-				break;
+			break;
 
 			case "U": result += this.getTime()/1000; break;
 			case "u": result += "0"; break;
@@ -434,7 +354,7 @@ Date.prototype.format = function(str) {
 
 if (!window.JSON) {
 	(function(){
-		var escapes = {
+        var escapes = {
 			'\b': '\\b',
 			'\t': '\\t',
 			'\n': '\\n',
@@ -442,11 +362,11 @@ if (!window.JSON) {
 			'\r': '\\r',
 			'"' : '\\"',
 			'\\': '\\\\'
-		};
-		var re = "[";
-		for (var p in escapes) { re += "\\"+p; }
-		re += "]";
-		re = new RegExp(re, "g");
+        };
+        var re = "[";
+        for (var p in escapes) { re += "\\"+p; }
+        re += "]";
+        re = new RegExp(re, "g");
 
 		var stringifyString = function(value) {
 			var v = value.replace(re, function(ch) {
@@ -462,12 +382,12 @@ if (!window.JSON) {
 			switch (typeof(value)) {
 				case "string":
 					return stringifyString(value);
-					break;
+				break;
 
 				case "boolean":
 				case "number":
 					return value.toString();
-					break;
+				break;
 
 				case "object":
 					var result = "";
@@ -504,12 +424,12 @@ if (!window.JSON) {
 					}
 
 					return result;
-					break;
+				break;
 
 				case "undefined":
 				default:
 					return "undefined";
-					break;
+				break;
 			}
 		}
 
@@ -532,9 +452,9 @@ if (!window.JSON) {
 	})();
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Statická třída sestavující dědičnost rozšiřováním prototypového objektu
@@ -660,7 +580,7 @@ JAK.ClassMaker._makeDefaultParams = function(params) {
  * @param {object} params parametry pro tvorbu nové třídy
  */
 JAK.ClassMaker._preMakeTests = function(params) {
-	if (!params.NAME) { throw new Error("No NAME passed to JAK.ClassMaker.makeClass()"); }
+    if (!params.NAME) { throw new Error("No NAME passed to JAK.ClassMaker.makeClass()"); }
 
 	/* test zavislosti */
 	var result = false;
@@ -689,7 +609,9 @@ JAK.ClassMaker._addConstructorProperties = function(constructor, params) {
  */
 JAK.ClassMaker._getInstance = function() {
 	if (!this._instance) {
-		this._instance = Object.create(this.prototype);
+		var tmp = function() {};
+		tmp.prototype = this.prototype;
+		this._instance = new tmp();
 		if ("$constructor" in this.prototype) { this._instance.$constructor(); }
 	}
 	return this._instance;
@@ -698,7 +620,7 @@ JAK.ClassMaker._getInstance = function() {
 /**
  * Volá vlastní kopírování prototypových vlastností jednotlivých rodičů
  * @param {array} extend pole rodicovskych trid
- */
+*/
 JAK.ClassMaker._setInheritance = function(constructor) {
 	if (constructor.EXTEND) { this._makeInheritance(constructor, constructor.EXTEND); }
 	for (var i=0; i<constructor.IMPLEMENT.length; i++) {
@@ -713,7 +635,7 @@ JAK.ClassMaker._setInheritance = function(constructor) {
  * @param {object} constructor Potomek, jehož nové prototypové vlastnosti nastavujeme
  * @param {object} parent Rodič, z jehož vlastnosti 'protype' budeme kopírovat
  * @param {bool} noSuper Je-li true, jen kopírujeme vlasnosti (IMPLEMENT)
- */
+*/
 JAK.ClassMaker._makeInheritance = function(constructor, parent, noSuper){
 	/* nastavit funkcim predka referenci na predka */
 	for (var p in parent.prototype) {
@@ -723,7 +645,9 @@ JAK.ClassMaker._makeInheritance = function(constructor, parent, noSuper){
 	}
 
 	if (!noSuper) { /* extend */
-		constructor.prototype = Object.create(parent.prototype);
+		var tmp = function(){};
+		tmp.prototype = parent.prototype;
+		constructor.prototype = new tmp();
 		for (var p in parent.prototype) {
 			if (typeof parent.prototype[p] != "object") { continue; }
 			constructor.prototype[p] = JSON.parse(JSON.stringify(parent.prototype[p]));
@@ -744,7 +668,7 @@ JAK.ClassMaker._makeInheritance = function(constructor, parent, noSuper){
  * Testuje závislosti vytvářené třídy, pokud jsou nastavené
  * @param {array} depend Pole závislostí, ktere chceme otestovat
  * @returns {bool|string} false = ok, string = error
- */
+*/
 JAK.ClassMaker._testDepend = function(depend){
 	for(var i = 0; i < depend.length; i++) {
 		var item = depend[i];
@@ -780,9 +704,9 @@ JAK.ClassMaker._$super = function() {
 	return func.apply(this, arguments);
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Třída sloužící ke zpracovavaní udalostí a časovačů poskytovaných DOM modelem.
@@ -810,7 +734,7 @@ JAK.Events._eventFolder = {};
  * @private
  */
 JAK.Events._domReadyTimer = null;
-JAK.Events._domReadyCallback = []; //zasobnik s objekty a jejich metodami, ktere chci zavolat po nastoleni udalosti
+JAK.Events._domReadyCallback = [];   //zasobnik s objekty a jejich metodami, ktere chci zavolat po nastoleni udalosti
 JAK.Events._domReadyAlreadyRun = false;/*ondomready je odchytavano specificky pro ruzne browsery a na konci je window.onload, tak aby se nespustilo 2x*/
 JAK.Events._windowLoadListenerId = false; /*v nekterych prohlizecich pouzivame listener, pro jeho odveseni sem schovavam jeho id*/
 
@@ -834,33 +758,33 @@ JAK.Events._onDomReady = function() {
 	if((/Safari/i.test(navigator.userAgent)) || (/WebKit|Khtml/i.test(navigator.userAgent))){ //safari, konqueror
 		JAK.Events._domReadyTimer=setInterval(function(){
 			if(/loaded|complete/.test(document.readyState)){
-				clearInterval(JAK.Events._domReadyTimer);
-				JAK.Events._domReady(); // zavolani cilove metody
+			    clearInterval(JAK.Events._domReadyTimer);
+			    JAK.Events._domReady(); // zavolani cilove metody
 			}}, 10);
 	} else if (document.all && !window.opera){ //IE
-//v IE
-//nejsme v ramu
+		//v IE
+		//nejsme v ramu
 		if (window.parent == window) {
 			try {
-// Diego Perini trik bez document.write, vice viz http://javascript.nwbox.com/IEContentLoaded/
+				// Diego Perini trik bez document.write, vice viz http://javascript.nwbox.com/IEContentLoaded/
 				document.documentElement.doScroll("left"); //test moznosti scrolovat, scrolovani jde dle msdn az po content load
 			} catch( error ) {
 				setTimeout( arguments.callee, 1 ); //nejde, tak volam sama sebe
 				return;
 			}
-// uz to proslo
+			// uz to proslo
 			JAK.Events._domReady(); // zavolani cilove metody
 
-//v ramu horni kod nefunguje, protoze document.documentElement je jen stranka s framesetem a ten je rychle nacten ale v ram nacten a byt redy nemusi
+			//v ramu horni kod nefunguje, protoze document.documentElement je jen stranka s framesetem a ten je rychle nacten ale v ram nacten a byt redy nemusi
 		} else {
 			JAK.Events._windowLoadListenerId = JAK.Events.addListener(window, 'load', window, function(){JAK.Events._domReady();});
 		}
-	} else if (document.addEventListener) { //FF, opera
-//JAK.Events._domReadyAlreadyRun = true;
-		document.addEventListener("DOMContentLoaded", JAK.Events._domReady, false); //FF, Opera ma specifickou udalost
-	} else {
-//pokud nic z toho tak dame jeste onload alespon :-)
-		JAK.Events._windowLoadListenerId = JAK.Events.addListener(window, 'load', window, function(){JAK.Events._domReady();});
+	} else 	if (document.addEventListener) { //FF, opera
+		//JAK.Events._domReadyAlreadyRun = true;
+  		document.addEventListener("DOMContentLoaded", JAK.Events._domReady, false); //FF, Opera ma specifickou udalost
+  	} else {
+	  	//pokud nic z toho tak dame jeste onload alespon :-)
+	  	JAK.Events._windowLoadListenerId = JAK.Events.addListener(window, 'load', window, function(){JAK.Events._domReady();});
 	}
 }
 
@@ -870,31 +794,31 @@ JAK.Events._onDomReady = function() {
  * @private
  */
 JAK.Events._domReady = function() {
-//zaruceni ze se to spusti jen jednou, tedy tehdy kdyz je _domReadyAlreadyRun=false
+	//zaruceni ze se to spusti jen jednou, tedy tehdy kdyz je _domReadyAlreadyRun=false
 	if (!JAK.Events._domReadyAlreadyRun) {
-//metoda byla opravdu zavolana
+		//metoda byla opravdu zavolana
 		JAK.Events._domReadyAlreadyRun = true;
 
-//pro FF, operu odvesim udalost
+		//pro FF, operu odvesim udalost
 		if (document.addEventListener) {
 			document.removeEventListener("DOMContentLoaded", JAK.Events._domReady, true);
 		}
-//odveseni udalosti window.onload
+		//odveseni udalosti window.onload
 		if (JAK.Events._windowLoadListenerId) {
 			JAK.Events.removeListener(JAK.Events._windowLoadListenerId);
 			JAK.Events._windowLoadListenerId = false;
 		}
 
-//vlastni volani metody objektu
+		//vlastni volani metody objektu
 		for(var i=0; i < JAK.Events._domReadyCallback.length; i++) {
-			var callback = JAK.Events._domReadyCallback[i];
+			var callback =  JAK.Events._domReadyCallback[i];
 			if (typeof callback.func == 'string') {
 				callback.obj[callback.func]();
 			} else {
 				callback.func.apply(callback.obj, []);
 			}
 		}
-//cisteni, uz nechceme zadny odkazy na objekty a funkce
+		//cisteni, uz nechceme zadny odkazy na objekty a funkce
 		JAK.Events._domReadyCallback = [];
 	}
 
@@ -1004,7 +928,7 @@ JAK.Events.removeListener = function(id) {
  * @param {object} elm element na kterém se naslouchalo
  * @param {string} type událost, která se zachytávala; možno zadat víc událostí naráz oddělených mezerami
  * @param {function} action skutečná funkce, která zpracovávala událost
- * @param {boolean} capture pro DOM zpracovávání stejna hodota jako při zavěšování
+ * @param  {boolean} capture pro DOM zpracovávání stejna hodota jako při zavěšování
  */
 JAK.Events._removeListener = function(elm, type, action, capture) {
 	var types = type.split(" ");
@@ -1107,8 +1031,8 @@ JAK.Events.getInfo = function() {
 			listeners.push({
 				'sType': o.type,
 				'bRemoved': false,
-				'sFunction': (obj != window && obj.constructor ? '['+obj.constructor.NAME+']' : '') +
-						(typeof(func) == 'string' ? '.'+func+' = '+ obj[func].toString() : ' '+func.toString())
+				'sFunction':  (obj != window && obj.constructor ? '['+obj.constructor.NAME+']' : '') +
+					(typeof(func) == 'string' ? '.'+func+' = '+ obj[func].toString() : ' '+func.toString())
 			});
 		}
 
@@ -1122,9 +1046,9 @@ JAK.Events.getInfo = function() {
 	return output;
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Detekce klientského prostředí v závislosti na vlastnostech JavaScriptu
@@ -1169,13 +1093,13 @@ JAK.Browser.mouse = {};
  */
 JAK.Browser._getPlatform = function(){
 	if((this._agent.indexOf('iPhone') != -1)
-			|| (this._agent.indexOf('iPod') != -1)
-			|| (this._agent.indexOf('iPad') != -1)){
+	|| (this._agent.indexOf('iPod') != -1)
+	|| (this._agent.indexOf('iPad') != -1)){
 		return 'ios';
 	} else if(this._agent.indexOf('Android') != -1){
 		return 'and';
 	} else if((this._agent.indexOf('X11') != -1)
-			|| (this._agent.indexOf('Linux') != -1)){
+	|| (this._agent.indexOf('Linux') != -1)){
 		return 'nix';
 	} else if(this._agent.indexOf('Mac') != -1){
 		return 'mac';
@@ -1274,8 +1198,8 @@ JAK.Browser._getMouse = function(){
  * Zjistuje verzi daneho prohlizece, detekovaneho metodou "_getClient"
  * @private
  * @returns {string} navratova hodnota metod jejich nazev je slozeny z retezcu
- * '_get_' + vlastnost <em>client</em> + '_ver'
- * @example <pre>
+ * '_get_' + vlastnost <em>client</em>  + '_ver'
+ * @example  <pre>
  * pro Internet Exlporer je volana metoda <em>this._get_ie_ver()</em>
  *</pre>
  */
@@ -1370,7 +1294,7 @@ JAK.Browser._get_gecko_ver = function() {
  */
 JAK.Browser._get_konqueror_ver = function(){
 	var num = this._agent.indexOf('KHTML') + 6;
-	var part = this._agent.substring(num);
+	var part =  this._agent.substring(num);
 	var end = part.indexOf(' ')
 	var x = part.substring(0,end - 2);
 	return x;
@@ -1384,7 +1308,7 @@ JAK.Browser._get_konqueror_ver = function(){
  */
 JAK.Browser._get_safari_ver = function(){
 	var ver = this._agent.match(/version\/([0-9]+)/i);
-	return (ver ? ver[1] : "3");
+	return (ver ? ver[1] : "1");
 };
 
 /**
@@ -1430,9 +1354,9 @@ JAK.Browser.getBrowser = function(){
 };
 JAK.Browser.getBrowser();
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Statická třída posytující některé praktické metody na úpravy a práci s DOM stromem, např. vytváření a získávání elementů.
@@ -1505,7 +1429,7 @@ JAK.ctext = function(str, doc) {
  * @param {object} [doc] dokument, v jehož kontextu se node vyrobí (default: document)
  * @returns {node} HTML element s id = id, pokud existuje, NEBO element specifikovaný jako parametr
  */
-JAK.gel = function(id, doc) {
+ JAK.gel = function(id, doc) {
 	var d = doc || document;
 	if (typeof(id) == "string") {
 		return d.getElementById(id);
@@ -1578,7 +1502,7 @@ JAK.query = function(query, root) {
 /**
  * Propoji zadané DOM uzly
  * @param {Array} pole1...poleN libovolný počet polí; pro každé pole se vezme jeho první prvek a ostatní
- * se mu navěsí jako potomci
+ *   se mu navěsí jako potomci
  */
 JAK.DOM.append = function() { /* takes variable amount of arrays */
 	for (var i=0;i<arguments.length;i++) {
@@ -1711,30 +1635,30 @@ JAK.DOM.getBoxPosition = function(obj, ref){
 }
 
 /*
- Par noticek k výpočtům odscrollovaní:
- - rodič body je html (documentElement), rodič html je document
- - v strict mode má scroll okna nastavené html
- - v quirks mode má scroll okna nastavené body
- - opera dává vždy do obou dvou
- - safari dává vždy jen do body
- */
+	Par noticek k výpočtům odscrollovaní:
+	- rodič body je html (documentElement), rodič html je document
+	- v strict mode má scroll okna nastavené html
+	- v quirks mode má scroll okna nastavené body
+	- opera dává vždy do obou dvou
+	- safari dává vždy jen do body
+*/
 
 /**
  * vrací polohu "obj" v okně nebo uvnitř objektu který předáme jako druhý
  * argument, zahrnuje i potencialni odskrolovani kdekoliv nad objektem
- * Par noticek k výpočtům odscrollovaní:<ul>
- * <li>rodič body je html (documentElement), rodič html je document</li>
- * <li>v strict mode má scroll okna nastavené html</li>
- * <li>v quirks mode má scroll okna nastavené body</li>
- * <li>opera dává vždy do obou dvou</li>
- * <li>safari dává vždy jen do body </li></ul>
+ *	Par noticek k výpočtům odscrollovaní:<ul>
+ *	<li>rodič body je html (documentElement), rodič html je document</li>
+ *	<li>v strict mode má scroll okna nastavené html</li>
+ *	<li>v quirks mode má scroll okna nastavené body</li>
+ *	<li>opera dává vždy do obou dvou</li>
+ *	<li>safari dává vždy jen do body </li></ul>
  * @param {object} obj HTML elmenet, jehož pozici chci zjistit
  * @param {object} parent <strong>volitelný</strong> HTML element, vůči kterému chci zjistit pozici <em>obj</em>, element musí být jeho rodič
  * @param {bool} fixed <strong>volitelný</strong> flag, má-li se brát ohled na "fixed" prvky
  * @returns {object} s vlastnostmi :
  * <ul><li><em>left</em>(px) - horizontalní pozice prvku</li><li><em>top</em>(px) - vertikální pozice prvku</li></ul>
  */
-JAK.DOM.getPortBoxPosition = function(obj, parent, fixed) {
+ JAK.DOM.getPortBoxPosition = function(obj, parent, fixed) {
 	var pos = JAK.DOM.getBoxPosition(obj, parent, fixed);
 	var scroll = JAK.DOM.getBoxScroll(obj, parent, fixed);
 	pos.left -= scroll.x;
@@ -1858,7 +1782,7 @@ JAK.DOM.writeStyle = function(css) {
  * @param {array} elements pole obsahující názvy problematických elementů
  * @param {string} action akce kterou chceme provést 'hide' pro skrytí 'show' nebo cokoli jiného než hide pro zobrazení
  * @examples
- * <pre>
+ *  <pre>
  * JAK.DOM.elementsHider(JAK.gel('test'),['select'],'hide')
  * JAK.DOM.elementsHider(JAK.gel('test'),['select'],'show')
  *</pre>
@@ -1892,7 +1816,7 @@ JAK.DOM.elementsHider = function(obj, elements, action) {
 		var hidden = [];
 		var box = this.getBoxPosition(obj);
 
-		box.width = obj.offsetWidth + box.left;
+		box.width =  obj.offsetWidth + box.left;
 		box.height = obj.offsetHeight +box.top;
 		for (var e = 0; e < elems.length; ++e) { /* pro kazdy typ uzlu */
 			var elm = document.getElementsByTagName(elems[e]);
@@ -1972,13 +1896,13 @@ JAK.DOM.arrayFromCollection = function(col) {
  * @returns {string[]} pole se dvěma položkami - čistým HTML a čistým JS
  */
 JAK.DOM.separateCode = function(str) {
-	var js = [];
-	var out = {}
-	var s = str.replace(/<script.*?>([\s\S]*?)<\/script>/g, function(tag, code) {
-		js.push(code);
-		return "";
-	});
-	return [s, js.join("\n")];
+    var js = [];
+    var out = {}
+    var s = str.replace(/<script.*?>([\s\S]*?)<\/script>/g, function(tag, code) {
+        js.push(code);
+        return "";
+    });
+    return [s, js.join("\n")];
 }
 
 /**
@@ -2036,17 +1960,17 @@ JAK.DOM.shiftBox = function(box) {
  * @returns {int}
  */
 JAK.DOM.scrollbarWidth = function() {
-	var div = JAK.mel('div', false, {width: '50px', height: '50px', overflow: 'hidden', position: 'absolute', left: '-200px'});
-	var innerDiv = JAK.mel('div', false, {height: '100px'});
-	div.appendChild(innerDiv);
-	// Append our div, do our calculation and then remove it
-	document.body.insertBefore(div, document.body.firstChild);
-	var w1 = div.clientWidth + parseInt(JAK.DOM.getStyle(div,'paddingLeft')) + parseInt(JAK.DOM.getStyle(div,'paddingRight'));
-	JAK.DOM.setStyle(div, {overflowY: 'scroll'});
-	var w2 = div.clientWidth + parseInt(JAK.DOM.getStyle(div,'paddingLeft')) + parseInt(JAK.DOM.getStyle(div,'paddingRight'));
-	document.body.removeChild(div);
+    var div = JAK.mel('div', false, {width: '50px', height: '50px', overflow: 'hidden', position: 'absolute', left: '-200px'});
+    var innerDiv = JAK.mel('div', false, {height: '100px'});
+    div.appendChild(innerDiv);
+    // Append our div, do our calculation and then remove it
+    document.body.insertBefore(div, document.body.firstChild);
+    var w1 = div.clientWidth + parseInt(JAK.DOM.getStyle(div,'paddingLeft')) + parseInt(JAK.DOM.getStyle(div,'paddingRight'));
+    JAK.DOM.setStyle(div, {overflowY: 'scroll'});
+    var w2 = div.clientWidth + parseInt(JAK.DOM.getStyle(div,'paddingLeft')) + parseInt(JAK.DOM.getStyle(div,'paddingRight'));
+    document.body.removeChild(div);
 
-	return (w1 - w2);
+    return (w1 - w2);
 }
 
 /**
@@ -2056,7 +1980,7 @@ JAK.DOM.scrollbarWidth = function() {
  */
 JAK.DOM.findParent = function(node, selector) {
 	/* pokud je prazdny nebo nezadany, dostaneme prazdne pole omezujicich podminek -- a vratime prvniho rodice */
-	var parts = (selector || "").match(/[#.]?[a-z0-9_-]+/ig) || [];
+	var parts = (selector || "").match(/[#.]?[a-z0-9]+/ig) || [];
 
 	var n = node.parentNode;
 	while (n && n != document) {
@@ -2066,13 +1990,13 @@ JAK.DOM.findParent = function(node, selector) {
 			switch (part.charAt(0)) {
 				case "#":
 					if (n.id != part.substring(1)) { ok = false; }
-					break;
+				break;
 				case ".":
 					if (!JAK.DOM.hasClass(n, part.substring(1))) { ok = false; }
-					break;
+				break;
 				default:
 					if (n.nodeName.toLowerCase() != part.toLowerCase()) { ok = false; }
-					break;
+				break;
 			}
 		}
 		if (ok) { return n; }
@@ -2081,9 +2005,9 @@ JAK.DOM.findParent = function(node, selector) {
 	return null;
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @class Třída provádí operace s objekty jako je jejich porovnávaní a serializace a deserializace. Obsolete!
@@ -2121,9 +2045,9 @@ JAK.ObjLib.prototype.arrayCopy = function(arrayToCopy) {
 	return this.copy(arrayToCopy);
 };
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @class XML/TEXT/JSONP request
@@ -2139,7 +2063,7 @@ JAK.Request = JAK.ClassMaker.makeClass({
 });
 
 /** @constant */
-JAK.Request.XML	= 0;
+JAK.Request.XML		= 0;
 /** @constant */
 JAK.Request.TEXT	= 1;
 /** @constant */
@@ -2161,7 +2085,7 @@ JAK.Request.supportsCrossOrigin = function() {
  * Podporuje prohlížeč upload ?
  */
 JAK.Request.supportsUpload = function() {
-	return (window.XMLHttpRequest && !! (new XMLHttpRequest().upload));
+  return (window.XMLHttpRequest && !! (new XMLHttpRequest().upload));
 };
 
 /**
@@ -2172,9 +2096,9 @@ JAK.Request.supportsUpload = function() {
  * @param {bool} [options.method="get"] HTTP metoda požadavku
  */
 JAK.Request.prototype.$constructor = function(type, options) {
-	this._NEW	= 0;
-	this._SENT	= 1;
-	this._DONE	= 2;
+	this._NEW		= 0;
+	this._SENT		= 1;
+	this._DONE		= 2;
 	this._ABORTED	= 3;
 	this._TIMEOUT	= 4;
 	this._PROGRESS	= 5;
@@ -2223,7 +2147,7 @@ JAK.Request.prototype.setHeaders = function(headers) {
  */
 JAK.Request.prototype.getHeaders = function() {
 	if (this._state != this._DONE) { throw new Error("Response headers not available"); }
-	if (this._type == JAK.Request.JSONP) { throw new Error("Response headers not supported in JSONP mode"); }
+	if (this._type == JAK.Request.JSONP) { 	throw new Error("Response headers not supported in JSONP mode"); }
 	var headers = {};
 	var h = this._xhr.getAllResponseHeaders();
 	if (h) {
@@ -2252,13 +2176,13 @@ JAK.Request.prototype.send = function(url, data) {
 		case JAK.Request.TEXT:
 		case JAK.Request.BINARY:
 			return this._sendXHR(url, data);
-			break;
+		break;
 		case JAK.Request.JSONP:
 			return this._sendScript(url, data);
-			break;
+		break;
 		default:
 			throw new Error("Unknown request type");
-			break;
+		break;
 	}
 }
 
@@ -2555,17 +2479,17 @@ JAK.Request.prototype._userCallback = function() {
 JAK.Request.prototype._buildVBS = function() {
 	var s = JAK.mel("script", {type:"text/vbscript"});
 	s.text = "Function VBS_getByte(data, pos)\n"
-			+ "VBS_getByte = AscB(MidB(data, pos+1,1))\n"
-			+ "End Function\n"
-			+ "Function VBS_getLength(data)\n"
-			+ "VBS_getLength = LenB(data)\n"
-			+ "End Function";
+		+ "VBS_getByte = AscB(MidB(data, pos+1,1))\n"
+		+ "End Function\n"
+		+ "Function VBS_getLength(data)\n"
+		+ "VBS_getLength = LenB(data)\n"
+		+ "End Function";
 	document.getElementsByTagName("head")[0].appendChild(s);
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Vytváření a zachytávání vlastních uživatelských událostí
@@ -2597,8 +2521,8 @@ JAK.Signals.prototype.$constructor = function() {
 /**
  * registrace posluchače uživatelské události, pokud je již na stejný druh
  * události zaregistrována shodná metoda shodného objektu nic se neprovede,
- * @param {object} owner objekt/třída, která naslouchá, a v jehož oboru platnosti se zpracovaní události provede
- * @param {string} type typ události, kterou chceme zachytit; možno zadat víc názvů naráz oddělených mezerami
+ * @param {object} owner objekt/třída,  která naslouchá, a v jehož oboru platnosti se zpracovaní události provede
+ * @param {string} type	typ události, kterou chceme zachytit; možno zadat víc názvů naráz oddělených mezerami
  * @param {string} functionName funkce/metoda posluchače, která má danou událost zpracovat
  * @param {object} sender objekt, jehož událost chceme poslouchat. Pokud není zadáno (nebo false), odesilatele nerozlišujeme
  * @returns {id} id události / null
@@ -2608,9 +2532,9 @@ JAK.Signals.prototype.addListener = function(owner, type, funcOrString, sender){
 	var typeFolders = [];
 
 	var data = {
-		eOwner	: owner,
+		eOwner		: owner,
 		eFunction	: funcOrString,
-		eSender	: sender
+		eSender		: sender
 	};
 
 	var types = type.split(" ");
@@ -2627,10 +2551,10 @@ JAK.Signals.prototype.addListener = function(owner, type, funcOrString, sender){
 		for (var id in typeFolder) {
 			var item = typeFolder[id];
 			if (
-					(item.eFunction == funcOrString) &&
-							(item.eOwner == owner) &&
-							(item.eSender == sender)
-					) {
+				(item.eFunction == funcOrString) &&
+				(item.eOwner == owner) &&
+				(item.eSender == sender)
+			) {
 				ok = false;
 			}
 		}
@@ -2727,9 +2651,9 @@ JAK.Signals.prototype._myEventHandler = function(myEvent) {
  */
 JAK.signals = new JAK.Signals();
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Rozhraní určené k práci s uživatelskými událostmi a "globálními"
@@ -2755,9 +2679,9 @@ JAK.ISignals = JAK.ClassMaker.makeInterface({
  * slouží k nalezení rozhraní u rodičovských tříd, hledá v nadřazených třídách třídu,
  * ktera ma nastavenou vlastnost TOP_LEVEL a v ni očekává instanci třídy JAK.Signals s
  * nazvem "interfaceName"
- * @param {string} interfaceName název instance třídy JAK.Signals v daném objektu
+ * @param {string}	interfaceName  název instance třídy JAK.Signals v daném objektu
  * @returns {object} referenci na instanci třídy JAK.Signals
- * @throws {error} SetInterface:Interface not found
+ * @throws {error} 	SetInterface:Interface not found
  */
 JAK.ISignals.prototype.setInterface = function(interfaceName) {
 	if (typeof(this[interfaceName]) != 'object') {
@@ -2804,7 +2728,7 @@ JAK.ISignals.prototype.removeListeners = function(array) {
  * vytváří novou událost, kterou zachytáva instance třídy JAK.Signals
  * @param {string} type název vyvolané události
  * @param {object} [data] objekt s vlastnostmi specifickými pro danou událost
- * nebo pouze vnitrnim objektum [private | public]
+ *					  nebo pouze vnitrnim objektum [private | public]
  * @throws {error} pokud neexistuje odkaz na instanci JAK.Signals vyvolá chybu 'Interface not defined'
  */
 JAK.ISignals.prototype.makeEvent = function(type, data) {
@@ -2815,9 +2739,9 @@ JAK.ISignals.prototype.getInterface = function() {
 	return (typeof(this.signals) == "object" ? this.signals : JAK.signals);
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @overview Základní nástroje pro práci s "dekorátory".
@@ -2866,8 +2790,8 @@ JAK.AbstractDecorator.prototype._$super = function() {
 		var d = decorators[i];
 		/**
 		 * Hledam dve veci:
-		 * - jak se jmenuje metoda, ze ktere je $super volan,
-		 * - kde je tato metoda deklarovana pred timto dekoratorem
+		 *  - jak se jmenuje metoda, ze ktere je $super volan,
+		 *  - kde je tato metoda deklarovana pred timto dekoratorem
 		 */
 
 		if (!obj && name && (name in d)) { obj = d; break; } /* mame predchozi objekt s metodou */
@@ -2931,9 +2855,9 @@ JAK.AutoDecorator.prototype.decorate = function(instance) {
 	}
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @class Dekorační rozhraní; implementuje ho ten, kdo chce být dekorován
@@ -2957,9 +2881,9 @@ JAK.IDecorable.prototype.decorate = function(decorator) {
 	return dec.decorate.apply(dec, args);
 }
 /*
- Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
- Licenced under the MIT Licence, complete text is available in licence.txt file
- */
+	Licencováno pod MIT Licencí, její celý text je uveden v souboru licence.txt
+	Licenced under the MIT Licence, complete text is available in licence.txt file
+*/
 
 /**
  * @class Metronom: udržuje běžící interval (default 60fps nebo requestAnimationFrame) a notifikuje o jeho průběhu všechny zájemce
@@ -2976,13 +2900,13 @@ JAK.Timekeeper.prototype.$constructor = function() {
 	this._tick = this._tick.bind(this);
 
 	this._scheduler = window.requestAnimationFrame
-			|| window.webkitRequestAnimationFrame
-			|| window.mozRequestAnimationFrame
-			|| window.oRequestAnimationFrame
-			|| window.msRequestAnimationFrame
-			|| function(callback, element) {
-		setTimeout(callback, 1000/60);
-	};
+						|| window.webkitRequestAnimationFrame
+						|| window.mozRequestAnimationFrame
+						|| window.oRequestAnimationFrame
+						|| window.msRequestAnimationFrame
+						|| function(callback, element) {
+              				setTimeout(callback, 1000/60);
+           				};
 }
 
 /**
@@ -3054,9 +2978,8 @@ JAK.Timekeeper.prototype._schedule = function() {
 }
 /**
  * @class Cross-browser nahrada za console.log a podobne
- * Z ConsoleAPI (http://getfirebug.com/wiki/index.php/Console_API) implementuje log,info,warn,debug,error,clear,dir.
+ * Z ConsoleAPI (http://getfirebug.com/wiki/index.php/Console_API) implementuje log,info,warn,debug,error,clear
  * @signal change
- * @group jak
  */
 JAK.C = JAK.ClassMaker.makeClass({
 	NAME: "JAK.C",
@@ -3077,7 +3000,6 @@ JAK.C.prototype.$constructor = function() {
 	this._defineLogMethod("warn");
 	this._defineLogMethod("debug");
 	this._defineLogMethod("error");
-	this._defineLogMethod("dir");
 }
 
 /**

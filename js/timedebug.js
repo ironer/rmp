@@ -1,14 +1,10 @@
-var _logContainer = document.createElement('div');
-_logContainer.id = 'logContainer';
-var _logView = document.createElement('div');
-_logView.id = 'logView';
-_logView.innerHTML = document.body.innerHTML;
-document.body.innerHTML = '';
+var _logView = document.getElementById('logView');
+_logView.parentNode.style.overflow = 'scroll';
+_logView.style.padding = '8px';
+document.body.style.height = '100%';
 document.body.style.margin = '0px';
 document.body.style.marginLeft = '400px';
 document.body.style.overflow = 'hidden';
-_logContainer.appendChild(_logView);
-document.body.appendChild(_logContainer);
 
 var _tdLinks;
 var _tdPreTags = _logView.getElementsByTagName('pre');

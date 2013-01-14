@@ -162,11 +162,7 @@ pre.nette-dump {
 #logContainer {
 	position: relative;
 	height: 100%;
-	overflow: scroll;
-}
-#logView {
-	float: left;
-	padding: 8px;
+	overflow: hidden;
 }
 hr + hr {
 	display: none;

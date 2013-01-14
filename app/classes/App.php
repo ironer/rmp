@@ -94,6 +94,7 @@ class App
 	private static $currentApp = NULL;
 	private static $lastRuntime = NOW;
 	private static $lastMemory = 0;
+	private static $setDumper = TRUE;
 
 	public static $timeDebug = array();
 	public static $timeDebugData = array();
@@ -121,7 +122,7 @@ class App
 
 	public static function lg($text = '', $object = NULL, $reset = FALSE) {
 		if (DEBUG) {
-			require_once(CLASSES . '/Dumper.php');
+			if (App::$setDumper) App::setDumper();
 			list($file, $line, $code) = Dumper::findLocation(TRUE);
 
 			if ($reset) {
@@ -177,7 +178,7 @@ class App
 
 
 	public static function dump() {
-		require_once(CLASSES . '/Dumper.php');
+		if (App::$setDumper) App::setDumper();
 		$vars = func_get_args();
 		echo '<hr>';
 		foreach ($vars as $var) {
@@ -186,4 +187,18 @@ class App
 		}
 	}
 
+	private static function setDumper() {
+		if (!preg_match('#^Content-Type: text/html#im', implode("\n", headers_list()))) {
+			header('Content-type: text/html; charset=utf-8');
+			header("Cache-control: private");
+			echo "<!DOCTYPE html>\n<html style=\"height: 100%\">\n<head>\n<meta charset=\"utf-8\">\n<title>Debuging session</title>\n";
+			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/nette-dump.css\">\n";
+			echo "<script src=\"" . WEBROOT . JS . "/vendor/jak_compressed.js\"></script>\n";
+			echo "</head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logView\">\n";
+		} else {
+			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/nette-dump.css\">\n";
+		}
+		require_once(CLASSES . '/Dumper.php');
+		App::$setDumper = FALSE;
+	}
 }

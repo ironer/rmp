@@ -23,15 +23,16 @@ if (DEBUG) {
 	App::lg('Zobrazeni debuggeru', $app);
 	echo '<hr>Generovani odpovedi: <b>' . App::runtime() . '</b>'
 			. ' / Max. pouzita pamet: <b>' . App::maxMem() . '</b> / Max. alokovana pamet: <b>' . App::maxMem(TRUE) . '</b>';
+	echo ' / <a href="' . WEBROOT . '">homepage</a> / <a href="'
+			. WEBROOT . "?mail=1\">odeslat email</a>\n";
+	echo "</div>\n</div>\n";
 	if (TIMEDEBUG) {
-		echo ' / <a href="' . WEBROOT . '">homepage</a> / <a href="'
-				. WEBROOT . "?mail=1\">odeslat email</a>\n";
 		echo "<script>\nvar _tdLogs = " . json_encode(App::$timeDebugData) . ";\n"
 				. "var _tdIndex = " . json_encode(App::$timeDebug) . ";\n</script>\n";
-		echo "<script src=\"" . WEBROOT . JS . "/vendor/jak.comp.js\"></script>\n";
-		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
+		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n</body>\n</html>";
 	} else {
 		App::dump($app);
+		echo "</body>\n</html>";
 	}
 }
 

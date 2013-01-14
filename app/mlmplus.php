@@ -14,7 +14,7 @@ define('LOGS', '/logs');
 define('TEMP', '/temp');
 
 require_once(CLASSES . '/App.php');
-$app = new App('MLM+', null, false, "adasdass\nsssssssssssdsdsdsdadas", array(), 178);
+$app = new App('MLM+', null, false, "adasdass\nsssssssssssdsdsdsdadas", array(1 => 'test', 2 => 'zluvy'), 178);
 
 if (!empty($_GET['mail'])) {
 	return $app->route('mailrouter')->getModel()->control()->getView();

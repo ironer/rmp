@@ -119,7 +119,26 @@ class Dumper
 						$args = array();
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
-								$args[] = self::dumpVar($arg, array(self::FORCE_HTML => TRUE, self::APP_RECURSION => FALSE, self::DEPTH => -1, self::TRUNCATE => 10, self::NO_BREAK => TRUE));
+								if(is_array($arg) && $cnt = count($arg)) {
+									$args[] = '<span class="nette-dump-array"><span class="nette-dump-title">'
+											. '<strong class="nette-dump-inner"><pre class="nette-dump">'
+											.self::dumpVar($arg, array(
+												self::FORCE_HTML => TRUE,
+												self::APP_RECURSION => FALSE,
+												self::DEPTH => 1,
+												self::COLLAPSE => FALSE,
+												self::TRUNCATE => 50,
+												self::NO_BREAK => FALSE
+											)) . '</pre></strong></span>array</span> (' . $cnt . ')';
+								} else {
+									$args[] = self::dumpVar($arg, array(
+										self::FORCE_HTML => TRUE,
+										self::APP_RECURSION => FALSE,
+										self::DEPTH => -1,
+										self::TRUNCATE => 10,
+										self::NO_BREAK => TRUE
+									));
+								}
 							}
 						}
 

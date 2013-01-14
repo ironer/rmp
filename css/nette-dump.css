@@ -2,6 +2,9 @@ pre.nette-dump div {
 	padding-left: 3ex;
 	margin-bottom: 5px;
 }
+.nette-dump-inner pre.nette-dump div {
+	margin-bottom: 0;
+}
 pre.nette-dump div div {
 	border-left: 1px solid rgba(0, 0, 0, 0.1);
 	margin-left: 0.5ex;
@@ -48,18 +51,19 @@ pre.nette-dump {
 	word-wrap: break-word;
 	padding: 0 8px;
 	overflow: hidden;
+	line-height: 16px;
+	font-size: 13px;
+	color: #000;
 }
-.nette-dump-title i {
+.nette-dump-inner i {
 	display: block;
 	position: relative;
 	font-style: normal;
 	text-indent: -31px;
 	padding-left: 31px;
-	line-height: 16px;
-	font-size: 13px;
 	color: #129;
 }
-.nette-dump-title i b {
+.nette-dump-inner i b {
 	color: #e23;
 }
 .nette-dump-color i.nette-dump-even {
@@ -112,16 +116,16 @@ pre.nette-dump {
 	background-color: #006;
 	color: #eee;
 }
-.nette-dump-active .nette-dump-array, .nette-dump-active .nette-dump-object {
+.nette-dump-active small>.nette-dump-array, .nette-dump-active small>.nette-dump-object {
 	color: #ff8b8e;
 }
-.nette-dump-active .nette-dump-string {
+.nette-dump-active small>.nette-dump-string {
 	color: #9bf;
 }
-.nette-dump-active .nette-dump-number {
+.nette-dump-active small>.nette-dump-number {
 	color: #3f3;
 }
-.nette-dump-active .nette-dump-null, .nette-dump-active .nette-dump-bool {
+.nette-dump-active small>.nette-dump-null, .nette-dump-active small>.nette-dump-bool {
 	color: #fea;
 }
 .nette-dump-active .nette-dump-path {

@@ -115,8 +115,6 @@ function _tdShowTitle(e) {
 
 	_tdAutosize();
 
-	// TODO: dat do posilanych argumentu jejich nazvy ze scriptu ?
-
 	// TODO: aktivator lokalniho menu pod kurzorem (<Alt> nebo podrzeni leveho mysitka)
 	// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all)
 	// TODO: moznost zapinat a vypinat sude podbarveni

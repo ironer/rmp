@@ -240,7 +240,7 @@ class Dumper
 			$retTitle = TIMEDEBUG ? '<span class="nette-dump-title nette-dump-color"><strong class="nette-dump-inner"><i>'
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE))
-					. '</i></strong></span>' : '';
+					. ($varLen > 4096 ? '&hellip; &lt; TRUNCATED to 4kB &gt;' : '') . '</i></strong></span>' : '';
 		} else {
 			$retTitle = '';
 			$retVal = self::encodeString($var) . '</span>';

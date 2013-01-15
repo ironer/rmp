@@ -17,7 +17,7 @@ TimeDebug.viewSize = JAK.DOM.getDocSize();
 TimeDebug.spaceX = 0;
 TimeDebug.spaceY = 0;
 
-TimeDebug.dragData = { element: null, listeners: [] };
+TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.init = function(tdId) {
 	TimeDebug.logView.parentNode.style.overflow = 'scroll';
@@ -79,7 +79,7 @@ TimeDebug.setTitles = function(el) {
 			_titleSpan.onmousemove = TimeDebug.showTitle;
 			_titleSpan.onmouseout = TimeDebug.hideTimer;
 			_titleSpan.onclick = TimeDebug.pinTitle;
-			_titleSpan.tdTitle.onmousedown = TimeDebug.moveTitle;
+			_titleSpan.tdTitle.onmousedown = TimeDebug.titleAction;
 		}
 	}
 };
@@ -87,7 +87,7 @@ TimeDebug.setTitles = function(el) {
 TimeDebug.showTitle = function(e) {
 	e = e || window.event;
 
-	if (TimeDebug.dragData.element !== null) return false;
+	if (TimeDebug.actionData.element !== null) return false;
 
 	JAK.Events.stopEvent(e);
 
@@ -133,57 +133,91 @@ TimeDebug.showTitle = function(e) {
 	return false;
 };
 
-
-
-TimeDebug.moveTitle = function(e) {
+TimeDebug.titleAction = function(e) {
 	e = e || window.event;
+
+	if (!e.altKey || e.ctrlKey || e.metaKey) return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
 	if (e.button == JAK.Browser.mouse.left) {
-
-		TimeDebug.dragData.startX = e.screenX;
-		TimeDebug.dragData.startY = e.screenY;
-		TimeDebug.dragData.offsetX = this.tdLeft;
-		TimeDebug.dragData.offsetY = this.tdTop;
-		TimeDebug.dragData.element = this;
-
-		TimeDebug.dragData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'dragging'));
-		TimeDebug.dragData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'stopDragging'));
-
-		document.body.focus();
-
-		TimeDebug.dragData.listeners.push(JAK.Events.addListener(this, 'selectstart', TimeDebug, 'stop'));
-		TimeDebug.dragData.listeners.push(JAK.Events.addListener(this, 'dragstart', TimeDebug, 'stop'));
-
-		return false;
+		if (e.shiftKey) TimeDebug.startResize(e, this);
+		else TimeDebug.startDragging(e, this);
 	}
-	return true;
+	return false;
+};
+
+TimeDebug.startResize = function(e, el) {
+	el.resized = 'test';
+	TimeDebug.actionData.startX = e.screenX;
+	TimeDebug.actionData.startY = e.screenY;
+	TimeDebug.actionData.width = (el.tdWidth === 'auto' ? el.offsetWidth : el.tdWidth);
+	TimeDebug.actionData.height = (el.tdHeight === 'auto' ? el.clientHeight : el.tdHeight);
+	TimeDebug.actionData.element = el;
+
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'resizing'));
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'));
+
+	document.body.focus();
+
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
+};
+
+TimeDebug.resizing = function(e) {
+	e = e || window.event;
+	var el = TimeDebug.actionData.element;
+
+	if (e.button != JAK.Browser.mouse.left) {
+		TimeDebug.endTitleAction();
+	} else {
+		el.userWidth = el.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - el.tdLeft - 50, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 16);
+		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(TimeDebug.viewSize.height - el.tdTop - 50, TimeDebug.actionData.height + e.screenY - TimeDebug.actionData.startY), 16) / 16);
+
+		JAK.DOM.setStyle(el, { width: el.tdWidth + 'px', height: el.tdHeight + 'px' });
+	}
+};
+
+TimeDebug.startDragging = function(e, el) {
+	TimeDebug.actionData.startX = e.screenX;
+	TimeDebug.actionData.startY = e.screenY;
+	TimeDebug.actionData.offsetX = el.tdLeft;
+	TimeDebug.actionData.offsetY = el.tdTop;
+	TimeDebug.actionData.element = el;
+
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'dragging'));
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'));
+
+	document.body.focus();
+
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
+	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
 };
 
 TimeDebug.dragging = function(e) {
 	e = e || window.event;
-	var el = TimeDebug.dragData.element;
+	var el = TimeDebug.actionData.element;
 
 	if (e.button != JAK.Browser.mouse.left) {
-		TimeDebug.stopDragging();
+		TimeDebug.endTitleAction();
 	} else {
-		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 66, TimeDebug.dragData.offsetX + e.screenX - TimeDebug.dragData.startX), 0);
-		el.tdTop = Math.max(Math.min(TimeDebug.viewSize.height - 66, TimeDebug.dragData.offsetY + e.screenY - TimeDebug.dragData.startY), 0);
+		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 66, TimeDebug.actionData.offsetX + e.screenX - TimeDebug.actionData.startX), 0);
+		el.tdTop = Math.max(Math.min(TimeDebug.viewSize.height - 66, TimeDebug.actionData.offsetY + e.screenY - TimeDebug.actionData.startY), 0);
 
 		JAK.DOM.setStyle(el, { left: el.tdLeft + 'px', top: el.tdTop + 'px' });
+
 		TimeDebug.titleAutosize(el);
 	}
 };
 
-TimeDebug.stopDragging = function() {
-	var el = TimeDebug.dragData.element;
+TimeDebug.endTitleAction = function() {
+	var el = TimeDebug.actionData.element;
 
 	if (el !== null) {
-		JAK.Events.removeListeners(TimeDebug.dragData.listeners);
-		TimeDebug.dragData.listeners.length = 0;
-		TimeDebug.dragData.element = null;
+		JAK.Events.removeListeners(TimeDebug.actionData.listeners);
+		TimeDebug.actionData.listeners.length = 0;
+		TimeDebug.actionData.element = null;
 	}
 };
 
@@ -196,28 +230,32 @@ TimeDebug.stop = function(e) {
 
 TimeDebug.titleAutosize = function(el) {
 	el = el || TimeDebug.titleActive;
-	var tdCheckWidthDif;
+
+	var tdCheckWidthDif = false;
 	var tdWidthDif;
 	TimeDebug.spaceX = Math.max(TimeDebug.viewSize.width - el.tdLeft - 50, 0);
 	TimeDebug.spaceY = 16 * parseInt(Math.max(TimeDebug.viewSize.height - el.tdTop - 50, 0) / 16);
-
-	if (TimeDebug.spaceX < el.oriWidth) {
-		el.style.width = TimeDebug.spaceX + 'px';
-		tdCheckWidthDif = false;
+	
+	if (el.resized) {
+		el.style.width = (TimeDebug.spaceX < el.userWidth ? el.tdWidth = TimeDebug.spaceX : el.tdWidth = el.userWidth) + 'px';
+	} else if (TimeDebug.spaceX < el.oriWidth) {
+		el.style.width = (el.tdWidth = TimeDebug.spaceX) + 'px';
 	} else {
-		el.style.width = 'auto';
+		el.style.width = el.tdWidth = 'auto';
 		tdCheckWidthDif = true;
 	}
 
-	if (TimeDebug.spaceY < el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
-		el.style.height = TimeDebug.spaceY + 'px';
-		if (tdCheckWidthDif) {
-			tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0);
-			if (tdWidthDif) el.style.width =  el.oriWidth + tdWidthDif + 'px';
+	if (el.resized) {
+		el.style.height = (TimeDebug.spaceY < el.userHeight ? el.tdHeight = TimeDebug.spaceY : el.tdHeight = el.userHeight) + 'px';
+	} else if (TimeDebug.spaceY < el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
+		el.style.height = (el.tdHeight = TimeDebug.spaceY) + 'px';
+		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0))) {
+			el.style.width = (el.tdWidth = el.oriWidth + tdWidthDif) + 'px';
 		}
 	} else {
-		el.style.height = 'auto';
+		el.style.height = el.tdHeight = 'auto';
 	}
+	return true;
 };
 
 TimeDebug.hideTimer = function(e) {

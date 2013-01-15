@@ -213,7 +213,7 @@ TimeDebug.titleAutosize = function(el) {
 		el.style.height = TimeDebug.spaceY + 'px';
 		if (tdCheckWidthDif) {
 			tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0);
-			if (tdWidthDif) el.style.width = el.oriWidth + tdWidthDif + 1;
+			if (tdWidthDif) el.style.width =  el.oriWidth + tdWidthDif + 'px';
 		}
 	} else {
 		el.style.height = 'auto';

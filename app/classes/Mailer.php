@@ -10,7 +10,8 @@ class Mailer
 			SUBJECT     = 'subject',        //předmět emailu
 			TEXT        = 'text',   	    //textová verze emailu
 			HTML        = 'html',   	    //HTML verze emailu
-			CHARSET     = 'charset',        //kódování e-mailu
+			ATTACHMENTS = 'attachments',        //kódování e-mailu
+			CHARSET     = 'charset',    //kódování e-mailu
 
 			EOL = "\r\n";
 
@@ -25,7 +26,7 @@ class Mailer
 		'subject' => 0,
 		'text' => 0,
 		'html' => 0,
-		'attachments' => 0
+		'attachments' => array()
 	);
 
 	private $data = array(
@@ -38,21 +39,26 @@ class Mailer
 		'html' => array(),
 		'attachments' => array()
 	);
-
-	private $emails = array(array('from'=>0, 'to'=>0, 'bcc'=>array(0,1,2,3)));
+    
+	private $emails = array();
 
 	private $encoded = array(
-		'fromName' => '',
 		'fromEmail' => '',
-		'toName' => '',
+		'fromFull' => '',
 		'toEmail' => '',
+		'toFull' => '',
 		'reply' => '',
 		'bcc' => '',
+        'bccEmails' => array(),
 		'subject' => '',
+        'headers' => array(),
 		'text' => '',
 		'html' => '',
-		'attachments' => array()
+		'attachments' => array(),
+        'boundary' => '',
 	);
+    
+    private $boundary = array();
 	
 	private static $SmtpServer = "essensmail-cz-ham.zarea.net";
 	private static $SmtpPort = "25"; //default
@@ -77,167 +83,194 @@ class Mailer
         
         foreach ($params as $key=>$param) {
             
-            switch ($key) {
+            if ($key == self::BCC) {
                 
-                case self::TO:
-                case self::BCC:
+                if (is_array($param)) {
                 
-                    foreach ($param as $user) {
+                    $email['bcc'] = array();
+                    
+                    foreach ($param as $item) {
                         
-                        $index = $this->indexes[$key]++;
-                        $this->data[$key][$index] = $user;
-                        $email[$key][] = $index;
+                        $index = $this->indexes['bcc']++;
+                        $this->data['bcc'][$index] = $item;
+                        $email['bcc'][] = $index;
                         
                     }
-                break;
+                    
+                 } else  $email['bcc'] = null;
+            }
+            
+            elseif ($key == self::ATTACHMENTS) {
                 
-                default:
+                $this->email[$key] = array();
+                
+                foreach ($param as $akey=>$item) {
                     
-                    $index = $this->indexes[$key]++;
-                    $this->data[$key][$index] = $params[$key];
-                    $email[$key][] = $index;
+                    $index = intval($this->indexes[self::ATTACHMENTS][$akey]++);
+                    $this->data[self::ATTACHMENTS][$akey][$index] = $item;
+                    $email[self::ATTACHMENTS][$akey] = $index;
                     
-                break;
+                }
+
+            }
+            
+            else {
+                
+                $index = $this->indexes[$key]++;
+                $this->data[$key][$index] = $params[$key];
+                $email[$key] = $index;
                     
             }
             
         }
         
         App::dump($email);
-        App::dump($this->data);
-            
+        
+        $this->emails[] = $email;
+                    
     }
     
 
-	public function old_prepare($params) {
+	public function go() {
 
-		//zpracování odesílatele a příjemců
+//        App::dump($this->emails);
+//        App::dump($this->data);
+        
+    App::lg('Start go',$this);
+        for ($i=0;$i<3;$i++) $this->boundary[$i] = md5(microtime(true).uniqid());
 
-		if (!empty($params[self::FROM_NAME]))
-			$this->sender = '"'.$this->AltBase64($params[self::FROM_NAME]).'" <'.$params[self::FROM_EMAIL].'>';
-		else
-			$this->sender = '<'.$params[self::FROM_EMAIL].'>';
-		if (!empty($params[self::TO_NAME]))
-			$this->recipient = '"'.$this->AltBase64($params[self::TO_NAME]).'" <'.$params[self::TO_EMAIL].'>';
-		else
-			$this->recipient = '<'.$params[self::TO_EMAIL].'>';
-		$this->sendermail = $params[self::FROM_EMAIL];
-		$this->recipientmails[] = $params[self::TO_EMAIL];
-		if (is_array($params[self::BCC])) {
+        foreach ($this->emails as $email) {
+            
+            App::dump($email);
 
-			foreach ($params[self::BCC] as $bcc) {
+            foreach ($email as $key=>$param)
+                
+                switch ($key) {
+                    
+                    case 'from';
+                    case 'to':
+                    
+                        $this->encoded[$key.'Email'] = $this->data[$key][$email[$key]][0];
+                        $this->encoded[$key.'Full']  = $this->encodeUser($this->data[$key][$email[$key]]);
+                        if ($key == 'from') $this->encoded['headers']['from'] = 'From: ' . $this->encoded[$key.'Full'];
+                        break;
+                    
+                    case 'bcc':
+                        
+                        $this->encoded['bcc'] = '';
+                        $this->encoded['bccEmails'] = array();
+                        
+                        if (is_array($email['bcc'])) {
+                        
+                            
+                            foreach ($email['bcc'] as $bccindex) {
+                                
+                                $this->encoded['bcc'] .= (($this->encoded['bcc']!='') ? ',' : '') . $this->encodeUser($this->data['bcc'][$bccindex]);
+                                $this->encoded['bccEmails'][] = $this->data['bcc'][$bccindex][0];
+                                
+                            }
+                            
+                        }
+                        
+                        break;
 
-				if ($this->bcc != '') $this->bcc .= ',';
+                    case 'subject':
+                    
+                        $this->encoded[$key] = $this->AltBase64($this->data[$key][$email[$key]]);
+                        break;
 
-				if (!empty($bcc[1]))
-					$this->bcc .= '"'.$this->AltBase64($bcc[1]).'" <'.$bcc[0].'>';
-				else
-					$this->bcc .= '<'.$bcc[0].'>';
+                    case 'text';
+                    case 'html':
+                        
+                        if ($key == 'text') $type = 'text/plain'; else $type = 'text/html';
+                        $this->encoded[$key] = 'Content-Type: ' . $type . ';' . "\n\t" . 'charset="UTF-8"' . "\n" . 'Content-Transfer-Encoding: quoted-printable' . "\n\n" . quoted_printable_encode($this->data[$key][$email[$key]]);
+                        break;
+                        
+                    case 'attachments':
+                        
+                        foreach ($email['attachments'] as $akey=>$fileindex) {
+                            
+                            $file = $this->data['attachments'][$akey][$fileindex];
+                            if ($slashpos = strrpos($file,'/')!==false) $filename = substr($file,$slashpos+1); else $filename = $file;
+                            
+                            
+                            $fi = finfo_open(FILEINFO_MIME);
+                            $mime_type = finfo_file($fi, $file);
+                            $mime_type = substr($mime_type,0,strrpos($mime_type,';'));
+                            
+                            $this->encoded['attachments'][$akey] = 'Content-Type: ' . $mime_type . ';' . "\n\t" . 'name="' . $filename . '"' . "\n" . 'Content-Transfer-Encoding: base64' . "\n" . 'Content-Disposition: attachment;' . "\n\t" . 'filename="' . $filename . '"' . "\n\n" . chunk_split(base64_encode(file_get_contents($file)));
+                                 
+                        }
+                                            
+                        break;
 
-				$this->recipientmails[] = $bcc[0];
+                 }
+            
+            $body = $this->createMIME();
 
-			}
+            App::dump($this->encoded);
+    App::lg('Encode end',$this);
 
-			$this->headers[] = 'Bcc: ' . $this->bcc;
+            App::dump($this->SMTPmail($body));
 
-		}
+    App::lg('SMTP send',$this);
+
+        }
 
 
-		//příprava obsahu mailu
-
-		$this->subject = $this->AltBase64($params[self::SUBJECT]);
-		$this->headers[] = 'From: ' . $this->sender;
-		if (!empty($params[self::REPLY_TO]))
-			$this->headers[] = 'Reply-To: ' . $params[self::REPLY_TO];
-		else
-			$this->headers[] = 'Reply-To: ' . $params[self::FROM_EMAIL];
-		$this->additional = '-f'.$params[self::FROM_EMAIL];
-
-		if (!empty($params[self::BODY_HTML])) { //vytvořit MIME mail
-
-			$this->boundary = md5(microtime(true));
-			$this->headers[] = 'MIME-Version: 1.0';
-			$this->headers[] = 'Content-Type: multipart/alternative;'."\n\t".'boundary="'.$this->boundary.'"';
-			$body = "This is a MIME encoded message.\n\n";
-			$this->addPart($params[self::BODY_TEXT],'text/plain');
-			$this->addPart($params[self::BODY_HTML],'text/html');
-
-			$this->body .= "\n\n" . '--' . $this->boundary . '--' . "\n";
-
-		} else {    //není HTML verze, ani příloha, pošleme obyčejný textový mail
-
-			$this->headers[] = 'Content-type: text/plain; charset=UTF-8';
-			$this->body = $params[self::BODY_TEXT];
-
-		}
-
-		return $this;
+	   
 	}
+    
+    
+    private function createMIME() {
+        
+        $body = 'This is a MIME encoded message.' . self::EOL . self::EOL;
+        
+        $boundary = md5(microtime(true).uniqid());
+            
+		$this->encoded['headers']['mime'] = 'MIME-Version: 1.0';
+		$this->encoded['headers']['contenttype'] = 'Content-Type: multipart/alternative;'."\n\t".'boundary="'.$this->boundary[0].'"';
+			
+        $body .= "\n\n" . '--' . $this->boundary[0] . "\n";
+        $body .= 'Content-Type: multipart/alternative;'."\n\t".'boundary="'.$this->boundary[1]."\"\n\n\n";
+        
+        $body .= "\n\n" . '--' . $this->boundary[1] . "\n" . $this->encoded['text'];
+		$body .= "\n\n" . '--' . $this->boundary[1] . "\n" . $this->encoded['html'];
 
+		$body .= "\n\n" . '--' . $this->boundary[1] . '--' . "\n";
 
-	public function go($recipient_email='',$recipient_name='')
-	{
+        //připojit přílohy
+        
+        foreach($this->encoded['attachments'] as $attachment) {
+            
+            $body .= "\n\n" . '--' . $this->boundary[0] . "\n" . $attachment;
 
-		App::lg("Send mail...", $this);
+        }
+        
+        $body .= "\n\n" . '--' . $this->boundary[0] . '--' . "\n";            
 
-		if ($recipient_email != '') {
+        return $body;
+        
+    }
+    
 
-			if (!empty($recipient_name)) $this->recipient = '"'.$this->AltBase64($recipient_name).'" <'.$recipient_email.'>'; else $this->recipient = '<'.$recipient_email.'>';
-			$this->recipientmail = array($recipient_email);
-
-			unset($this->bcc); //zrušit příjemce skrytých kopií, aby se jim mail neposílal znovu
-
-		}
-
-		$headers = implode("\n", $this->headers);
-
-		$result = $this->SMTPmail($this->sender, $this->recipient, $this->subject, $headers, $this->body);
-
-		App::dump($result);
-
-		//zpracovat POP3
-
-
-
-
-		return $this->id;
-	}
-
-
-	private function addPart($part,$type) {
-
-		$this->body .= "\n\n" . '--' . $this->boundary . "\n";
-
-		if ($type == 'text/plain' || $type == 'text/html') {
-
-			$quoted = quoted_printable_encode($part);
-			if ($part != $quoted) {$part = $quoted; $coded = true;} else $coded = false;
-
-			$this->body .= 'Content-Type: ' . $type . ';' . "\n\t" . 'charset="UTF-8"' . (($coded) ? "\n" . 'Content-Transfer-Encoding: quoted-printable' : '') . "\n\n" . $part;
-
-		} else {
-
-			$part = base64_encode($part);
-			$this->body .= 'Content-Type: ' . $type . "\n" . 'Content-Transfer-Encoding: base64' . "\n\n" . $part;
-
-		}
-
-
-	}
-
-
-	private function SMTPmail ($from,$to,$subject,$headers,$body) {
-
+	private function SMTPmail ($body) {
+        
+        
+        
 		if (($SMTPIN = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) && socket_connect($SMTPIN, self::$SmtpServer, self::$SmtpPort)) {
 
-			$mail = "To: ".$to."\r\nSubject:".$subject."\r\n".$headers."\r\n\r\n".$body."\r\n.";
-			$recipients = '';
-			foreach ($this->recipientmails as $recipient) $recipients .= 'RCPT TO: <' . $recipient . '>' . self::EOL;
+			$mail = "To: ".$this->encoded['toFull'] . self::EOL
+                . "Subject:".$this->encoded['subject'] . self::EOL
+                . implode(self::EOL,$this->encoded['headers']) . self::EOL . self::EOL
+                . $body . self::EOL . '.';
+			$recipients = 'RCPT TO: <' . $this->encoded['toEmail'] . '>' . self::EOL;;
+			foreach ($this->encoded['bccEmails'] as $recipient) $recipients .= 'RCPT TO: <' . $recipient . '>' . self::EOL;
 
 			$this->sockTalk($SMTPIN, '', $talk);
 			$this->sockTalk($SMTPIN, 'EHLO ' . $_SERVER['HTTP_HOST'], $talk);
 			$this->sockTalk($SMTPIN, 'AUTH LOGIN' . self::EOL . base64_encode(self::$SmtpUser) . self::EOL . base64_encode(self::$SmtpPass) . self::EOL
-					. 'MAIL FROM: <' . $this->sendermail . '>' . self::EOL
+					. 'MAIL FROM: <' . $this->encoded['fromEmail'] . '>' . self::EOL
 					. $recipients
 					. 'DATA' , $talk);
 			$this->sockTalk($SMTPIN, $mail, $talk);
@@ -276,9 +309,9 @@ class Mailer
     private function encodeUser($user) {
 
 		if (!empty($user[1]))
-			$this->sender = '"'.$this->AltBase64($user[1]).'" <'.$user[0].'>';
+			return '"'.$this->AltBase64($user[1]).'" <'.$user[0].'>';
 		else
-			$this->sender = '<'.$user[0].'>';
+			return '<'.$user[0].'>';
         
     }
     

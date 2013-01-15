@@ -4,8 +4,8 @@ TimeDebug.logView = document.getElementById('logView');
 TimeDebug.logRows = [];
 TimeDebug.logRowsChosen = [];
 TimeDebug.logRowActiveId = 0;
-TimeDebug.tdDumps = [];
-TimeDebug.tdIndexes = [];
+TimeDebug.dumps = [];
+TimeDebug.indexes = [];
 
 TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
 TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
@@ -17,7 +17,9 @@ TimeDebug.viewSize = JAK.DOM.getDocSize();
 TimeDebug.spaceX = 0;
 TimeDebug.spaceY = 0;
 
-TimeDebug.tdInit = function(tdId) {
+TimeDebug.dragData = { element: null, listeners: [] };
+
+TimeDebug.init = function(tdId) {
 	TimeDebug.logView.parentNode.style.overflow = 'scroll';
 	TimeDebug.logView.style.padding = '8px';
 	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 400px', overflow:'hidden'});
@@ -28,7 +30,7 @@ TimeDebug.tdInit = function(tdId) {
 	for(var i = 0, j = preTags.length, k; i < j; ++i) {
 		if (JAK.DOM.hasClass(preTags[i], 'nette-dump-row')) {
 			TimeDebug.logRows.push(preTags[i]);
-			preTags[i].onclick = this.tdMouseClick;
+			preTags[i].onclick = this.logClick;
 			links = preTags[i].getElementsByTagName('a');
 			for(k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
 		}
@@ -44,26 +46,26 @@ TimeDebug.tdInit = function(tdId) {
 	_tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.appendChild(_tdContainer);
 
-	TimeDebug.tdSetTitles(TimeDebug.logView);
-	TimeDebug.tdShowDump(tdId);
-	window.onresize = TimeDebug.tdResizeWrapper;
-	document.onkeydown = TimeDebug.tdKeyDown;
+	TimeDebug.setTitles(TimeDebug.logView);
+	TimeDebug.showDump(tdId);
+	window.onresize = TimeDebug.resizeWrapper;
+	document.onkeydown = TimeDebug.readKeyDown;
 };
 
-TimeDebug.tdShowDump = function(id) {
+TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
 	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('tdId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
 	JAK.DOM.addClass(document.getElementById('tdId_' + id), 'nette-dump-active');
-	if (TimeDebug.tdIndexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.tdIndexes[id - 1]) {
-		TimeDebug.tdView.innerHTML = TimeDebug.tdDumps[TimeDebug.tdIndexes[id - 1]];
-		TimeDebug.tdSetTitles(TimeDebug.tdView);
-		TimeDebug.tdResizeWrapper();
+	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
+		TimeDebug.tdView.innerHTML = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
+		TimeDebug.setTitles(TimeDebug.tdView);
+		TimeDebug.resizeWrapper();
 	}
 	TimeDebug.logRowActiveId = id;
 	return true;
 };
 
-TimeDebug.tdSetTitles = function(el) {
+TimeDebug.setTitles = function(el) {
 	var _titleSpan;
 	var _titleStrong;
 	var _titleStrongs;
@@ -74,21 +76,25 @@ TimeDebug.tdSetTitles = function(el) {
 			_titleSpan = _titleStrong.parentNode.parentNode;
 			_titleSpan.tdTitle = _titleStrong.parentNode;
 			_titleSpan.tdTitle.tdInner = _titleStrong;
-			_titleSpan.onmousemove = TimeDebug.tdShowTitle;
-			_titleSpan.onmouseout = TimeDebug.tdHideTimer;
-			_titleSpan.onclick = TimeDebug.tdPinTitle;
-			_titleSpan.tdTitle.onmousedown = TimeDebug.tdMoveTitle;
+			_titleSpan.onmousemove = TimeDebug.showTitle;
+			_titleSpan.onmouseout = TimeDebug.hideTimer;
+			_titleSpan.onclick = TimeDebug.pinTitle;
+			_titleSpan.tdTitle.onmousedown = TimeDebug.moveTitle;
 		}
 	}
 };
 
-TimeDebug.tdShowTitle = function(e) {
+TimeDebug.showTitle = function(e) {
 	e = e || window.event;
+
+	if (TimeDebug.dragData.element !== null) return false;
+
 	JAK.Events.stopEvent(e);
+
 	var tdTitleRows;
 
 	if (TimeDebug.titleActive && TimeDebug.titleActive !== this.tdTitle) {
-		TimeDebug.tdHideTitle();
+		TimeDebug.hideTitle();
 	}
 	else if (TimeDebug.titleHideTimeout) {
 		window.clearTimeout(TimeDebug.titleHideTimeout);
@@ -114,7 +120,7 @@ TimeDebug.tdShowTitle = function(e) {
 	TimeDebug.titleActive.style.left = (TimeDebug.titleActive.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
 	TimeDebug.titleActive.style.top = (TimeDebug.titleActive.tdTop = (e.pageY || e.clientY) - 5) + 'px';
 
-	TimeDebug.tdTitleAutosize();
+	TimeDebug.titleAutosize();
 
 	// TODO: aktivator lokalniho menu pod kurzorem (<Alt> nebo podrzeni leveho mysitka)
 	// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all)
@@ -127,17 +133,73 @@ TimeDebug.tdShowTitle = function(e) {
 	return false;
 };
 
-TimeDebug.tdMoveTitle = function(e) {
+
+
+TimeDebug.moveTitle = function(e) {
 	e = e || window.event;
+
+	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
+
+	if (e.button == JAK.Browser.mouse.left) {
+
+		TimeDebug.dragData.startX = e.screenX;
+		TimeDebug.dragData.startY = e.screenY;
+		TimeDebug.dragData.offsetX = this.tdLeft;
+		TimeDebug.dragData.offsetY = this.tdTop;
+		TimeDebug.dragData.element = this;
+
+		TimeDebug.dragData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'dragging'));
+		TimeDebug.dragData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'stopDragging'));
+
+		document.body.focus();
+
+		TimeDebug.dragData.listeners.push(JAK.Events.addListener(this, 'selectstart', TimeDebug, 'stop'));
+		TimeDebug.dragData.listeners.push(JAK.Events.addListener(this, 'dragstart', TimeDebug, 'stop'));
+
+		return false;
+	}
+	return true;
 };
 
-TimeDebug.tdTitleAutosize = function(el) {
+TimeDebug.dragging = function(e) {
+	e = e || window.event;
+	var el = TimeDebug.dragData.element;
+
+	if (e.button != JAK.Browser.mouse.left) {
+		TimeDebug.stopDragging();
+	} else {
+		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 66, TimeDebug.dragData.offsetX + e.screenX - TimeDebug.dragData.startX), 0);
+		el.tdTop = Math.max(Math.min(TimeDebug.viewSize.height - 66, TimeDebug.dragData.offsetY + e.screenY - TimeDebug.dragData.startY), 0);
+
+		JAK.DOM.setStyle(el, { left: el.tdLeft + 'px', top: el.tdTop + 'px' });
+		TimeDebug.titleAutosize(el);
+	}
+};
+
+TimeDebug.stopDragging = function() {
+	var el = TimeDebug.dragData.element;
+
+	if (el !== null) {
+		JAK.Events.removeListeners(TimeDebug.dragData.listeners);
+		TimeDebug.dragData.listeners.length = 0;
+		TimeDebug.dragData.element = null;
+	}
+};
+
+TimeDebug.stop = function(e) {
+	e = e || window.event;
+	JAK.Events.cancelDef(e);
+	JAK.Events.stopEvent(e);
+	return false;
+};
+
+TimeDebug.titleAutosize = function(el) {
 	el = el || TimeDebug.titleActive;
 	var tdCheckWidthDif;
 	var tdWidthDif;
-	TimeDebug.spaceX = Math.max(TimeDebug.viewSize[0] - el.tdLeft - 50, 0);
-	TimeDebug.spaceY = 16 * parseInt(Math.max(TimeDebug.viewSize[1] - el.tdTop - 50, 0) / 16);
+	TimeDebug.spaceX = Math.max(TimeDebug.viewSize.width - el.tdLeft - 50, 0);
+	TimeDebug.spaceY = 16 * parseInt(Math.max(TimeDebug.viewSize.height - el.tdTop - 50, 0) / 16);
 
 	if (TimeDebug.spaceX < el.oriWidth) {
 		el.style.width = TimeDebug.spaceX + 'px';
@@ -158,14 +220,14 @@ TimeDebug.tdTitleAutosize = function(el) {
 	}
 };
 
-TimeDebug.tdHideTimer = function(e) {
+TimeDebug.hideTimer = function(e) {
 	e = e || window.event;
 	JAK.Events.stopEvent(e);
 	if (TimeDebug.titleHideTimeout) window.clearTimeout(TimeDebug.titleHideTimeout);
-	TimeDebug.titleHideTimeout = window.setTimeout(TimeDebug.tdHideTitle, 300);
+	TimeDebug.titleHideTimeout = window.setTimeout(TimeDebug.hideTitle, 300);
 };
 
-TimeDebug.tdHideTitle = function() {
+TimeDebug.hideTitle = function() {
 	if (TimeDebug.titleHideTimeout) {
 		window.clearTimeout(TimeDebug.titleHideTimeout);
 		TimeDebug.titleHideTimeout = null;
@@ -178,7 +240,7 @@ TimeDebug.tdHideTitle = function() {
 	}
 };
 
-TimeDebug.tdPinTitle = function() {
+TimeDebug.pinTitle = function() {
 	if (TimeDebug.titleHideTimeout) {
 		window.clearTimeout(TimeDebug.titleHideTimeout);
 		TimeDebug.titleHideTimeout = null;
@@ -186,7 +248,7 @@ TimeDebug.tdPinTitle = function() {
 	TimeDebug.titleActive = null;
 };
 
-TimeDebug.tdMouseClick = function(e) {
+TimeDebug.logClick = function(e) {
 	e = e || window.event;
 	var id = parseInt(this.id.split('_')[1]);
 
@@ -208,25 +270,25 @@ TimeDebug.tdMouseClick = function(e) {
 			}
 		}
 	} else {
-		TimeDebug.tdShowDump(id);
+		TimeDebug.showDump(id);
 	}
 	return false;
 };
 
-TimeDebug.tdKeyDown = function(e) {
+TimeDebug.readKeyDown = function(e) {
 	e = e || window.event;
 	var tdNext;
 
 	if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
 		if (e.keyCode == 37 && TimeDebug.logRowActiveId > 1) {
-			tdNext = TimeDebug.tdSelected() ? TimeDebug.tdGetPrev() : TimeDebug.logRowActiveId - 1;
+			tdNext = TimeDebug.selected() ? TimeDebug.getPrevious() : TimeDebug.logRowActiveId - 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
-			TimeDebug.tdShowDump(tdNext);
+			TimeDebug.showDump(tdNext);
 			return false;
-		} else if (e.keyCode == 39 && TimeDebug.logRowActiveId < TimeDebug.tdIndexes.length) {
-			tdNext = TimeDebug.tdSelected() ? TimeDebug.tdGetNext() : TimeDebug.logRowActiveId + 1;
+		} else if (e.keyCode == 39 && TimeDebug.logRowActiveId < TimeDebug.indexes.length) {
+			tdNext = TimeDebug.selected() ? TimeDebug.getNext() : TimeDebug.logRowActiveId + 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
-			TimeDebug.tdShowDump(tdNext);
+			TimeDebug.showDump(tdNext);
 			return false;
 		} else if (e.keyCode == 38 && TimeDebug.titleActive) {
 			TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);
@@ -250,30 +312,30 @@ TimeDebug.tdKeyDown = function(e) {
 	return true;
 };
 
-TimeDebug.tdResizeWrapper = function() {
+TimeDebug.resizeWrapper = function() {
 	var viewWidth = parseInt(TimeDebug.tdView.clientWidth);
 	var viewHeight = parseInt(TimeDebug.tdView.clientHeight);
 	if (viewWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width =  viewWidth + 'px';
 	if (viewHeight > TimeDebug.tdOuterWrapper.clientHeight) TimeDebug.tdOuterWrapper.style.height = viewHeight + 'px';
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
-	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.tdTitleAutosize(TimeDebug.visibleTitles[i]);
+	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
 };
 
-TimeDebug.tdSelected = function() {
+TimeDebug.selected = function() {
 	for(var i = TimeDebug.logRowsChosen.length; i-- > 0;) {
 		if (TimeDebug.logRowsChosen[i]) return true;
 	}
 	return false;
 };
 
-TimeDebug.tdGetPrev = function() {
+TimeDebug.getPrevious = function() {
 	for(var i = TimeDebug.logRowActiveId; --i > 0;) {
 		if (TimeDebug.logRowsChosen[i - 1]) return i;
 	}
 	return TimeDebug.logRowActiveId;
 };
 
-TimeDebug.tdGetNext = function() {
+TimeDebug.getNext = function() {
 	for(var i = TimeDebug.logRowActiveId, j = TimeDebug.logRowsChosen.length; i++ < j;) {
 		if (TimeDebug.logRowsChosen[i - 1]) return i;
 	}

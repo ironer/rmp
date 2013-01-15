@@ -28,10 +28,9 @@ if (DEBUG) {
 	echo "</div>\n</div>\n";
 	if (TIMEDEBUG) {
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
-		echo "<script>\n"
-				. "TimeDebug.tdDumps = ". json_encode(App::$timeDebugData) . ";\n"
-				. "TimeDebug.tdIndexes = ". json_encode(App::$timeDebug) . ";\n"
-				. "TimeDebug.tdInit(1);\n</script>\n</body>\n</html>";
+		echo "<script>\nTimeDebug.dumps = ". json_encode(App::$timeDebugData) . ";\n"
+				. "TimeDebug.indexes = ". json_encode(App::$timeDebug) . ";\n"
+				. "TimeDebug.init(1);\n</script>\n</body>\n</html>";
 	} else {
 		App::dump($app);
 		echo "</body>\n</html>";

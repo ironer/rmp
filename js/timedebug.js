@@ -1,123 +1,120 @@
-var _logView = document.getElementById('logView');
-_logView.parentNode.style.overflow = 'scroll';
-_logView.style.padding = '8px';
-document.body.style.height = '100%';
-document.body.style.margin = '0px';
-document.body.style.marginLeft = '400px';
-document.body.style.overflow = 'hidden';
+var TimeDebug = {};
 
-var _tdLinks;
-var _tdPreTags = _logView.getElementsByTagName('pre');
-var _tdRows = [];
+TimeDebug.logView = document.getElementById('logView');
+TimeDebug.logRows = [];
+TimeDebug.logRowsChosen = [];
+TimeDebug.logRowActiveId = 0;
+TimeDebug.tdDumps = [];
+TimeDebug.tdIndexes = [];
 
-for(var i = 0, j = _tdPreTags.length, k; i < j; ++i) {
-	if (_tdHasClass(_tdPreTags[i], 'nette-dump-row')) {
-		_tdRows.push(_tdPreTags[i]);
-		_tdPreTags[i].onclick = _tdMouseClick;
-		_tdLinks = _tdPreTags[i].getElementsByTagName('a');
-		for(k = _tdLinks.length; k-- > 0;) _tdLinks[k].onclick = _tdStopPropagation;
+TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
+TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
 
+TimeDebug.visibleTitles = [];
+TimeDebug.titleActive = null;
+TimeDebug.titleHideTimeout = null;
+TimeDebug.viewSize = JAK.DOM.getDocSize();
+TimeDebug.spaceX = 0;
+TimeDebug.spaceY = 0;
+
+TimeDebug.tdInit = function(tdId) {
+	TimeDebug.logView.parentNode.style.overflow = 'scroll';
+	TimeDebug.logView.style.padding = '8px';
+	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 400px', overflow:'hidden'});
+
+	var links;
+	var preTags = TimeDebug.logView.getElementsByTagName('pre');
+
+	for(var i = 0, j = preTags.length, k; i < j; ++i) {
+		if (JAK.DOM.hasClass(preTags[i], 'nette-dump-row')) {
+			TimeDebug.logRows.push(preTags[i]);
+			preTags[i].onclick = this.tdMouseClick;
+			links = preTags[i].getElementsByTagName('a');
+			for(k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
+		}
 	}
-}
 
-var _titleSpan;
-var _titleStrong;
-var _titleStrongs;
+	TimeDebug.logRowsChosen.length = TimeDebug.logRows.length;
 
-_tdSetHovers(_logView);
+	var _tdContainer = JAK.mel('div', {id:'tdContainer'});
+	var _tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
 
-var _tdContainer = document.createElement('div');
-_tdContainer.id = 'tdContainer';
-var _tdOuterWrapper = document.createElement('div');
-_tdOuterWrapper.id = 'tdOuterWrapper';
-var _tdInnerWrapper = document.createElement('div');
-_tdInnerWrapper.id = 'tdInnerWrapper';
-var _tdView = document.createElement('div');
-_tdView.id = 'tdView';
+	_tdInnerWrapper.appendChild(TimeDebug.tdView);
+	TimeDebug.tdOuterWrapper.appendChild(_tdInnerWrapper);
+	_tdContainer.appendChild(TimeDebug.tdOuterWrapper);
+	document.body.appendChild(_tdContainer);
 
-_tdInnerWrapper.appendChild(_tdView);
-_tdOuterWrapper.appendChild(_tdInnerWrapper);
-_tdContainer.appendChild(_tdOuterWrapper);
-document.body.appendChild(_tdContainer);
+	TimeDebug.tdSetTitles(TimeDebug.logView);
+	TimeDebug.tdShowDump(tdId);
+	window.onresize = TimeDebug.tdResizeWrapper;
+	document.onkeydown = TimeDebug.tdKeyDown;
+};
 
-var _tdChosen = [];
-_tdChosen.length = _tdRows.length;
-var _tdActive = 0;
-var _tdShownTitles = [];
-var _tdTitle = null;
-var _tdHideTimeout = null;
-var _tdWindowSize = _tdGetWindowSize();
-var _tdNext, _tdSpaceX, _tdSpaceY, _tdWidthDif, _tdCheckWidthDif, _tdTitleRows;
-
-_tdShowLog(1);
-
-function _tdShowLog(id) {
-	if (_tdActive == (id = id || 0)) return false;
-	if (_tdActive) _tdRemoveClass(document.getElementById('tdId_' + _tdActive), 'nette-dump-active');
-	_tdAddClass(document.getElementById('tdId_' + id), 'nette-dump-active');
-	if (_tdIndex[_tdActive - 1] !== _tdIndex[id - 1]) {
-		_tdView.innerHTML = _tdLogs[_tdIndex[id - 1]];
-		_tdSetHovers(_tdView);
-		_tdResizeWrapper();
+TimeDebug.tdShowDump = function(id) {
+	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
+	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('tdId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
+	JAK.DOM.addClass(document.getElementById('tdId_' + id), 'nette-dump-active');
+	if (TimeDebug.tdIndexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.tdIndexes[id - 1]) {
+		TimeDebug.tdView.innerHTML = TimeDebug.tdDumps[TimeDebug.tdIndexes[id - 1]];
+		TimeDebug.tdSetTitles(TimeDebug.tdView);
+		TimeDebug.tdResizeWrapper();
 	}
-	_tdActive = id;
+	TimeDebug.logRowActiveId = id;
 	return true;
-}
+};
 
-function _tdSetHovers(el) {
+TimeDebug.tdSetTitles = function(el) {
+	var _titleSpan;
+	var _titleStrong;
+	var _titleStrongs;
+
 	_titleStrongs = el.getElementsByTagName('strong');
 	for (var i = _titleStrongs.length; i-- > 0;) {
-		if (_tdHasClass(_titleStrong = _titleStrongs[i], 'nette-dump-inner')) {
+		if (JAK.DOM.hasClass(_titleStrong = _titleStrongs[i], 'nette-dump-inner')) {
 			_titleSpan = _titleStrong.parentNode.parentNode;
 			_titleSpan.tdTitle = _titleStrong.parentNode;
 			_titleSpan.tdTitle.tdInner = _titleStrong;
-			_titleSpan.onmousemove = _tdShowTitle;
-			_titleSpan.onmouseout = _tdHideTitle;
-			_titleSpan.onclick = _tdPinTitle;
-			_titleSpan.tdTitle.onmousedown = _tdMoveTitle;
+			_titleSpan.onmousemove = TimeDebug.tdShowTitle;
+			_titleSpan.onmouseout = TimeDebug.tdHideTimer;
+			_titleSpan.onclick = TimeDebug.tdPinTitle;
+			_titleSpan.tdTitle.onmousedown = TimeDebug.tdMoveTitle;
 		}
 	}
-}
+};
 
-function _tdMoveTitle(e) {
+TimeDebug.tdShowTitle = function(e) {
 	e = e || window.event;
-	_tdStopPropagation(e);
+	JAK.Events.stopEvent(e);
+	var tdTitleRows;
 
-
-}
-
-function _tdShowTitle(e) {
-	e = e || window.event;
-	_tdStopPropagation(e);
-
-	if (_tdTitle && _tdTitle !== this.tdTitle) {
-		_tdHide();
+	if (TimeDebug.titleActive && TimeDebug.titleActive !== this.tdTitle) {
+		TimeDebug.tdHideTitle();
 	}
-	else if (_tdHideTimeout) {
-		window.clearTimeout(_tdHideTimeout);
-		_tdHideTimeout = null;
+	else if (TimeDebug.titleHideTimeout) {
+		window.clearTimeout(TimeDebug.titleHideTimeout);
+		TimeDebug.titleHideTimeout = null;
 	}
 
-	if (_tdTitle === null && this.tdTitle.style.display != 'block')  {
-		_tdTitle = this.tdTitle;
-		_tdTitle.style.display = 'block';
-		_tdTitle.style.position = 'fixed';
-		if (!_tdTitle.hasOwnProperty('oriWidth')) {
-			_tdTitle.oriWidth = _tdTitle.clientWidth;
-			_tdTitle.oriHeight = _tdTitle.clientHeight;
-			_tdTitleRows = _tdTitle.getElementsByTagName('i');
-			for (var i = 0, j = _tdTitleRows.length; ++i < j; ++i)
-				_tdTitleRows[i].className = "nette-dump-even";
+	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block')  {
+		TimeDebug.titleActive = this.tdTitle;
+		TimeDebug.titleActive.style.display = 'block';
+		TimeDebug.titleActive.style.position = 'fixed';
+		if (!TimeDebug.titleActive.hasOwnProperty('oriWidth')) {
+			TimeDebug.titleActive.oriWidth = TimeDebug.titleActive.clientWidth;
+			TimeDebug.titleActive.oriHeight = TimeDebug.titleActive.clientHeight;
+			tdTitleRows = TimeDebug.titleActive.getElementsByTagName('i');
+			for (var i = 0, j = tdTitleRows.length; ++i < j; ++i)
+				tdTitleRows[i].className = "nette-dump-even";
 		}
-		_tdShownTitles.push(_tdTitle);
+		TimeDebug.visibleTitles.push(TimeDebug.titleActive);
 	}
 
-	if (_tdTitle === null) return true;
+	if (TimeDebug.titleActive === null) return true;
 
-	_tdTitle.style.left = (_tdTitle.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
-	_tdTitle.style.top = (_tdTitle.tdTop = (e.pageY || e.clientY) - 5) + 'px';
+	TimeDebug.titleActive.style.left = (TimeDebug.titleActive.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
+	TimeDebug.titleActive.style.top = (TimeDebug.titleActive.tdTop = (e.pageY || e.clientY) - 5) + 'px';
 
-	_tdAutosize();
+	TimeDebug.tdTitleAutosize();
 
 	// TODO: aktivator lokalniho menu pod kurzorem (<Alt> nebo podrzeni leveho mysitka)
 	// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all)
@@ -128,205 +125,157 @@ function _tdShowTitle(e) {
 	// TODO: udelat fullwidth mod time debugu
 
 	return false;
-}
+};
 
-function _tdAutosize(el) {
-	el = el || _tdTitle;
-	_tdSpaceX = Math.max(_tdWindowSize[0] - el.tdLeft - 50, 0);
-	_tdSpaceY = 16 * parseInt(Math.max(_tdWindowSize[1] - el.tdTop - 50, 0) / 16);
+TimeDebug.tdMoveTitle = function(e) {
+	e = e || window.event;
+	JAK.Events.stopEvent(e);
+};
 
-	if (_tdSpaceX < el.oriWidth) {
-		el.style.width = _tdSpaceX + 'px';
-		_tdCheckWidthDif = false;
+TimeDebug.tdTitleAutosize = function(el) {
+	el = el || TimeDebug.titleActive;
+	var tdCheckWidthDif;
+	var tdWidthDif;
+	TimeDebug.spaceX = Math.max(TimeDebug.viewSize[0] - el.tdLeft - 50, 0);
+	TimeDebug.spaceY = 16 * parseInt(Math.max(TimeDebug.viewSize[1] - el.tdTop - 50, 0) / 16);
+
+	if (TimeDebug.spaceX < el.oriWidth) {
+		el.style.width = TimeDebug.spaceX + 'px';
+		tdCheckWidthDif = false;
 	} else {
 		el.style.width = 'auto';
-		_tdCheckWidthDif = true;
+		tdCheckWidthDif = true;
 	}
 
-	if (_tdSpaceY < el.tdInner.clientHeight || _tdSpaceY < el.oriHeight) {
-		el.style.height = _tdSpaceY + 'px';
-		if (_tdCheckWidthDif) {
-			_tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0);
-			if (_tdWidthDif) el.style.width = el.oriWidth + _tdWidthDif + 1;
+	if (TimeDebug.spaceY < el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
+		el.style.height = TimeDebug.spaceY + 'px';
+		if (tdCheckWidthDif) {
+			tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0);
+			if (tdWidthDif) el.style.width = el.oriWidth + tdWidthDif + 1;
 		}
 	} else {
 		el.style.height = 'auto';
 	}
-}
+};
 
-function _tdHideTitle(e) {
+TimeDebug.tdHideTimer = function(e) {
 	e = e || window.event;
-	_tdStopPropagation(e);
-	if (_tdHideTimeout) window.clearTimeout(_tdHideTimeout);
-	_tdHideTimeout = window.setTimeout(_tdHide, 300);
-}
+	JAK.Events.stopEvent(e);
+	if (TimeDebug.titleHideTimeout) window.clearTimeout(TimeDebug.titleHideTimeout);
+	TimeDebug.titleHideTimeout = window.setTimeout(TimeDebug.tdHideTitle, 300);
+};
 
-function _tdHide() {
-	if (_tdHideTimeout) {
-		window.clearTimeout(_tdHideTimeout);
-		_tdHideTimeout = null;
+TimeDebug.tdHideTitle = function() {
+	if (TimeDebug.titleHideTimeout) {
+		window.clearTimeout(TimeDebug.titleHideTimeout);
+		TimeDebug.titleHideTimeout = null;
 	}
-	if (_tdTitle !== null) {
-		var i = _tdShownTitles.indexOf(_tdTitle);
-		if (i !== -1) _tdShownTitles.splice(i, 1);
-		_tdTitle.style.display = 'none';
-		_tdTitle = null;
+	if (TimeDebug.titleActive !== null) {
+		var i = TimeDebug.visibleTitles.indexOf(TimeDebug.titleActive);
+		if (i !== -1) TimeDebug.visibleTitles.splice(i, 1);
+		TimeDebug.titleActive.style.display = 'none';
+		TimeDebug.titleActive = null;
 	}
-}
+};
 
-function _tdPinTitle() {
-	if (_tdHideTimeout) {
-		window.clearTimeout(_tdHideTimeout);
-		_tdHideTimeout = null;
+TimeDebug.tdPinTitle = function() {
+	if (TimeDebug.titleHideTimeout) {
+		window.clearTimeout(TimeDebug.titleHideTimeout);
+		TimeDebug.titleHideTimeout = null;
 	}
-	_tdTitle = null;
-}
+	TimeDebug.titleActive = null;
+};
 
-function _tdMouseClick(e) {
+TimeDebug.tdMouseClick = function(e) {
 	e = e || window.event;
 	var id = parseInt(this.id.split('_')[1]);
 
 	if (e.altKey) {
 	} else if (e.ctrlKey || e.metaKey) {
-		_tdChosen[id - 1] = !_tdChosen[id - 1];
-		if (_tdChosen[id - 1]) _tdAddClass(_tdRows[id - 1], 'nette-dump-chosen');
-		else _tdRemoveClass(_tdRows[id - 1], 'nette-dump-chosen');
+		TimeDebug.logRowsChosen[id - 1] = !TimeDebug.logRowsChosen[id - 1];
+		if (TimeDebug.logRowsChosen[id - 1]) JAK.DOM.addClass(TimeDebug.logRows[id - 1], 'nette-dump-chosen');
+		else JAK.DOM.removeClass(TimeDebug.logRows[id - 1], 'nette-dump-chosen');
 	} else if (e.shiftKey) {
 		var unset = false;
-		if (_tdHasClass(this, 'nette-dump-chosen')) unset = true;
-		for(var i = Math.min(_tdActive, id), j = Math.max(_tdActive, id); i <= j; i++) {
+		if (JAK.DOM.hasClass(this, 'nette-dump-chosen')) unset = true;
+		for(var i = Math.min(TimeDebug.logRowActiveId, id), j = Math.max(TimeDebug.logRowActiveId, id); i <= j; i++) {
 			if (unset) {
-				_tdChosen[i - 1] = false;
-				_tdRemoveClass(_tdRows[i - 1], 'nette-dump-chosen');
+				TimeDebug.logRowsChosen[i - 1] = false;
+				JAK.DOM.removeClass(TimeDebug.logRows[i - 1], 'nette-dump-chosen');
 			} else {
-				_tdChosen[i - 1] = true;
-				_tdAddClass(_tdRows[i - 1], 'nette-dump-chosen');
+				TimeDebug.logRowsChosen[i - 1] = true;
+				JAK.DOM.addClass(TimeDebug.logRows[i - 1], 'nette-dump-chosen');
 			}
 		}
 	} else {
-		_tdShowLog(id);
+		TimeDebug.tdShowDump(id);
 	}
 	return false;
-}
+};
 
-document.onkeydown = function(e) {
+TimeDebug.tdKeyDown = function(e) {
 	e = e || window.event;
+	var tdNext;
 
 	if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
-		if (e.keyCode == 37 && _tdActive > 1) {
-			_tdNext = _tdSelected() ? _tdGetPrev() : _tdActive - 1;
-			if (_tdNext === _tdActive) return true;
-			_tdShowLog(_tdNext);
+		if (e.keyCode == 37 && TimeDebug.logRowActiveId > 1) {
+			tdNext = TimeDebug.tdSelected() ? TimeDebug.tdGetPrev() : TimeDebug.logRowActiveId - 1;
+			if (tdNext === TimeDebug.logRowActiveId) return true;
+			TimeDebug.tdShowDump(tdNext);
 			return false;
-		} else if (e.keyCode == 39 && _tdActive < _tdIndex.length) {
-			_tdNext = _tdSelected() ? _tdGetNext() : _tdActive + 1;
-			if (_tdNext === _tdActive) return true;
-			_tdShowLog(_tdNext);
+		} else if (e.keyCode == 39 && TimeDebug.logRowActiveId < TimeDebug.tdIndexes.length) {
+			tdNext = TimeDebug.tdSelected() ? TimeDebug.tdGetNext() : TimeDebug.logRowActiveId + 1;
+			if (tdNext === TimeDebug.logRowActiveId) return true;
+			TimeDebug.tdShowDump(tdNext);
 			return false;
-		} else if (e.keyCode == 38 && _tdTitle) {
-			_tdTitle.scrollTop = 16 * parseInt((_tdTitle.scrollTop - 16) / 16);
+		} else if (e.keyCode == 38 && TimeDebug.titleActive) {
+			TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);
 			return false;
-		} else if (e.keyCode == 40 && _tdTitle) {
-			_tdTitle.scrollTop = 16 * parseInt((_tdTitle.scrollTop + 16) / 16);
+		} else if (e.keyCode == 40 && TimeDebug.titleActive) {
+			TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop + 16) / 16);
 			return false;
-		} else if (e.keyCode == 27 && _tdShownTitles.length) {
-			if (_tdHideTimeout) {
-				window.clearTimeout(_tdHideTimeout);
-				_tdHideTimeout = null;
+		} else if (e.keyCode == 27 && TimeDebug.visibleTitles.length) {
+			if (TimeDebug.titleHideTimeout) {
+				window.clearTimeout(TimeDebug.titleHideTimeout);
+				TimeDebug.titleHideTimeout = null;
 			}
-			for (var i = _tdShownTitles.length; i-- > 0;) {
-				_tdShownTitles[i].style.display = 'none';
+			for (var i = TimeDebug.visibleTitles.length; i-- > 0;) {
+				TimeDebug.visibleTitles[i].style.display = 'none';
 			}
-			_tdShownTitles.length = 0;
-			_tdTitle = null;
+			TimeDebug.visibleTitles.length = 0;
+			TimeDebug.titleActive = null;
 			return false;
 		}
 	}
 	return true;
 };
 
-window.onresize = _tdResizeWrapper;
+TimeDebug.tdResizeWrapper = function() {
+	var viewWidth = parseInt(TimeDebug.tdView.clientWidth);
+	var viewHeight = parseInt(TimeDebug.tdView.clientHeight);
+	if (viewWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width =  viewWidth + 'px';
+	if (viewHeight > TimeDebug.tdOuterWrapper.clientHeight) TimeDebug.tdOuterWrapper.style.height = viewHeight + 'px';
+	TimeDebug.viewSize = JAK.DOM.getDocSize();
+	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.tdTitleAutosize(TimeDebug.visibleTitles[i]);
+};
 
-function _tdResizeWrapper() {
-	var viewWidth = parseInt(_tdView.clientWidth);
-	var viewHeight = parseInt(_tdView.clientHeight);
-	if (viewWidth > _tdOuterWrapper.clientWidth) _tdOuterWrapper.style.width =  viewWidth + 'px';
-	if (viewHeight > _tdOuterWrapper.clientHeight) _tdOuterWrapper.style.height = viewHeight + 'px';
-	_tdWindowSize = _tdGetWindowSize();
-	for (var i = _tdShownTitles.length; i-- > 0;) _tdAutosize(_tdShownTitles[i]);
-}
-
-function _tdSelected() {
-	for(var i = _tdChosen.length; i-- > 0;) {
-		if (_tdChosen[i]) return true;
+TimeDebug.tdSelected = function() {
+	for(var i = TimeDebug.logRowsChosen.length; i-- > 0;) {
+		if (TimeDebug.logRowsChosen[i]) return true;
 	}
 	return false;
-}
+};
 
-function _tdGetPrev() {
-	for(var i = _tdActive; --i > 0;) {
-		if (_tdChosen[i - 1]) return i;
+TimeDebug.tdGetPrev = function() {
+	for(var i = TimeDebug.logRowActiveId; --i > 0;) {
+		if (TimeDebug.logRowsChosen[i - 1]) return i;
 	}
-	return _tdActive;
-}
+	return TimeDebug.logRowActiveId;
+};
 
-function _tdGetNext() {
-	for(var i = _tdActive, j = _tdChosen.length; i++ < j;) {
-		if (_tdChosen[i - 1]) return i;
+TimeDebug.tdGetNext = function() {
+	for(var i = TimeDebug.logRowActiveId, j = TimeDebug.logRowsChosen.length; i++ < j;) {
+		if (TimeDebug.logRowsChosen[i - 1]) return i;
 	}
-	return _tdActive;
-}
-
-function _tdStopPropagation(e) {
-	e = e || window.event;
-	if (e.stopPropagation) e.stopPropagation();
-	else e.cancelBubble = true;
-}
-
-function _tdCancelDef(e) {
-	e = e || window.event;
-	if (e.preventDefault) e.preventDefault();
-	else e.returnValue = false;
-}
-
-function _tdHasClass(el, classes) {
-	var classNames = el.className;
-	if (!classNames) return false;
-	classes = classes.split(' ');
-	for (var i = 0, j = classes.length; j-- > 0;) {
-		if (classNames.indexOf(classes[j]) !== -1) i++;
-	}
-	return i == classes.length;
-}
-
-function _tdAddClass(el, classes) {
-	var classNames = el.className;
-	if (!classNames) {
-		el.className = classes;
-		return el;
-	}
-	classes = classes.split(' ');
-	for (var i = 0, j = classes.length; i < j; i++) {
-		if (classNames.indexOf(classes[i]) === -1) classNames += ' ' + classes[i];
-	}
-	el.className = classNames;
-	return el;
-}
-
-function _tdRemoveClass(el, classes) {
-	var classNames = el.className.split(' ');
-	if (classNames.length == 0) { return el; }
-	var newClassNames = [];
-	for (var i = 0, j = classes.length; i < j; i++) {
-		if (classNames[i] && classes.indexOf(classNames[i]) === -1) newClassNames.push(classNames[i]);
-	}
-	el.className = newClassNames.join(' ');
-	return el;
-}
-
-function _tdGetWindowSize() {
-	return [
-		window.innerWidth || document.documentElement.clientWidth || document.getElementsByTagName('body')[0].clientWidth,
-		window.innerHeight || document.documentElement.clientHeight || document.getElementsByTagName('body')[0].clientHeight
-	];
-}
+	return TimeDebug.logRowActiveId;
+};

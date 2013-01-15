@@ -143,7 +143,8 @@ class Dumper
 						$lines = file($backtrace[$id]['file']);
 						$line = trim($lines[$backtrace[$id]['line'] - 1]);
 
-						$code = '<span title="' . htmlspecialchars($line, ENT_COMPAT) . '">' . $backtrace[$id]['class']
+						$code = '<span title="' . htmlspecialchars($line . "\nin " . substr($backtrace[$id]['file'], strlen(ROOT))
+								. ' @' . $backtrace[$id]['line'], ENT_COMPAT) . '">' . $backtrace[$id]['class']
 								. $backtrace[$id]['type'] . $backtrace[$id]['function'] . '</span>(' . implode(', ', $args) . ')';
 					} else {
 						$code = '';

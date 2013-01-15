@@ -27,9 +27,11 @@ if (DEBUG) {
 			. WEBROOT . "?mail=1\">odeslat email</a>\n";
 	echo "</div>\n</div>\n";
 	if (TIMEDEBUG) {
-		echo "<script>\nvar _tdLogs = " . json_encode(App::$timeDebugData) . ";\n"
-				. "var _tdIndex = " . json_encode(App::$timeDebug) . ";\n</script>\n";
-		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n</body>\n</html>";
+		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
+		echo "<script>\n"
+				. "TimeDebug.tdDumps = ". json_encode(App::$timeDebugData) . ";\n"
+				. "TimeDebug.tdIndexes = ". json_encode(App::$timeDebug) . ";\n"
+				. "TimeDebug.tdInit(1);\n</script>\n</body>\n</html>";
 	} else {
 		App::dump($app);
 		echo "</body>\n</html>";

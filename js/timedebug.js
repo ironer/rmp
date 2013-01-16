@@ -146,6 +146,8 @@ TimeDebug.titleAction = function(e) {
 
 	if (!this.pined) return true;
 
+	JAK.Events.stopEvent(e);
+
 	if (e.altKey) {
 		if (!e.ctrlKey && !e.metaKey) {
 			if (e.shiftKey) TimeDebug.hideTitle(this);
@@ -163,8 +165,6 @@ TimeDebug.titleAction = function(e) {
 	}
 
 	JAK.Events.cancelDef(e);
-	JAK.Events.stopEvent(e);
-
 	return false;
 };
 

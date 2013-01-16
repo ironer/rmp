@@ -125,7 +125,7 @@ class Dumper
 												self::APP_RECURSION => FALSE,
 												self::DEPTH => 1,
 												self::COLLAPSE => FALSE,
-												self::TRUNCATE => 50,
+												self::TRUNCATE => 20,
 												self::NO_BREAK => FALSE
 											)) . '</pre></strong></span>array</span> (' . $cnt . ')';
 								} else {

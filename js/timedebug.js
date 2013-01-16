@@ -177,8 +177,8 @@ TimeDebug.resizing = function(e) {
 	if (e.button != JAK.Browser.mouse.left) {
 		TimeDebug.endTitleAction();
 	} else {
-		el.userWidth = el.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - el.tdLeft - 50, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 16);
-		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(TimeDebug.viewSize.height - el.tdTop - 50, TimeDebug.actionData.height + e.screenY - TimeDebug.actionData.startY), 16) / 16);
+		el.userWidth = el.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - el.tdLeft - 20, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 16);
+		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(TimeDebug.viewSize.height - el.tdTop - 35, TimeDebug.actionData.height + e.screenY - TimeDebug.actionData.startY), 16) / 16);
 
 		JAK.DOM.setStyle(el, { width: el.tdWidth + 'px', height: el.tdHeight + 'px' });
 	}
@@ -207,8 +207,8 @@ TimeDebug.dragging = function(e) {
 	if (e.button != JAK.Browser.mouse.left) {
 		TimeDebug.endTitleAction();
 	} else {
-		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 66, TimeDebug.actionData.offsetX + e.screenX - TimeDebug.actionData.startX), 0);
-		el.tdTop = Math.max(Math.min(TimeDebug.viewSize.height - 66, TimeDebug.actionData.offsetY + e.screenY - TimeDebug.actionData.startY), 0);
+		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 36, TimeDebug.actionData.offsetX + e.screenX - TimeDebug.actionData.startX), 0);
+		el.tdTop = Math.max(Math.min(TimeDebug.viewSize.height - 51, TimeDebug.actionData.offsetY + e.screenY - TimeDebug.actionData.startY), 0);
 
 		JAK.DOM.setStyle(el, { left: el.tdLeft + 'px', top: el.tdTop + 'px' });
 
@@ -238,8 +238,8 @@ TimeDebug.titleAutosize = function(el) {
 
 	var tdCheckWidthDif = false;
 	var tdWidthDif;
-	TimeDebug.spaceX = Math.max(TimeDebug.viewSize.width - el.tdLeft - 50, 0);
-	TimeDebug.spaceY = 16 * parseInt(Math.max(TimeDebug.viewSize.height - el.tdTop - 50, 0) / 16);
+	TimeDebug.spaceX = Math.max(TimeDebug.viewSize.width - el.tdLeft - 20, 0);
+	TimeDebug.spaceY = 16 * parseInt(Math.max(TimeDebug.viewSize.height - el.tdTop - 35, 0) / 16);
 	
 	if (el.resized) {
 		el.style.width = (TimeDebug.spaceX < el.userWidth ? el.tdWidth = TimeDebug.spaceX : el.tdWidth = el.userWidth) + 'px';

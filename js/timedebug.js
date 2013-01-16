@@ -125,8 +125,9 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
+	// TODO: skryt podrizene titulky drive nez aktualne skryvany (pri jejich vykresleni si je poznamenat)
 	// TODO: otestovat volani s polem obsahujicim zkracene stringy
-	// TODO: podsviceni radku k hoverovanemu titulku
+
 	// TODO: napsat napovedu
 	// TODO: udelat resizovani time debugu
 	// TODO: udelat fullwidth mod time debugu
@@ -148,6 +149,8 @@ TimeDebug.titleAction = function(e) {
 
 	JAK.Events.stopEvent(e);
 
+	if (this.style.zIndex < TimeDebug.zIndexMax) this.style.zIndex = ++TimeDebug.zIndexMax;
+
 	if (e.altKey) {
 		if (!e.ctrlKey && !e.metaKey) {
 			if (e.shiftKey) TimeDebug.hideTitle(this);
@@ -159,10 +162,7 @@ TimeDebug.titleAction = function(e) {
 	} else if (e.shiftKey) return true;
 	else if (e.ctrlKey || e.metaKey) {
 		TimeDebug.startResize(e, this)
-	} else {
-		if (this.style.zIndex < TimeDebug.zIndexMax) this.style.zIndex = ++TimeDebug.zIndexMax;
-		return true;
-	}
+	} else return true;
 
 	JAK.Events.cancelDef(e);
 	return false;

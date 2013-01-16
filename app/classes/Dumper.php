@@ -118,7 +118,7 @@ class Dumper
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
 								if(is_array($arg) && $cnt = count($arg)) {
-									$args[] = '<span class="nette-dump-array"><span class="nette-dump-title">'
+									$args[] = '<span class="nette-dump-array nette-dump-titled"><span class="nette-dump-title">'
 											. '<strong class="nette-dump-inner"><pre class="nette-dump">'
 											.self::dumpVar($arg, array(
 												self::FORCE_HTML => TRUE,
@@ -241,14 +241,16 @@ class Dumper
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE))
 					. ($varLen > 4096 ? '&hellip; &lt; TRUNCATED to 4kB &gt;' : '') . '</i></strong></span>' : '';
+			$retClass = ' nette-dump-titled';
 		} else {
 			$retTitle = '';
 			$retVal = self::encodeString($var) . '</span>';
+			$retClass = '';
 		}
 		if ($options[self::FORCE_HTML])
 			$retVal = str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b>', '<b>\\t</b>'), $retVal);
 
-		return '<span class="nette-dump-string">' . $retTitle . $retVal . ($options[self::NO_BREAK] ? '' : "\n");
+		return '<span class="nette-dump-string' . $retClass . '">' . $retTitle . $retVal . ($options[self::NO_BREAK] ? '' : "\n");
 
 	}
 

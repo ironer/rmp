@@ -14,15 +14,18 @@ pre.nette-dump {
 	border: medium none;
 	padding: 0;
 }
-.nette-dump-array, .nette-dump-object {
+.nette-dump-array, .nette-dump-object, .nette-dump-active .nette-dump-array.nette-dump-titled:hover {
 	color: #c22;
 }
-.nette-dump-string {
+.nette-dump-string, .nette-dump-active .nette-dump-string.nette-dump-titled:hover {
 	position: relative;
 	color: #35d;
 }
 .nette-dump-string b {
 	color: #f34;
+}
+.nette-dump-titled:hover {
+	background: #9f3;
 }
 .nette-dump-title {
 	position: absolute;
@@ -33,14 +36,19 @@ pre.nette-dump {
 	border-bottom: 8px solid #def;
 	top: 0;
 	left: 0;
-	-moz-box-shadow: 3px 2px 8px #788;
-	-webkit-box-shadow: 3px 2px 8px #788;
-	box-shadow: 3px 2px 8px #788;
+	-moz-box-shadow: 3px 2px 8px #888;
+	-webkit-box-shadow: 3px 2px 8px #888;
+	box-shadow: 3px 2px 8px #888;
 	padding: 0;
 	text-indent: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
 	outline: 0;
+}
+.nette-dump-title .nette-dump-title {
+	background: #dfe;
+	border-top: 8px solid #dfe;
+	border-bottom: 8px solid #dfe;
 }
 .nette-dump-inner {
 	display: block;

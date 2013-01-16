@@ -16,6 +16,7 @@ TimeDebug.titleHideTimeout = null;
 TimeDebug.viewSize = JAK.DOM.getDocSize();
 TimeDebug.spaceX = 0;
 TimeDebug.spaceY = 0;
+TimeDebug.zIndexMax = 100;
 
 TimeDebug.actionData = { element: null, listeners: [] };
 
@@ -104,8 +105,10 @@ TimeDebug.showTitle = function(e) {
 	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block')  {
 		TimeDebug.titleActive = this.tdTitle;
 		TimeDebug.titleActive.style.display = 'block';
-		TimeDebug.titleActive.style.position = 'fixed';
+		TimeDebug.titleActive.style.zIndex = ++TimeDebug.zIndexMax;
+
 		if (!TimeDebug.titleActive.hasOwnProperty('oriWidth')) {
+			TimeDebug.titleActive.style.position = 'fixed';
 			TimeDebug.titleActive.oriWidth = TimeDebug.titleActive.clientWidth;
 			TimeDebug.titleActive.oriHeight = TimeDebug.titleActive.clientHeight;
 			tdTitleRows = TimeDebug.titleActive.getElementsByTagName('i');
@@ -122,11 +125,20 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
-	// TODO: doresit zIndex
+	// TODO: otestovat volani s polem obsahujicim zkracene stringy
+	// TODO: podsviceni radku k hoverovanemu titulku
+	// TODO: napsat napovedu
 	// TODO: udelat resizovani time debugu
 	// TODO: udelat fullwidth mod time debugu
 
 	return false;
+};
+
+TimeDebug.getMaxZIndex = function() {
+	for (var retVal = 100, i = TimeDebug.visibleTitles.length; i-- > 0;) {
+		retVal = Math.max(retVal, TimeDebug.visibleTitles[i].style.zIndex);
+	}
+	return retVal;
 };
 
 TimeDebug.titleAction = function(e) {
@@ -145,7 +157,10 @@ TimeDebug.titleAction = function(e) {
 	} else if (e.shiftKey) return true;
 	else if (e.ctrlKey || e.metaKey) {
 		TimeDebug.startResize(e, this)
-	} else return true;
+	} else {
+		if (this.style.zIndex < TimeDebug.zIndexMax) this.style.zIndex = ++TimeDebug.zIndexMax;
+		return true;
+	}
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
@@ -275,11 +290,13 @@ TimeDebug.hideTitle = function(el) {
 
 	if (el && el.pined) {
 		if ((index = TimeDebug.visibleTitles.indexOf(el)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
+		if (el.style.zIndex == TimeDebug.zIndexMax) TimeDebug.zIndexMax = TimeDebug.getMaxZIndex();
 		el.style.display = 'none';
 		el.pined = false;
 		return true;
 	} else if (TimeDebug.titleActive !== null) {
 		if ((index = TimeDebug.visibleTitles.indexOf(TimeDebug.titleActive)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
+		if (TimeDebug.titleActive.style.zIndex == TimeDebug.zIndexMax) TimeDebug.zIndexMax = TimeDebug.getMaxZIndex();
 		TimeDebug.titleActive.style.display = 'none';
 		TimeDebug.titleActive = null;
 	}
@@ -367,6 +384,7 @@ TimeDebug.readKeyDown = function(e) {
 				TimeDebug.visibleTitles[i].resized = false;
 			}
 			TimeDebug.visibleTitles.length = 0;
+			TimeDebug.zIndexMax = 100;
 			TimeDebug.titleActive = null;
 			return false;
 		}

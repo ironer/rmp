@@ -26,13 +26,13 @@ TimeDebug.init = function(tdId) {
 	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 400px', overflow:'hidden'});
 
 	var links;
-	var preTags = TimeDebug.logView.getElementsByTagName('pre');
+	var logNodes = TimeDebug.logView.childNodes;
 
-	for(var i = 0, j = preTags.length, k; i < j; ++i) {
-		if (JAK.DOM.hasClass(preTags[i], 'nette-dump-row')) {
-			TimeDebug.logRows.push(preTags[i]);
-			preTags[i].onclick = this.logClick;
-			links = preTags[i].getElementsByTagName('a');
+	for(var i = 0, j = logNodes.length, k; i < j; ++i) {
+		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre' && JAK.DOM.hasClass(logNodes[i], 'nette-dump-row')) {
+			TimeDebug.logRows.push(logNodes[i]);
+			logNodes[i].onclick = this.logClick;
+			links = logNodes[i].getElementsByTagName('a');
 			for(k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
 		}
 	}
@@ -111,9 +111,12 @@ TimeDebug.showTitle = function(e) {
 			TimeDebug.titleActive.style.position = 'fixed';
 			TimeDebug.titleActive.oriWidth = TimeDebug.titleActive.clientWidth;
 			TimeDebug.titleActive.oriHeight = TimeDebug.titleActive.clientHeight;
-			tdTitleRows = TimeDebug.titleActive.getElementsByTagName('i');
-			for (var i = 0, j = tdTitleRows.length; ++i < j; ++i)
-				tdTitleRows[i].className = "nette-dump-even";
+			tdTitleRows = TimeDebug.titleActive.tdInner.childNodes;
+			for (var i = 0, j = tdTitleRows.length, c = 1; i < j; ++i) {
+				if (tdTitleRows[i].nodeType == 1 && tdTitleRows[i].tagName.toLowerCase() == 'i' && ++c % 2) {
+					tdTitleRows[i].className = "nette-dump-even";
+				}
+			}
 		}
 		TimeDebug.visibleTitles.push(TimeDebug.titleActive);
 	}
@@ -126,6 +129,7 @@ TimeDebug.showTitle = function(e) {
 	TimeDebug.titleAutosize();
 
 	// TODO: skryt podrizene titulky drive nez aktualne skryvany (pri jejich vykresleni si je poznamenat)
+	// 			- davat pozor jetli skryvam odkazovany a aktivni v jednom
 	// TODO: otestovat volani s polem obsahujicim zkracene stringy
 
 	// TODO: napsat napovedu

@@ -122,11 +122,7 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
-	// TODO: aktivator lokalniho menu pod kurzorem (<Alt> nebo podrzeni leveho mysitka)
-	// TODO: udelat menu oken(lt drag, rb resize, close, select content - word, line, all)
-	// TODO: moznost zapinat a vypinat sude podbarveni
-	// TODO: minihra - zavirani title s danou velikosti
-
+	// TODO: doresit zIndex
 	// TODO: udelat resizovani time debugu
 	// TODO: udelat fullwidth mod time debugu
 
@@ -136,15 +132,24 @@ TimeDebug.showTitle = function(e) {
 TimeDebug.titleAction = function(e) {
 	e = e || window.event;
 
-	if (!e.altKey || e.ctrlKey || e.metaKey) return true;
+	if (!this.pined) return true;
+
+	if (e.altKey) {
+		if (!e.ctrlKey && !e.metaKey) {
+			if (e.shiftKey) TimeDebug.hideTitle(this);
+			else TimeDebug.startDragging(e, this);
+		} else if (!e.shiftKey) {
+			this.resized = false;
+			TimeDebug.titleAutosize(this);
+		} else return true;
+	} else if (e.shiftKey) return true;
+	else if (e.ctrlKey || e.metaKey) {
+		TimeDebug.startResize(e, this)
+	} else return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	if (e.button == JAK.Browser.mouse.left) {
-		if (e.shiftKey) TimeDebug.startResize(e, this);
-		else TimeDebug.startDragging(e, this);
-	}
 	return false;
 };
 
@@ -265,25 +270,42 @@ TimeDebug.hideTimer = function(e) {
 	TimeDebug.titleHideTimeout = window.setTimeout(TimeDebug.hideTitle, 300);
 };
 
-TimeDebug.hideTitle = function() {
+TimeDebug.hideTitle = function(el) {
+	var index;
+
+	if (el && el.pined) {
+		if ((index = TimeDebug.visibleTitles.indexOf(el)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
+		el.style.display = 'none';
+		el.pined = false;
+		return true;
+	} else if (TimeDebug.titleActive !== null) {
+		if ((index = TimeDebug.visibleTitles.indexOf(TimeDebug.titleActive)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
+		TimeDebug.titleActive.style.display = 'none';
+		TimeDebug.titleActive = null;
+	}
+
+	if (TimeDebug.titleHideTimeout) {
+		window.clearTimeout(TimeDebug.titleHideTimeout);
+		TimeDebug.titleHideTimeout = null;
+	}
+	return true;
+};
+
+TimeDebug.pinTitle = function(e) {
+	e = e || window.event;
+	JAK.Events.stopEvent(e);
+
+	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return false;
+
 	if (TimeDebug.titleHideTimeout) {
 		window.clearTimeout(TimeDebug.titleHideTimeout);
 		TimeDebug.titleHideTimeout = null;
 	}
 	if (TimeDebug.titleActive !== null) {
-		var i = TimeDebug.visibleTitles.indexOf(TimeDebug.titleActive);
-		if (i !== -1) TimeDebug.visibleTitles.splice(i, 1);
-		TimeDebug.titleActive.style.display = 'none';
+		TimeDebug.titleActive.pined = true;
 		TimeDebug.titleActive = null;
 	}
-};
-
-TimeDebug.pinTitle = function() {
-	if (TimeDebug.titleHideTimeout) {
-		window.clearTimeout(TimeDebug.titleHideTimeout);
-		TimeDebug.titleHideTimeout = null;
-	}
-	TimeDebug.titleActive = null;
+	return false;
 };
 
 TimeDebug.logClick = function(e) {
@@ -341,6 +363,8 @@ TimeDebug.readKeyDown = function(e) {
 			}
 			for (var i = TimeDebug.visibleTitles.length; i-- > 0;) {
 				TimeDebug.visibleTitles[i].style.display = 'none';
+				TimeDebug.visibleTitles[i].pined = false;
+				TimeDebug.visibleTitles[i].resized = false;
 			}
 			TimeDebug.visibleTitles.length = 0;
 			TimeDebug.titleActive = null;

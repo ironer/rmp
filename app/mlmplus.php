@@ -1,5 +1,6 @@
 <?php
 
+define('CACHE', APP . '/cache');
 define('CLASSES', APP . '/classes');
 define('CONTROLLERS', APP . '/controllers');
 define('MODELS', APP . '/models');

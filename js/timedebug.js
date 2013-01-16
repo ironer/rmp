@@ -73,7 +73,7 @@ TimeDebug.setTitles = function(el) {
 
 	_titleStrongs = el.getElementsByTagName('strong');
 	for (var i = _titleStrongs.length; i-- > 0;) {
-		if (JAK.DOM.hasClass(_titleStrong = _titleStrongs[i], 'nette-dump-inner')) {
+		if ((_titleStrong = _titleStrongs[i]).className == 'nette-dump-inner') {
 			_titleSpan = _titleStrong.parentNode.parentNode;
 			_titleSpan.tdTitle = _titleStrong.parentNode;
 			_titleSpan.tdTitle.tdInner = _titleStrong;
@@ -89,10 +89,9 @@ TimeDebug.showTitle = function(e) {
 	e = e || window.event;
 
 	if (TimeDebug.actionData.element !== null) return false;
+	var tdTitleRows, tdParents;
 
 	JAK.Events.stopEvent(e);
-
-	var tdTitleRows;
 
 	if (TimeDebug.titleActive && TimeDebug.titleActive !== this.tdTitle) {
 		TimeDebug.hideTitle();
@@ -103,21 +102,30 @@ TimeDebug.showTitle = function(e) {
 	}
 
 	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block')  {
-		TimeDebug.titleActive = this.tdTitle;
-		TimeDebug.titleActive.style.display = 'block';
-		TimeDebug.titleActive.style.zIndex = ++TimeDebug.zIndexMax;
+		this.tdTitle.style.display = 'block';
+		this.tdTitle.style.zIndex = ++TimeDebug.zIndexMax;
 
-		if (!TimeDebug.titleActive.hasOwnProperty('oriWidth')) {
-			TimeDebug.titleActive.style.position = 'fixed';
-			TimeDebug.titleActive.oriWidth = TimeDebug.titleActive.clientWidth;
-			TimeDebug.titleActive.oriHeight = TimeDebug.titleActive.clientHeight;
-			tdTitleRows = TimeDebug.titleActive.tdInner.childNodes;
+		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
+			if ((tdParents = TimeDebug.getParentTitles(this)).length) this.tdTitle.parents = tdParents;
+			this.tdTitle.style.position = 'fixed';
+			this.tdTitle.oriWidth = this.tdTitle.clientWidth;
+			this.tdTitle.oriHeight = this.tdTitle.clientHeight;
+			tdTitleRows = this.tdTitle.tdInner.childNodes;
 			for (var i = 0, j = tdTitleRows.length, c = 1; i < j; ++i) {
 				if (tdTitleRows[i].nodeType == 1 && tdTitleRows[i].tagName.toLowerCase() == 'i' && ++c % 2) {
 					tdTitleRows[i].className = "nette-dump-even";
 				}
 			}
 		}
+
+		if (tdParents = tdParents || this.tdTitle.parents) {
+			for(var k = tdParents.length; k-- > 0;) {
+				if (tdParents[k].hasOwnProperty('activeChilds')) {
+					tdParents[k].activeChilds.push(this.tdTitle);
+				} else tdParents[k].activeChilds = [this.tdTitle];
+			}
+		}
+		TimeDebug.titleActive = this.tdTitle;
 		TimeDebug.visibleTitles.push(TimeDebug.titleActive);
 	}
 
@@ -128,15 +136,29 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
-	// TODO: skryt podrizene titulky drive nez aktualne skryvany (pri jejich vykresleni si je poznamenat)
-	// 			- davat pozor jetli skryvam odkazovany a aktivni v jednom
-	// TODO: otestovat volani s polem obsahujicim zkracene stringy
-
 	// TODO: napsat napovedu
 	// TODO: udelat resizovani time debugu
 	// TODO: udelat fullwidth mod time debugu
 
 	return false;
+};
+
+TimeDebug.removeFromParents = function(el) {
+	for (var i = el.parents.length, j; i-- > 0;) {
+		for (j = el.parents[i].activeChilds.length; j-- > 0;) {
+			if (el.parents[i].activeChilds[j] === el) el.parents[i].activeChilds.splice(j, 1);
+		}
+	}
+};
+
+TimeDebug.getParentTitles = function(el) {
+	if (!el) return [];
+	var tag, parents = [];
+
+	while ((tag = (el = el.parentNode).tagName.toLowerCase()) != 'body') {
+		if (tag == 'strong' && el.className == 'nette-dump-inner') parents.push(el = el.parentNode);
+	}
+	return parents;
 };
 
 TimeDebug.getMaxZIndex = function() {
@@ -292,23 +314,25 @@ TimeDebug.hideTimer = function(e) {
 TimeDebug.hideTitle = function(el) {
 	var index;
 
-	if (el && el.pined) {
-		if ((index = TimeDebug.visibleTitles.indexOf(el)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
-		if (el.style.zIndex == TimeDebug.zIndexMax) TimeDebug.zIndexMax = TimeDebug.getMaxZIndex();
-		el.style.display = 'none';
-		el.pined = false;
-		return true;
-	} else if (TimeDebug.titleActive !== null) {
-		if ((index = TimeDebug.visibleTitles.indexOf(TimeDebug.titleActive)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
-		if (TimeDebug.titleActive.style.zIndex == TimeDebug.zIndexMax) TimeDebug.zIndexMax = TimeDebug.getMaxZIndex();
-		TimeDebug.titleActive.style.display = 'none';
-		TimeDebug.titleActive = null;
-	}
-
 	if (TimeDebug.titleHideTimeout) {
 		window.clearTimeout(TimeDebug.titleHideTimeout);
 		TimeDebug.titleHideTimeout = null;
 	}
+
+	if (el && el.pined) {
+		el.pined = false;
+	} else if ((el = TimeDebug.titleActive) !== null) {
+		TimeDebug.titleActive = null;
+	} else return false;
+
+	if ((index = TimeDebug.visibleTitles.indexOf(el)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
+	if (el.style.zIndex == TimeDebug.zIndexMax) TimeDebug.zIndexMax = TimeDebug.getMaxZIndex();
+	if (el.parents) TimeDebug.removeFromParents(el);
+	if (el.activeChilds && el.activeChilds.length) {
+		for (index = el.activeChilds.length; index-- > 0;) TimeDebug.hideTitle(el.activeChilds[index]);
+	}
+	el.style.display = 'none';
+
 	return true;
 };
 

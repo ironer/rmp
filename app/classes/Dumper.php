@@ -12,6 +12,7 @@
  */
 class Dumper
 {
+
 	const DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 4)
 			TRUNCATE = 'truncate', // how truncate long strings? (defaults to 70)
 			COLLAPSE = 'collapse', // always collapse? (defaults to false)

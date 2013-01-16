@@ -102,11 +102,13 @@ class Mailer
             
             elseif ($key == self::ATTACHMENTS) {
                 
-                $this->email[$key] = array();
+                $email[$key] = array();
                 
                 foreach ($param as $akey=>$item) {
                     
-                    $index = intval($this->indexes[self::ATTACHMENTS][$akey]++);
+                   if (isset($this->indexes[self::ATTACHMENTS][$akey])) $index = ++$this->indexes[self::ATTACHMENTS][$akey];
+						 else $this->indexes[self::ATTACHMENTS][$akey] = $index = 0;
+
                     $this->data[self::ATTACHMENTS][$akey][$index] = $item;
                     $email[self::ATTACHMENTS][$akey] = $index;
                     
@@ -226,7 +228,7 @@ class Mailer
         
         $body = 'This is a MIME encoded message.' . self::EOL . self::EOL;
         
-        $boundary = md5(microtime(true).uniqid());
+        //$boundary = md5(microtime(true).uniqid());
             
 		$this->encoded['headers']['mime'] = 'MIME-Version: 1.0';
 		$this->encoded['headers']['contenttype'] = 'Content-Type: multipart/alternative;'."\n\t".'boundary="'.$this->boundary[0].'"';
@@ -255,8 +257,7 @@ class Mailer
     
 
 	private function SMTPmail ($body) {
-        
-        
+      $talk = '';
         
 		if (($SMTPIN = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) && socket_connect($SMTPIN, self::$SmtpServer, self::$SmtpPort)) {
 
@@ -315,17 +316,17 @@ class Mailer
         
     }
     
-	private function normaliza($string){
-		$table = array('À'=>'A','Á'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A','Å'=>'A','Æ'=>'A','Þ'=>'B','Ç'=>'C','Ć'=>'C','Č'=>'C','Ð'=>'Dj',
-			'Ď'=>'D','È'=>'E','É'=>'E','Ê'=>'E','Ë'=>'E','Ě'=>'E','Ì'=>'I','Í'=>'I','Î'=>'I','Ï'=>'I','Ľ'=>'L',
-			'Ĺ'=>'L','Ñ'=>'N','Ň'=>'N','Ò'=>'O','Ó'=>'O','Ô'=>'O','Õ'=>'O','Ö'=>'O','Ő'=>'O','Ø'=>'O','Ř'=>'R',
-			'Ŕ'=>'R','Š'=>'S','ß'=>'Ss','Ť'=>'T','Ù'=>'U','Ú'=>'U','Û'=>'U','Ü'=>'U','Ů'=>'U','Ű'=>'U','Ý'=>'Y',
-			'Ÿ'=>'Y','Ž'=>'Z','à'=>'a','á'=>'a','â'=>'a','ã'=>'a','ä'=>'a','å'=>'a','æ'=>'a','þ'=>'b','ç'=>'c','ć'=>'c',
-			'č'=>'c','ð'=>'dj','ď'=>'d','è'=>'e','é'=>'e','ê'=>'e','ë'=>'e','ě'=>'e','ì'=>'i','í'=>'i','î'=>'i',
-			'ï'=>'i','ľ'=>'l','ĺ'=>'l','ñ'=>'n','ň'=>'n','ò'=>'o','ó'=>'o','ô'=>'o','õ'=>'o','ö'=>'o','ő'=>'o',
-			'ø'=>'o','ř'=>'r','ŕ'=>'r','š'=>'s','ß'=>'ss','ť'=>'t','ù'=>'u','ú'=>'u','û'=>'u','ü'=>'u','ů'=>'u',
-			'ű'=>'u','ý'=>'y','ÿ'=>'y','ž'=>'z');
-		return preg_replace('/[^(\x20-\x7F)]*/','?',strtr($string, $table));
-	}
+//	private function normaliza($string){
+//		$table = array('À'=>'A','Á'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A','Å'=>'A','Æ'=>'A','Þ'=>'B','Ç'=>'C','Ć'=>'C','Č'=>'C','Ð'=>'Dj',
+//			'Ď'=>'D','È'=>'E','É'=>'E','Ê'=>'E','Ë'=>'E','Ě'=>'E','Ì'=>'I','Í'=>'I','Î'=>'I','Ï'=>'I','Ľ'=>'L',
+//			'Ĺ'=>'L','Ñ'=>'N','Ň'=>'N','Ò'=>'O','Ó'=>'O','Ô'=>'O','Õ'=>'O','Ö'=>'O','Ő'=>'O','Ø'=>'O','Ř'=>'R',
+//			'Ŕ'=>'R','Š'=>'S','ß'=>'Ss','Ť'=>'T','Ù'=>'U','Ú'=>'U','Û'=>'U','Ü'=>'U','Ů'=>'U','Ű'=>'U','Ý'=>'Y',
+//			'Ÿ'=>'Y','Ž'=>'Z','à'=>'a','á'=>'a','â'=>'a','ã'=>'a','ä'=>'a','å'=>'a','æ'=>'a','þ'=>'b','ç'=>'c','ć'=>'c',
+//			'č'=>'c','ð'=>'dj','ď'=>'d','è'=>'e','é'=>'e','ê'=>'e','ë'=>'e','ě'=>'e','ì'=>'i','í'=>'i','î'=>'i',
+//			'ï'=>'i','ľ'=>'l','ĺ'=>'l','ñ'=>'n','ň'=>'n','ò'=>'o','ó'=>'o','ô'=>'o','õ'=>'o','ö'=>'o','ő'=>'o',
+//			'ø'=>'o','ř'=>'r','ŕ'=>'r','š'=>'s','ß'=>'ss','ť'=>'t','ù'=>'u','ú'=>'u','û'=>'u','ü'=>'u','ů'=>'u',
+//			'ű'=>'u','ý'=>'y','ÿ'=>'y','ž'=>'z');
+//		return preg_replace('/[^(\x20-\x7F)]*/','?',strtr($string, $table));
+//	}
 
 }

@@ -1,6 +1,7 @@
 var TimeDebug = {};
 
 TimeDebug.logView = document.getElementById('logView');
+TimeDebug.logContainer = TimeDebug.logView.parentNode;
 TimeDebug.logRows = [];
 TimeDebug.logRowsChosen = [];
 TimeDebug.logRowActiveId = 0;
@@ -9,6 +10,7 @@ TimeDebug.indexes = [];
 
 TimeDebug.tdContainer = JAK.mel('div', {id:'tdContainer'});
 TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
+TimeDebug.tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
 TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
 TimeDebug.tdWidth = 400;
 
@@ -26,7 +28,7 @@ TimeDebug.zIndexMax = 100;
 TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.init = function(tdId) {
-	TimeDebug.logView.parentNode.style.overflow = 'scroll';
+	TimeDebug.logContainer.style.overflow = 'scroll';
 	TimeDebug.logView.style.padding = '8px';
 	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 ' + TimeDebug.tdWidth + 'px', overflow:'hidden'});
 	TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
@@ -45,10 +47,8 @@ TimeDebug.init = function(tdId) {
 
 	TimeDebug.logRowsChosen.length = TimeDebug.logRows.length;
 
-	var _tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
-
-	_tdInnerWrapper.appendChild(TimeDebug.tdView);
-	TimeDebug.tdOuterWrapper.appendChild(_tdInnerWrapper);
+	TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
+	TimeDebug.tdOuterWrapper.appendChild(TimeDebug.tdInnerWrapper);
 	TimeDebug.tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.insertBefore(TimeDebug.tdContainer, document.body.childNodes[0]);
 
@@ -58,8 +58,9 @@ TimeDebug.init = function(tdId) {
 			+ '     <a href="" onclick="return false;">[nahrat cookie]</a>'
 			+ '     <a href="" onclick="return false;">[smazat cookie]</a>'
 			+ '</div><hr></strong></span>?</span>';
-	TimeDebug.logView.appendChild(TimeDebug.help);
+	document.body.appendChild(TimeDebug.help);
 	TimeDebug.help.onmousedown = TimeDebug.logAction;
+	TimeDebug.setTitles(TimeDebug.help);
 
 	TimeDebug.setTitles(TimeDebug.logView);
 	TimeDebug.showDump(tdId);
@@ -90,8 +91,13 @@ TimeDebug.logAction = function(e) {
 		TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
 	} else {
 		// TODO: udelat fullwidth mod time debugu
-		alert('zapinam fullscreen');
-
+		JAK.DOM.setStyle(document.body, {margin: 0});
+		JAK.DOM.setStyle(TimeDebug.logContainer, {overflow: 'visible', height: '1px', width: '100%', top: '-1px'});
+		JAK.DOM.setStyle(TimeDebug.logView, {overflow: 'hidden', padding: 0, height: '1px', width: '1px'});
+		JAK.DOM.setStyle(TimeDebug.tdContainer, {width: '100%'});
+		JAK.DOM.setStyle(TimeDebug.tdView, {paddingTop: '48px'});
+		JAK.DOM.setStyle(TimeDebug.help, {left: 0});
+		TimeDebug.logView.className = 'nette-dump-fullscreen';
 	}
 
 	return false;
@@ -201,7 +207,10 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
+	// TODO: nastavit radek na 16px vysku
+	// TODO: odebrat viditelne titulky z TimeDebugu pri zmene logu
 	// TODO: ulozit nastaveni do cookie
+
 
 	return false;
 };
@@ -487,7 +496,7 @@ TimeDebug.windowResize = function() {
 	TimeDebug.resizeWrapper();
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
 	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
-}
+};
 
 TimeDebug.resizeWrapper = function() {
 	var viewWidth = TimeDebug.tdView.clientWidth;

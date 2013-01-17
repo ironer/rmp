@@ -27,9 +27,31 @@ if (DEBUG) {
 			. WEBROOT . "?mail=1\">odeslat email</a>\n";
 	echo "</div>\n</div>\n";
 	if (TIMEDEBUG) {
+		$tdHelp = array(
+			'OVLADANI LOGU' => array(
+				'←' => 'posun na predchozi (oznaceny) log',
+				'→' => 'posun na nasledujici (oznaceny) log',
+				'Left Click' => 'vyber logu',
+				'Ctrl/Cmd + LC' => 'oznaceni/odznaceni logu',
+				'Shift + LC' => 'oznaceni/odznaceni rozsahu logu'
+			),
+			'OVLADANI TITULKU' => array(
+				'↑' => 'skrolovani nahoru',
+				'↓' => 'skrolovani dolu',
+				'Left Click' => 'prispendlit titulek',
+				'Alt + LC' => 'presunout titulek',
+				'Ctrl/Cmd + LC' => 'zmenit velikost titulku',
+				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost titulku',
+				'Shift + Alt + LC' => 'zavrit titulek (s podtitulky)'
+			)
+		);
+
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 		echo "<script>\nTimeDebug.dumps = ". json_encode(App::$timeDebugData) . ";\n"
 				. "TimeDebug.indexes = ". json_encode(App::$timeDebug) . ";\n"
+				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode('<span class="nette-dump-titled">'
+				. '<span class="nette-dump-title"><strong class="nette-dump-inner">'
+				. trim(Dumper::dump($tdHelp, array('html' => TRUE))) . '</strong></span>?</span>') : "''") . ";\n"
 				. "TimeDebug.init(1);\n</script>\n</body>\n</html>";
 	} else {
 		App::dump($app);

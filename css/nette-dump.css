@@ -142,6 +142,13 @@ pre.nette-dump {
 .nette-dump-active .nette-dump-editor {
 	color: #fe6;
 }
+.nette-dump-help {
+	position: absolute;
+	top: 0;
+	left: 0;
+	color: #888;
+	font-size: 10px;
+}
 #tdContainer {
 	position: absolute;
 	top: 0;

@@ -10,6 +10,9 @@ TimeDebug.indexes = [];
 TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
 TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
 
+TimeDebug.help = null;
+TimeDebug.helpHtml = '';
+
 TimeDebug.visibleTitles = [];
 TimeDebug.titleActive = null;
 TimeDebug.titleHideTimeout = null;
@@ -47,6 +50,11 @@ TimeDebug.init = function(tdId) {
 	_tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.appendChild(_tdContainer);
 
+	if (TimeDebug.helpHtml) {
+		TimeDebug.help = JAK.cel('span', 'nette-dump-help');
+		TimeDebug.help.innerHTML = TimeDebug.helpHtml;
+		TimeDebug.logView.appendChild(TimeDebug.help);
+	}
 	TimeDebug.setTitles(TimeDebug.logView);
 	TimeDebug.showDump(tdId);
 	window.onresize = TimeDebug.resizeWrapper;
@@ -136,7 +144,6 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
-	// TODO: napsat napovedu
 	// TODO: udelat resizovani time debugu
 	// TODO: udelat fullwidth mod time debugu
 

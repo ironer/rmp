@@ -43,6 +43,10 @@ if (DEBUG) {
 				'Ctrl/Cmd + LC' => 'zmenit velikost titulku',
 				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost titulku',
 				'Shift + Alt + LC' => 'zavrit titulek (s podtitulky)'
+			),
+			'OVLADANI OTAZNIKU' => array(
+				'Alt + LC' => 'zmena velikosti oken',
+				'Ctrl/Cmd + LC' => 'maximalizovany rezim'
 			)
 		);
 

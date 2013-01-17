@@ -2,7 +2,7 @@ pre.nette-dump div {
 	padding-left: 3ex;
 	margin-bottom: 5px;
 }
-.nette-dump-inner pre.nette-dump div {
+.nette-dump-row pre.nette-dump div {
 	margin-bottom: 0;
 }
 pre.nette-dump div div {
@@ -143,17 +143,20 @@ pre.nette-dump {
 	color: #fe6;
 }
 .nette-dump-help {
-	position: absolute;
+	position: fixed;
 	top: 0;
-	left: 0;
 	color: #888;
 	font-size: 10px;
+}
+.nette-dump-help .nette-dump-title {
+	background: #ffe;
+	border-top: 8px solid #ffe;
+	border-bottom: 8px solid #ffe;
 }
 #tdContainer {
 	position: absolute;
 	top: 0;
 	left: 0;
-	width: 400px;
 	height: 100%;
 	overflow: scroll;
 }

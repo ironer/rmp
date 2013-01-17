@@ -46,7 +46,7 @@ if (DEBUG) {
 			),
 			'OVLADANI OTAZNIKU' => array(
 				'Alt + LC' => 'zmena velikosti oken',
-				'Ctrl/Cmd + LC' => 'maximalizovany rezim'
+				'Shift + LC' => 'maximalizovany rezim'
 			)
 		);
 

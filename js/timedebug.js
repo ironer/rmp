@@ -59,36 +59,40 @@ TimeDebug.init = function(tdId) {
 			+ '     <a href="" onclick="return false;">[smazat cookie]</a>'
 			+ '</div><hr></strong></span>?</span>';
 	TimeDebug.logView.appendChild(TimeDebug.help);
-	TimeDebug.help.onmousedown = TimeDebug.resizeLog;
+	TimeDebug.help.onmousedown = TimeDebug.logAction;
 
 	TimeDebug.setTitles(TimeDebug.logView);
 	TimeDebug.showDump(tdId);
-	window.onresize = TimeDebug.resizeWrapper;
+	window.onresize = TimeDebug.windowResize;
 	document.onkeydown = TimeDebug.readKeyDown;
 };
 
-TimeDebug.resizeLog = function(e) {
+TimeDebug.logAction = function(e) {
 	e = e || window.event;
 
-	if (e.shiftKey || !e.altKey || e.ctrlKey || e.metaKey ||	e.button != JAK.Browser.mouse.left) return true;
+	if ((e.shiftKey ? e.altKey : !e.altKey) || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
-
 	var el = TimeDebug.help;
-		
-	TimeDebug.actionData.startX = e.screenX;
-	TimeDebug.actionData.width = TimeDebug.tdWidth;
 
-	TimeDebug.actionData.element = el;
+	if (e.altKey) {
+		TimeDebug.actionData.startX = e.screenX;
+		TimeDebug.actionData.width = TimeDebug.tdWidth;
+		TimeDebug.actionData.element = el;
 
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'logResizing'));
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endLogResize'));
+		TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'logResizing'));
+		TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endLogResize'));
 
-	document.body.focus();
+		document.body.focus();
 
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
+		TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
+		TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
+	} else {
+		// TODO: udelat fullwidth mod time debugu
+		alert('zapinam fullscreen');
+
+	}
 
 	return false;
 };
@@ -101,7 +105,10 @@ TimeDebug.logResizing = function(e) {
 		TimeDebug.endLogResize();
 	} else {
 		TimeDebug.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - 20, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 0);
+
 		document.body.style.marginLeft = TimeDebug.tdContainer.style.width = el.style.left = TimeDebug.tdWidth + 'px';
+
+		TimeDebug.resizeWrapper();
 	}
 };
 
@@ -194,7 +201,6 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
-	// TODO: udelat fullwidth mod time debugu
 	// TODO: ulozit nastaveni do cookie
 
 	return false;
@@ -477,13 +483,18 @@ TimeDebug.readKeyDown = function(e) {
 	return true;
 };
 
-TimeDebug.resizeWrapper = function() {
-	var viewWidth = parseInt(TimeDebug.tdView.clientWidth);
-	var viewHeight = parseInt(TimeDebug.tdView.clientHeight);
-	if (viewWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width =  viewWidth + 'px';
-	if (viewHeight > TimeDebug.tdOuterWrapper.clientHeight) TimeDebug.tdOuterWrapper.style.height = viewHeight + 'px';
+TimeDebug.windowResize = function() {
+	TimeDebug.resizeWrapper();
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
 	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
+}
+
+TimeDebug.resizeWrapper = function() {
+	var viewWidth = TimeDebug.tdView.clientWidth;
+	var viewHeight = TimeDebug.tdView.clientHeight;
+	if (viewWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width = viewWidth + 'px';
+	if (viewHeight > TimeDebug.tdOuterWrapper.clientHeight) TimeDebug.tdOuterWrapper.style.height = viewHeight + 'px';
+	if (TimeDebug.tdContainer.clientWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width = '100%';
 };
 
 TimeDebug.selected = function() {

@@ -153,6 +153,12 @@ pre.nette-dump {
 	border-top: 8px solid #ffe;
 	border-bottom: 8px solid #ffe;
 }
+.nette-dump-help a {
+	text-decoration: none;
+}
+.nette-dump-menu {
+	text-align: center;
+}
 #tdContainer {
 	position: absolute;
 	top: 0;

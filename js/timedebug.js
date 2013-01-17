@@ -13,7 +13,7 @@ TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
 TimeDebug.tdWidth = 400;
 
 TimeDebug.help = JAK.cel('div', 'nette-dump-help');
-TimeDebug.helpHtml = '>';
+TimeDebug.helpHtml = '';
 
 TimeDebug.visibleTitles = [];
 TimeDebug.titleActive = null;
@@ -52,7 +52,12 @@ TimeDebug.init = function(tdId) {
 	TimeDebug.tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.insertBefore(TimeDebug.tdContainer, document.body.childNodes[0]);
 
-	TimeDebug.help.innerHTML = TimeDebug.helpHtml;
+	TimeDebug.help.innerHTML = '<span class="nette-dump-titled"><span class="nette-dump-title"><strong class="nette-dump-inner">'
+			+ TimeDebug.helpHtml + '<hr><div class="nette-dump-menu">'
+			+ '<a href="" onclick="return false;">[ulozit nastaveni do cookie]</a>'
+			+ '     <a href="" onclick="return false;">[nahrat cookie]</a>'
+			+ '     <a href="" onclick="return false;">[smazat cookie]</a>'
+			+ '</div><hr></strong></span>?</span>';
 	TimeDebug.logView.appendChild(TimeDebug.help);
 	TimeDebug.help.onmousedown = TimeDebug.resizeLog;
 
@@ -190,6 +195,7 @@ TimeDebug.showTitle = function(e) {
 	TimeDebug.titleAutosize();
 
 	// TODO: udelat fullwidth mod time debugu
+	// TODO: ulozit nastaveni do cookie
 
 	return false;
 };

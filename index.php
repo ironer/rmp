@@ -53,9 +53,7 @@ if (DEBUG) {
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 		echo "<script>\nTimeDebug.dumps = ". json_encode(App::$timeDebugData) . ";\n"
 				. "TimeDebug.indexes = ". json_encode(App::$timeDebug) . ";\n"
-				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode('<span class="nette-dump-titled">'
-				. '<span class="nette-dump-title"><strong class="nette-dump-inner">'
-				. trim(Dumper::dump($tdHelp, array('html' => TRUE))) . '</strong></span>?</span>') : "''") . ";\n"
+				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(Dumper::dump($tdHelp, array('html' => TRUE)))): "''") . ";\n"
 				. "TimeDebug.init(1);\n</script>\n</body>\n</html>";
 	} else {
 		App::dump($app);

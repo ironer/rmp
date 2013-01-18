@@ -1,8 +1,13 @@
 <?php
 
+//TODO: dopsat prefixy 'key_' ke klíčům attachments
+//TODO: explodovat odpověď na RCPT TO a zjistit chybové kódy
+//TODO: zapsat chybový kód celkového odeslání přes SMTP
+
+
 class Mailer
 {
-
+        
     const   FROM        = 'from',           //jméno odesílatele
             TO          = 'to',             //jméno příjemce
 			BCC         = 'bcc',            //příjemci skrytých kopií (pole polí s jménem a emailems)
@@ -10,14 +15,20 @@ class Mailer
 			SUBJECT     = 'subject',        //předmět emailu
 			TEXT        = 'text',   	    //textová verze emailu
 			HTML        = 'html',   	    //HTML verze emailu
-			ATTACHMENTS = 'attachments',        //kódování e-mailu
-			CHARSET     = 'charset',    //kódování e-mailu
+			ATTACHMENTS = 'attachments',    //přílohy
+			CHARSET     = 'charset',
+            DATADIR     = 'mailer',         //složka uložiště
 
 			EOL = "\r\n";
 
 	public $id;
 	public $container;
-
+    
+    public $prepared;                       //počet emailů k odeslání
+    public $sended;                         //počet odeslaných mailů
+    
+    private $runSMTP = true;
+    
 	private $indexes = array(
 		'from' => 0,
 		'reply' => 0,
@@ -55,10 +66,20 @@ class Mailer
 		'text' => '',
 		'html' => '',
 		'attachments' => array(),
-        'boundary' => '',
 	);
     
+    private $fullemail = array();
+    
     private $boundary = array();
+
+    private $storage;
+
+    private $f_errors;
+    private $f_emails;
+    private $f_index;
+    
+    private $msgid_len = 20;
+    private $index_len = 10;
 	
 	private static $SmtpServer = "essensmail-cz-ham.zarea.net";
 	private static $SmtpPort = "25"; //default
@@ -74,10 +95,13 @@ class Mailer
 		} else {
 			throw new Exception("Konstruktor maileru ocekava odkaz na kontajner. Druhy argument neni objekt tridy 'App'.");
 		}
+        
+        $this->readData();
+        
 	}
-
-
-    public function prepare($params) {
+    
+    
+    public function addEmail($params) {
         
         $email = array();
         
@@ -108,7 +132,7 @@ class Mailer
                     
                    if (isset($this->indexes[self::ATTACHMENTS][$akey])) $index = ++$this->indexes[self::ATTACHMENTS][$akey];
 						 else $this->indexes[self::ATTACHMENTS][$akey] = $index = 0;
-
+                         
                     $this->data[self::ATTACHMENTS][$akey][$index] = $item;
                     $email[self::ATTACHMENTS][$akey] = $index;
                     
@@ -125,33 +149,40 @@ class Mailer
             }
             
         }
-        
-        App::dump($email);
-        
+                
         $this->emails[] = $email;
+        $this->prepared++;
                     
     }
     
 
-	public function go() {
+	public function go($count=0) {
 
-//        App::dump($this->emails);
-//        App::dump($this->data);
+        App::lg('Start go',$this);
         
-    App::lg('Start go',$this);
-        for ($i=0;$i<3;$i++) $this->boundary[$i] = md5(microtime(true).uniqid());
+        
+        $this->f_emails = fopen($this->storage.'/send.dat','a');
+        $this->f_index  = fopen($this->storage.'/sendindex.dat','a');
+        if (is_file($this->storage.'/encoded.dat')) $this->encoded = unserialize(file_get_contents($this->storage.'/encoded.dat'));
 
+        $counter = 0;
+        $timer = microtime(true);
+        
+        array_splice($this->emails,0,$this->sended);
+        
         foreach ($this->emails as $email) {
             
-            App::dump($email);
-
-            foreach ($email as $key=>$param)
+            for ($i=0;$i<3;$i++) $this->boundary[$i] = md5(microtime(true).uniqid());
+            
+            foreach ($email as $key=>$param) {
+                
+                if (($this->fullemail[$key] = $email[$key]) === null) unset($this->fullemail[$key]);
                 
                 switch ($key) {
                     
                     case 'from';
                     case 'to':
-                    
+                        
                         $this->encoded[$key.'Email'] = $this->data[$key][$email[$key]][0];
                         $this->encoded[$key.'Full']  = $this->encodeUser($this->data[$key][$email[$key]]);
                         if ($key == 'from') $this->encoded['headers']['from'] = 'From: ' . $this->encoded[$key.'Full'];
@@ -207,20 +238,33 @@ class Mailer
                         break;
 
                  }
+                 
+            }
             
             $body = $this->createMIME();
 
-            App::dump($this->encoded);
+//            App::dump($email);
+//            App::dump($this->fullemail);
+//            App::dump($this->encoded);
     App::lg('Encode end',$this);
-
-            App::dump($this->SMTPmail($body));
+            
+            $smtp = $this->SMTPmail($body);
+            
+            App::dump($smtp);
 
     App::lg('SMTP send',$this);
 
+            $stat = fstat($this->f_emails);
+            $fpos = $stat['size'];
+            fputs($this->f_index,str_pad($smtp['msgid'],$this->msgid_len,' ',STR_PAD_RIGHT).str_pad($fpos,$this->index_len,' ',STR_PAD_RIGHT).self::EOL);
+            fputs($this->f_emails,serialize($this->fullemail).self::EOL);
+            
+            $this->sended++;
+            $counter++;
+            if ($counter == $count) {file_put_contents($this->storage.'/encoded.dat',$this->encoded); fclose($this->f_emails); fclose($this->f_index); return;}
+
         }
-
-
-	   
+        	   
 	}
     
     
@@ -228,7 +272,7 @@ class Mailer
         
         $body = 'This is a MIME encoded message.' . self::EOL . self::EOL;
         
-        //$boundary = md5(microtime(true).uniqid());
+        $boundary = md5(microtime(true).uniqid());
             
 		$this->encoded['headers']['mime'] = 'MIME-Version: 1.0';
 		$this->encoded['headers']['contenttype'] = 'Content-Type: multipart/alternative;'."\n\t".'boundary="'.$this->boundary[0].'"';
@@ -257,7 +301,6 @@ class Mailer
     
 
 	private function SMTPmail ($body) {
-      $talk = '';
         
 		if (($SMTPIN = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) && socket_connect($SMTPIN, self::$SmtpServer, self::$SmtpPort)) {
 
@@ -270,32 +313,72 @@ class Mailer
 
 			$this->sockTalk($SMTPIN, '', $talk);
 			$this->sockTalk($SMTPIN, 'EHLO ' . $_SERVER['HTTP_HOST'], $talk);
-			$this->sockTalk($SMTPIN, 'AUTH LOGIN' . self::EOL . base64_encode(self::$SmtpUser) . self::EOL . base64_encode(self::$SmtpPass) . self::EOL
+			$replies = explode(self::EOL,$this->sockTalk($SMTPIN, 'AUTH LOGIN' . self::EOL . base64_encode(self::$SmtpUser) . self::EOL . base64_encode(self::$SmtpPass) . self::EOL
 					. 'MAIL FROM: <' . $this->encoded['fromEmail'] . '>' . self::EOL
 					. $recipients
-					. 'DATA' , $talk);
-			$this->sockTalk($SMTPIN, $mail, $talk);
+					. 'DATA' , $talk));
+            
+            //zpracovat odpovědi SMTP serveru
+            
+            $msgid = substr(strrchr($this->sockTalk($SMTPIN, $mail, $talk),' '),1);
 			$this->sockTalk($SMTPIN, 'QUIT', $talk);
 			socket_close($SMTPIN);
 
 		}
+        $talk['msgid'] = $msgid;
 		return $talk;
 
 
 	}
 
 	private function sockTalk($socket, $command, &$talk) {
-		if (!empty($command)) {
-			socket_write($socket, $command . "\r\n");
-			if (substr($command, 0, 10) === 'AUTH LOGIN') {
-				$command = preg_replace('#^(AUTH LOGIN[\r\n]+)[^\r\n]+([\r\n]+)[^\r\n]+#i', '$1***$2***', $command);
-			}
-			$talk[] = $command;
-		}
+        
+        if (!$this->runSMTP) {
 
-		$talk[] = socket_read($socket,512);
+    		if (!empty($command)) {
+    		  
+    			if (substr($command, 0, 10) === 'AUTH LOGIN') {
+    				$command = preg_replace('#^(AUTH LOGIN[\r\n]+)[^\r\n]+([\r\n]+)[^\r\n]+#i', '$1***$2***', $command);
+    			}
+    			$talk[] = $command;
+            
+            }
+            
+            return $talk[] = 'SMTP disabled';
+        
+        } else {        
+    		if (!empty($command)) {
+    			socket_write($socket, $command . "\r\n");
+    			if (substr($command, 0, 10) === 'AUTH LOGIN') {
+    				$command = preg_replace('#^(AUTH LOGIN[\r\n]+)[^\r\n]+([\r\n]+)[^\r\n]+#i', '$1***$2***', $command);
+    			}
+    			$talk[] = $command;
+    		}
+    
+    		return $talk[] = socket_read($socket,512);
+      
+      }
 
 	}
+    
+    public function reset() {
+        
+        $this->data = array();
+        $this->indexes = array(
+    		'from' => 0,
+    		'reply' => 0,
+    		'to' => 0,
+    		'bcc' => 0,
+    		'subject' => 0,
+    		'text' => 0,
+    		'html' => 0,
+    		'attachments' => array()
+    	);
+        
+        $this->emails = array();
+        
+    }
+    
 
 	private function AltBase64($text) {
 
@@ -315,6 +398,39 @@ class Mailer
 			return '<'.$user[0].'>';
         
     }
+    
+    
+    private function readData() {
+        
+        $this->storage = CACHE . '/mailer/' . $this->id;
+
+        if (!is_dir($this->storage)) {
+            
+            mkdir($this->storage);
+            
+        } else {
+            
+            if (is_file($this->storage.'/data.dat')) $this->data = unserialize(file_get_contents($this->storage.'/data.dat'));
+            if (is_file($this->storage.'/indexes.dat')) $this->indexes = unserialize(file_get_contents($this->storage.'/indexes.dat'));
+            if (is_file($this->storage.'/emails.dat')) $this->emails = unserialize(file_get_contents($this->storage.'/emails.dat'));
+            
+            if (is_array($this->emails)) $this->prepared = count($this->emails); else $this->prepared = 0;
+            
+            if (is_file($this->storage.'/sendindex.dat')) $this->sended = filesize($this->storage.'/sendindex.dat')/($this->msgid_len+$this->index_len+2); else $this->sended = 0;
+            
+        }
+        
+    }
+
+
+    public function saveData() {
+            
+            file_put_contents($this->storage.'/data.dat',serialize($this->data));
+            file_put_contents($this->storage.'/indexes.dat',serialize($this->indexes));
+            file_put_contents($this->storage.'/emails.dat',serialize($this->emails));
+        
+    }
+
     
 //	private function normaliza($string){
 //		$table = array('À'=>'A','Á'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A','Å'=>'A','Æ'=>'A','Þ'=>'B','Ç'=>'C','Ć'=>'C','Č'=>'C','Ð'=>'Dj',

@@ -1,8 +1,14 @@
 <?php
+/**
+ * Copyright (c) 2013 Stefan Fiedler (http://ironer.cz)
+ * App class including logging and debugging methods
+ * @author: Stefan Fiedler 2013
+ */
 
 class App
 {
 
+	public $test = "asd asd asd asd qewfwerer erg erg erg\n sdf sadf saf saf wef wefwe ff wefwe\n sdf sdf sdfsdf sdfsdf sd\nsdfsdfsdfdsfsdfsdrg erg\n sdf sadf saf saf wef wefwe ff wefwe\n sdf sdf sdfsdf sdfsdf sd\nsdfsdfsdfdsfsdfsdrg erg\n sdf sadf saf saf wef wefwe ff wefwe\n sdf sdf sdfsdf sdfsdf sd\nsdfsdfsdfdsfsdfsd";
 	public $id;
 	public $request;
 	public $stop = FALSE;

@@ -2,7 +2,7 @@
 
 /**
  * Copyright (c) 2004 David Grudl (http://davidgrudl.com)
- * Modified for RMCV by Stefan Fiedler [2013] (http://ironer.cz)
+ * Modified for RMCV by Stefan Fiedler [2012 - 2013] (http://ironer.cz)
  */
 
 /**

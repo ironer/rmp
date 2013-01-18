@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2013 Stefan Fiedler (http://ironer.cz)
+ * Object for TimeDebug GUI
+ * @author: Stefan Fiedler 2013
+ */
+
+// TODO: ulozit nastaveni do cookie
+// TODO: on-line podstrceni hodnoty pri logovani
+// TODO: vyplivnout vystup do iframe nebo dalsiho okna
+
 var TimeDebug = {};
 
 TimeDebug.logView = document.getElementById('logView');
@@ -12,6 +22,7 @@ TimeDebug.tdContainer = JAK.mel('div', {id:'tdContainer'});
 TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
 TimeDebug.tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
 TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
+TimeDebug.tdView.activeChilds = [];
 TimeDebug.tdListeners = [];
 TimeDebug.tdFullWidth = false;
 TimeDebug.tdWidth = 400;
@@ -137,15 +148,19 @@ TimeDebug.endLogResize = function() {
 
 TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
-	if (TimeDebug.logRowActiveId) {
-		JAK.DOM.removeClass(document.getElementById('tdId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
+	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('tdId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
+
+	JAK.DOM.addClass(document.getElementById('tdId_' + id), 'nette-dump-active');
+	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 		if (TimeDebug.tdListeners.length) {
 			JAK.Events.removeListeners(TimeDebug.tdListeners);
 			TimeDebug.tdListeners.length = 0;
 		}
-	}
-	JAK.DOM.addClass(document.getElementById('tdId_' + id), 'nette-dump-active');
-	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
+		for (var i = TimeDebug.tdView.activeChilds.length, j; i-- > 0;) {
+			if ((j = TimeDebug.visibleTitles.indexOf(TimeDebug.tdView.activeChilds[i])) !== -1) TimeDebug.visibleTitles.splice(j, 1);
+		}
+		TimeDebug.tdView.activeChilds.length = 0;
+
 		TimeDebug.tdView.innerHTML = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
 		TimeDebug.setTitles(TimeDebug.tdView);
 		TimeDebug.resizeWrapper();
@@ -171,7 +186,8 @@ TimeDebug.setTitles = function(el) {
 			);
 		}
 	}
-	if (el.id === 'tdView') TimeDebug.tdListeners = TimeDebug.tdListeners.concat(listeners);
+
+	if (el === TimeDebug.tdView) TimeDebug.tdListeners = TimeDebug.tdListeners.concat(listeners);
 };
 
 TimeDebug.showTitle = function(e) {
@@ -195,7 +211,7 @@ TimeDebug.showTitle = function(e) {
 		this.tdTitle.style.zIndex = ++TimeDebug.zIndexMax;
 
 		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
-			if ((tdParents = TimeDebug.getParentTitles(this)).length) this.tdTitle.parents = tdParents;
+			if ((tdParents = TimeDebug.getParents(this)).length) this.tdTitle.parents = tdParents;
 			this.tdTitle.style.position = 'fixed';
 			this.tdTitle.oriWidth = this.tdTitle.clientWidth;
 			this.tdTitle.oriHeight = this.tdTitle.clientHeight;
@@ -206,8 +222,8 @@ TimeDebug.showTitle = function(e) {
 				}
 			}
 		}
-
 		if (tdParents = tdParents || this.tdTitle.parents) {
+
 			for(var k = tdParents.length; k-- > 0;) {
 				if (tdParents[k].hasOwnProperty('activeChilds')) {
 					tdParents[k].activeChilds.push(this.tdTitle);
@@ -225,9 +241,6 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
-	// TODO: odebrat viditelne titulky z TimeDebugu pri zmene logu
-	// TODO: ulozit nastaveni do cookie
-
 	return false;
 };
 
@@ -239,12 +252,16 @@ TimeDebug.removeFromParents = function(el) {
 	}
 };
 
-TimeDebug.getParentTitles = function(el) {
+TimeDebug.getParents = function(el) {
 	if (!el) return [];
 	var tag, parents = [];
 
 	while ((tag = (el = el.parentNode).tagName.toLowerCase()) != 'body') {
 		if (tag == 'strong' && el.className == 'nette-dump-inner') parents.push(el = el.parentNode);
+		else if (el.id === 'tdView') {
+			parents.push(el);
+			break;
+		}
 	}
 	return parents;
 };

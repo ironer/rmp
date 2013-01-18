@@ -12,8 +12,9 @@ TimeDebug.tdContainer = JAK.mel('div', {id:'tdContainer'});
 TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
 TimeDebug.tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
 TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
-TimeDebug.tdWidth = 400;
+TimeDebug.tdListeners = [];
 TimeDebug.tdFullWidth = false;
+TimeDebug.tdWidth = 400;
 
 TimeDebug.help = JAK.cel('div', 'nette-dump-help');
 TimeDebug.helpHtml = '';
@@ -40,7 +41,7 @@ TimeDebug.init = function(tdId) {
 	for(var i = 0, j = logNodes.length, k; i < j; ++i) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre' && JAK.DOM.hasClass(logNodes[i], 'nette-dump-row')) {
 			TimeDebug.logRows.push(logNodes[i]);
-			logNodes[i].onclick = this.logClick;
+			logNodes[i].onclick = TimeDebug.logClick;
 			links = logNodes[i].getElementsByTagName('a');
 			for(k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
 		}
@@ -83,13 +84,14 @@ TimeDebug.logAction = function(e) {
 		TimeDebug.actionData.width = TimeDebug.tdWidth;
 		TimeDebug.actionData.element = el;
 
-		TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'logResizing'));
-		TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endLogResize'));
+		TimeDebug.actionData.listeners.push(
+				JAK.Events.addListener(document, 'mousemove', TimeDebug, 'logResizing'),
+				JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endLogResize'),
+				JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'),
+				JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop')
+		);
 
 		document.body.focus();
-
-		TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
-		TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
 	} else {
 		if (!TimeDebug.tdFullWidth) {
 			document.body.style.marginLeft = TimeDebug.logView.style.padding = TimeDebug.help.style.left = 0;
@@ -135,7 +137,13 @@ TimeDebug.endLogResize = function() {
 
 TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
-	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('tdId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
+	if (TimeDebug.logRowActiveId) {
+		JAK.DOM.removeClass(document.getElementById('tdId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
+		if (TimeDebug.tdListeners.length) {
+			JAK.Events.removeListeners(TimeDebug.tdListeners);
+			TimeDebug.tdListeners.length = 0;
+		}
+	}
 	JAK.DOM.addClass(document.getElementById('tdId_' + id), 'nette-dump-active');
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 		TimeDebug.tdView.innerHTML = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
@@ -147,22 +155,23 @@ TimeDebug.showDump = function(id) {
 };
 
 TimeDebug.setTitles = function(el) {
-	var _titleSpan;
-	var _titleStrong;
-	var _titleStrongs;
+	var titleSpan, titleStrong, titleStrongs, listeners = [];
 
-	_titleStrongs = el.getElementsByTagName('strong');
-	for (var i = _titleStrongs.length; i-- > 0;) {
-		if ((_titleStrong = _titleStrongs[i]).className == 'nette-dump-inner') {
-			_titleSpan = _titleStrong.parentNode.parentNode;
-			_titleSpan.tdTitle = _titleStrong.parentNode;
-			_titleSpan.tdTitle.tdInner = _titleStrong;
-			_titleSpan.onmousemove = TimeDebug.showTitle;
-			_titleSpan.onmouseout = TimeDebug.hideTimer;
-			_titleSpan.onclick = TimeDebug.pinTitle;
-			_titleSpan.tdTitle.onmousedown = TimeDebug.titleAction;
+	titleStrongs = el.getElementsByTagName('strong');
+	for (var i = titleStrongs.length; i-- > 0;) {
+		if ((titleStrong = titleStrongs[i]).className == 'nette-dump-inner') {
+			titleSpan = titleStrong.parentNode.parentNode;
+			titleSpan.tdTitle = titleStrong.parentNode;
+			titleSpan.tdTitle.tdInner = titleStrong;
+
+			listeners.push(JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, TimeDebug.showTitle),
+					JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, TimeDebug.hideTimer),
+					JAK.Events.addListener(titleSpan, 'click', titleSpan, TimeDebug.pinTitle),
+					JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, TimeDebug.titleAction)
+			);
 		}
 	}
+	if (el.id === 'tdView') TimeDebug.tdListeners = TimeDebug.tdListeners.concat(listeners);
 };
 
 TimeDebug.showTitle = function(e) {
@@ -181,7 +190,7 @@ TimeDebug.showTitle = function(e) {
 		TimeDebug.titleHideTimeout = null;
 	}
 
-	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block')  {
+	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block') {
 		this.tdTitle.style.display = 'block';
 		this.tdTitle.style.zIndex = ++TimeDebug.zIndexMax;
 
@@ -281,13 +290,14 @@ TimeDebug.startTitleResize = function(e, el) {
 	TimeDebug.actionData.height = (el.tdHeight === 'auto' ? el.clientHeight : el.tdHeight);
 	TimeDebug.actionData.element = el;
 
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'titleResizing'));
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'));
+	TimeDebug.actionData.listeners.push(
+			JAK.Events.addListener(document, 'mousemove', TimeDebug, 'titleResizing'),
+			JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'),
+			JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'),
+			JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop')
+	);
 
 	document.body.focus();
-
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
 };
 
 TimeDebug.titleResizing = function(e) {
@@ -311,13 +321,14 @@ TimeDebug.startTitleDrag = function(e, el) {
 	TimeDebug.actionData.offsetY = el.tdTop;
 	TimeDebug.actionData.element = el;
 
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mousemove', TimeDebug, 'titleDragging'));
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'));
+	TimeDebug.actionData.listeners.push(
+			JAK.Events.addListener(document, 'mousemove', TimeDebug, 'titleDragging'),
+			JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'),
+			JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'),
+			JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop')
+	);
 
 	document.body.focus();
-
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
-	TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
 };
 
 TimeDebug.titleDragging = function(e) {

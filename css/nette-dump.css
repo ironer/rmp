@@ -67,6 +67,12 @@ pre.nette-dump {
 	line-height: 16px;
 	font-size: 13px;
 	color: #000;
+	-webkit-touch-callout: text;
+	-webkit-user-select: text;
+	-khtml-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
 }
 .nette-dump-inner i {
 	display: block;

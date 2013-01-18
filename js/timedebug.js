@@ -13,6 +13,7 @@ TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
 TimeDebug.tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
 TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
 TimeDebug.tdWidth = 400;
+TimeDebug.tdFullWidth = false;
 
 TimeDebug.help = JAK.cel('div', 'nette-dump-help');
 TimeDebug.helpHtml = '';
@@ -57,7 +58,7 @@ TimeDebug.init = function(tdId) {
 			+ '<a href="" onclick="return false;">[ulozit nastaveni do cookie]</a>'
 			+ '     <a href="" onclick="return false;">[nahrat cookie]</a>'
 			+ '     <a href="" onclick="return false;">[smazat cookie]</a>'
-			+ '</div><hr></strong></span>?</span>';
+			+ '</div><hr></strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
 	TimeDebug.help.onmousedown = TimeDebug.logAction;
 	TimeDebug.setTitles(TimeDebug.help);
@@ -71,7 +72,7 @@ TimeDebug.init = function(tdId) {
 TimeDebug.logAction = function(e) {
 	e = e || window.event;
 
-	if ((e.shiftKey ? e.altKey : !e.altKey) || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.left) return true;
+	if ((e.altKey ? e.shiftKey || TimeDebug.tdFullWidth : !e.shiftKey) || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
@@ -90,14 +91,22 @@ TimeDebug.logAction = function(e) {
 		TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'selectstart', TimeDebug, 'stop'));
 		TimeDebug.actionData.listeners.push(JAK.Events.addListener(el, 'dragstart', TimeDebug, 'stop'));
 	} else {
-		// TODO: udelat fullwidth mod time debugu
-		JAK.DOM.setStyle(document.body, {margin: 0});
-		JAK.DOM.setStyle(TimeDebug.logContainer, {overflow: 'visible', height: '1px', width: '100%', top: '-1px'});
-		JAK.DOM.setStyle(TimeDebug.logView, {overflow: 'hidden', padding: 0, height: '1px', width: '1px'});
-		JAK.DOM.setStyle(TimeDebug.tdContainer, {width: '100%'});
-		JAK.DOM.setStyle(TimeDebug.tdView, {paddingTop: '48px'});
-		JAK.DOM.setStyle(TimeDebug.help, {left: 0});
-		TimeDebug.logView.className = 'nette-dump-fullscreen';
+		if (!TimeDebug.tdFullWidth) {
+			document.body.style.marginLeft = TimeDebug.logView.style.padding = TimeDebug.help.style.left = 0;
+			TimeDebug.tdView.style.paddingTop = '50px';
+			TimeDebug.tdContainer.style.width = '100%';
+			JAK.DOM.setStyle(TimeDebug.logContainer, {width: TimeDebug.tdContainer.clientWidth + 'px', overflow: 'visible'});
+
+			TimeDebug.logContainer.className = 'nette-dump-fullscreen';
+			TimeDebug.tdFullWidth = true;
+		} else {
+			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
+			TimeDebug.tdView.style.padding = TimeDebug.logView.style.padding = '8px';
+			JAK.DOM.setStyle(TimeDebug.logContainer, {width: 'auto', overflow: 'scroll'});
+
+			TimeDebug.logContainer.className = '';
+			TimeDebug.tdFullWidth = false;
+		}
 	}
 
 	return false;
@@ -207,10 +216,8 @@ TimeDebug.showTitle = function(e) {
 
 	TimeDebug.titleAutosize();
 
-	// TODO: nastavit radek na 16px vysku
 	// TODO: odebrat viditelne titulky z TimeDebugu pri zmene logu
 	// TODO: ulozit nastaveni do cookie
-
 
 	return false;
 };
@@ -495,6 +502,7 @@ TimeDebug.readKeyDown = function(e) {
 TimeDebug.windowResize = function() {
 	TimeDebug.resizeWrapper();
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
+	if (TimeDebug.tdFullWidth) TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
 	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
 };
 

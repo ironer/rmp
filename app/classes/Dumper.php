@@ -124,9 +124,10 @@ class Dumper
 											.self::dumpVar($arg, array(
 												self::FORCE_HTML => TRUE,
 												self::APP_RECURSION => FALSE,
-												self::DEPTH => 1,
+												self::DEPTH => 2,
 												self::COLLAPSE => FALSE,
-												self::TRUNCATE => 20,
+												self::COLLAPSE_COUNT => 5,
+												self::TRUNCATE => 30,
 												self::NO_BREAK => FALSE
 											)) . '</pre></strong></span>array</span> (' . $cnt . ')';
 								} else {

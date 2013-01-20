@@ -11,7 +11,7 @@ define('WEBPATH', (strlen($_webdir = dirname($_SERVER['SCRIPT_NAME'])) === 1 ? '
 define('WEBROOT', (empty($_SERVER['HTTPS']) ? 'http://' : 'https://') . $_SERVER['HTTP_HOST'] . WEBPATH);
 
 try {
-	$app = require_once(APP . '/mlmplus.php');
+	$app = require_once(APP . '/groupmail.php');
 	$app->go();
 } catch (Exception $e) {
 	list($message, $file, $line) = array(htmlspecialchars($e->getMessage()), $e->getFile(), $e->getLine());
@@ -60,5 +60,3 @@ if (DEBUG) {
 		echo "</body>\n</html>";
 	}
 }
-
-

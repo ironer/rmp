@@ -4,8 +4,14 @@
  * @author: Stefan Fiedler 2013
  */
 
-// TODO: ulozit nastaveni do cookie
-// TODO: on-line podstrceni hodnoty pri logovani
+// TODO: prepocitat sirku outer wrapperu po prepnuti do fullwidth modu pri nastavene sirce v px
+// TODO: prepocitat sirku outer wrapperu po prepnuti z fullwidth modu pri nastavene sirce 100%
+
+// TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
+
+// TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
+// TODO: on-line podstrceni hodnoty pri dumpovani
+
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
 
 var TimeDebug = {};
@@ -40,7 +46,7 @@ TimeDebug.zIndexMax = 100;
 
 TimeDebug.actionData = { element: null, listeners: [] };
 
-TimeDebug.init = function(tdId) {
+TimeDebug.init = function(logId) {
 	TimeDebug.logContainer.style.overflow = 'scroll';
 	TimeDebug.logView.style.padding = '8px';
 	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 ' + TimeDebug.tdWidth + 'px', overflow:'hidden'});
@@ -65,18 +71,20 @@ TimeDebug.init = function(tdId) {
 	TimeDebug.tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.insertBefore(TimeDebug.tdContainer, document.body.childNodes[0]);
 
-	TimeDebug.help.innerHTML = '<span class="nette-dump-titled"><span class="nette-dump-title"><strong class="nette-dump-inner">'
-			+ TimeDebug.helpHtml + '<hr><div class="nette-dump-menu">'
-			+ '<a href="" onclick="return false;">[ulozit nastaveni do cookie]</a>'
-			+ '     <a href="" onclick="return false;">[nahrat cookie]</a>'
-			+ '     <a href="" onclick="return false;">[smazat cookie]</a>'
-			+ '</div><hr></strong></span>*</span>';
+	TimeDebug.help.innerHTML = '<span class="nette-dump-titled"><span id="tId_0" class="nette-dump-title"><strong class="nette-dump-inner">'
+			+ TimeDebug.helpHtml
+//			+ '<hr><div class="nette-dump-menu">'
+//			+ '<a href="" onclick="return false;">[ulozit nastaveni do cookie]</a>'
+//			+ '     <a href="" onclick="return false;">[nahrat cookie]</a>'
+//			+ '     <a href="" onclick="return false;">[smazat cookie]</a>'
+//			+ '</div><hr>'
+			+ '</strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
 	TimeDebug.help.onmousedown = TimeDebug.logAction;
 	TimeDebug.setTitles(TimeDebug.help);
 
 	TimeDebug.setTitles(TimeDebug.logView);
-	TimeDebug.showDump(tdId);
+	TimeDebug.showDump(logId);
 	window.onresize = TimeDebug.windowResize;
 	document.onkeydown = TimeDebug.readKeyDown;
 };
@@ -148,9 +156,9 @@ TimeDebug.endLogResize = function() {
 
 TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
-	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('tdId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
+	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('logId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
 
-	JAK.DOM.addClass(document.getElementById('tdId_' + id), 'nette-dump-active');
+	JAK.DOM.addClass(document.getElementById('logId_' + id), 'nette-dump-active');
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 		if (TimeDebug.tdListeners.length) {
 			JAK.Events.removeListeners(TimeDebug.tdListeners);

@@ -21,7 +21,8 @@ class Dumper
 			LOCATION_LINK = 'loclink', // show location string as link (defaults to true)
 			NO_BREAK = 'nobreak', // return dump without line breaks (defaults to false)
 			FORCE_HTML = 'html', // force HTML output
-			APP_RECURSION = 'apprecursion'; // force { RECURSION } on all nested objects with class 'App'
+			APP_RECURSION = 'apprecursion', // force { RECURSION } on all nested objects with class 'App'
+			ID_PREFIX = 'idprefix'; // sets the prefix of auto incrementing tags' ids for dumped titles (defaults to 'tId')
 
 	/** @var array */
 	public static $terminalColors = array(
@@ -39,6 +40,8 @@ class Dumper
 
 	/** @var array */
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
+
+	public static $titleId = 0;
 
 	/**
 	 * Dumps variable to the output.
@@ -119,8 +122,8 @@ class Dumper
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
 								if(is_array($arg) && $cnt = count($arg)) {
-									$args[] = '<span class="nette-dump-array nette-dump-titled"><span class="nette-dump-title">'
-											. '<strong class="nette-dump-inner"><pre class="nette-dump">'
+									$args[] = '<span class="nette-dump-array nette-dump-titled"><span id="tId_' . ++self::$titleId
+											. '" class="nette-dump-title"><strong class="nette-dump-inner"><pre class="nette-dump">'
 											.self::dumpVar($arg, array(
 												self::FORCE_HTML => TRUE,
 												self::APP_RECURSION => FALSE,
@@ -239,11 +242,12 @@ class Dumper
 		if ($options[self::TRUNCATE] && ($varLen = strlen($var)) > $options[self::TRUNCATE]) {
 			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 2048)), TRUE)
 					. '&hellip;"</span> (' . $varLen . ')';
-			$retTitle = TIMEDEBUG ? '<span class="nette-dump-title nette-dump-color"><strong class="nette-dump-inner"><i>'
+			$retTitle = TIMEDEBUG ? '<span id="tId_' . ++self::$titleId
+					. '" class="nette-dump-title nette-dump-color"><strong class="nette-dump-inner"><i>'
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE))
 					. ($varLen > 4096 ? '&hellip; &lt; TRUNCATED to 4kB &gt;' : '') . '</i></strong></span>' : '';
-			$retClass = ' nette-dump-titled';
+			$retClass = TIMEDEBUG ? ' nette-dump-titled' : '';
 		} else {
 			$retTitle = '';
 			$retVal = self::encodeString($var) . '</span>';

@@ -8,21 +8,23 @@
 class App
 {
 
-	public $test = "asd asd asd asd qewfwerer erg erg erg\n sdf sadf saf saf wef wefwe ff wefwe\n sdf sdf sdfsdf sdfsdf sd\nsdfsdfsdfdsfsdfsdrg erg\n sdf sadf saf saf wef wefwe ff wefwe\n sdf sdf sdfsdf sdfsdf sd\nsdfsdfsdfdsfsdfsdrg erg\n sdf sadf saf saf wef wefwe ff wefwe\n sdf sdf sdfsdf sdfsdf sd\nsdfsdfsdfdsfsdfsd";
 	public $id;
-	public $request;
 	public $stop = FALSE;
 
+	private $request;
+	private $services = array();
+	private $calls = array();
 	private $data = array();
+	private $response;
+
 	private $router = 'router';
 	private $model = 'model';
-	private $controller = 'controller';
-	private $view = NULL;
-	private $rmcv = array(
+	private $dpu = 'dpu';
+
+	private $rmd = array(
 		'routers' => array(),
 		'models' => array(),
-		'controllers' => array(),
-		'views' => array()
+		'dpus' => array()
 	);
 
 
@@ -46,12 +48,12 @@ class App
 			}
 
 			App::lg("Volani routeru '$this->router'", $this);
-			$this->rmcv['routers'][$this->router] = require(ROUTERS . "/$this->router.php");
+			$this->rmd['routers'][$this->router] = require_once(ROUTERS . "/$this->router.php");
 
-			if (get_class($this->rmcv['routers'][$this->router]) !== 'Router') {
+			if (get_class($this->rmd['routers'][$this->router]) !== 'Router') {
 				throw new Exception("Aplikace '$this->id' ocekava odkaz na router. '$this->router.php' nevraci objekt tridy 'Router'.");
 			}
-		} while (($_router = $this->rmcv['routers'][$this->router]->go()) !== $this->router);
+		} while (($_router = $this->rmd['routers'][$this->router]->go()) !== $this->router);
 
 		return $this;
 	}
@@ -71,17 +73,10 @@ class App
 	{
 		if ($this->stop) return $this;
 
-		App::lg("Controller...", $this);
+		// TODO: napsat jednoduchy iterator pro require_once vraceneho dpu pripadne volani calls s 1 parametrem (asoc. polem)
+		// TODO: vsechny metody controleru se musi volat s jednim argumentem - asociativnim polem
 
-		return $this;
-	}
-
-
-	public function getView()
-	{
-		if ($this->stop || empty($this->view)) return $this;
-
-		App::lg("View...", $this);
+		App::lg("Running data processing units...", $this);
 
 		return $this;
 	}
@@ -152,7 +147,7 @@ class App
 
 			$tdParam = '';
 
-			if (TIMEDEBUG) {
+			if (TIMEDEBUG && isset($objects)) {
 				$dumpVars = array();
 				foreach($objects as $curObj) {
 					$dumpVars[] = Dumper::dump($curObj, array('html' => TRUE));
@@ -165,7 +160,7 @@ class App
 					App::$timeDebug[] = App::$timeDebugMD5[$dumpMD5] = count(App::$timeDebugData);
 					App::$timeDebugData[] = $dump;
 				}
-				$tdParam = "id=\"tdId_" . count(App::$timeDebug) . "\"";
+				$tdParam = "id=\"logId_" . count(App::$timeDebug) . "\"";
 			}
 
 			echo "<pre $tdParam class=\"nette-dump-row\">[" . str_pad(App::runtime(App::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '

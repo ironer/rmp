@@ -4,14 +4,10 @@
  * @author: Stefan Fiedler 2013
  */
 
-// TODO: prepocitat sirku outer wrapperu po prepnuti do fullwidth modu pri nastavene sirce v px
-// TODO: prepocitat sirku outer wrapperu po prepnuti z fullwidth modu pri nastavene sirce 100%
+// TODO: on-line podstrceni hodnoty pri dumpovani
+// TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
 // TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
-
-// TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
-// TODO: on-line podstrceni hodnoty pri dumpovani
-
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
 
 var TimeDebug = {};
@@ -128,6 +124,8 @@ TimeDebug.logAction = function(e) {
 			TimeDebug.logContainer.className = '';
 			TimeDebug.tdFullWidth = false;
 		}
+
+		TimeDebug.resizeWrapper();
 	}
 
 	return false;

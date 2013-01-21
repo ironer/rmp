@@ -52,6 +52,8 @@ if (DEBUG) {
 
 		echo "<script src=\"" . WEBROOT . JS . "/vendor/jak.packer.js\"></script>\n";
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
+//		echo "<script src=\"" . WEBROOT . JS . "/timedebug.combined.js\"></script>\n";
+
 		echo "<script>\nTimeDebug.dumps = ". json_encode(App::$timeDebugData) . ";\n"
 				. "TimeDebug.indexes = ". json_encode(App::$timeDebug) . ";\n"
 				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(Dumper::dump($tdHelp, array('html' => TRUE)))): "''") . ";\n"

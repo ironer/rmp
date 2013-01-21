@@ -103,6 +103,8 @@ class App
 	private static $lastMemory = 0;
 	private static $setDumper = TRUE;
 
+	public static $dumpIdPrefix = 'dId';
+	private static $dumpIdCounters = array();
 	public static $timeDebug = array();
 	public static $timeDebugData = array();
 	private static $timeDebugMD5 = array();
@@ -146,7 +148,7 @@ class App
 					$path[] = $object->id;
 				}
 
-				$text = '<span class="nette-dump-path">' . htmlspecialchars(implode('/', array_reverse($path))) . '</span> ' . htmlspecialchars($text);
+				$text = '<span class="nd-path">' . htmlspecialchars(implode('/', array_reverse($path))) . '</span> ' . htmlspecialchars($text);
 			} else {
 				$text = htmlspecialchars($text);
 			}
@@ -169,14 +171,14 @@ class App
 				$tdParam = "id=\"logId_" . count(App::$timeDebug) . "\"";
 			}
 
-			echo "<pre $tdParam class=\"nette-dump-row\">[" . str_pad(App::runtime(App::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
+			echo "<pre $tdParam class=\"nd-row\">[" . str_pad(App::runtime(App::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
 					. str_pad(App::memory(App::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $text [<small>";
 
 			if (LOCAL) {
 				echo '<a href="editor://open/?file=' . rawurlencode($file) . "&line=$line"
-						. "\" class=\"nette-dump-editor\"><i>" . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a>";
+						. "\" class=\"nd-editor\"><i>" . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a>";
 			} else {
-				echo "<span class=\"nette-dump-editor\"><i>" . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></span>";
+				echo "<span class=\"nd-editor\"><i>" . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></span>";
 			}
 
 			echo ($code ? " $code" : '') . '</small>]</pre>';
@@ -189,16 +191,17 @@ class App
 			throw new Exception("Staticka metoda 'dump' muze prijmout nejvyse 10 argumentu.");
 		}
 		if (App::$setDumper) App::setDumper();
-		$stack = debug_backtrace(FALSE);
+		$backtrace = debug_backtrace(FALSE);
 		echo '<hr>';
-		foreach ($stack[0]["args"] as &$var) {
-			echo Dumper::dump($var, array('location' => TRUE, 'loclink' => LOCAL, 'html' => TRUE));
+		foreach ($backtrace[0]["args"] as &$var) {
+
+			if (is_array($var)) $var[0][0] = 'jana';
+			if(isset(self::$dumpIdCounters[self::$dumpIdPrefix])) $dumpId = ++self::$dumpIdCounters[self::$dumpIdPrefix];
+			else self::$dumpIdCounters[self::$dumpIdPrefix] = $dumpId = 1;
+			echo Dumper::dump($var, array('location' => TRUE, 'loclink' => LOCAL, 'html' => TRUE, 'dumpid' => self::$dumpIdPrefix . "_$dumpId"));
 			echo '<hr>';
-//			$test = 'rmd';
-//			$var->{$test}["routers"]["router"]->id = 'zluva';
 			// TODO: napsat nalezeni referencni cesty v objektu (poli), je treba rozeznavat typ containeru
-			// TODO: generovat dumpum idcka
-		}
+		} unset($var);
 	}
 
 	private static function setDumper() {

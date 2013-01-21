@@ -1,10 +1,5 @@
 <?php
 
-//TODO: dopsat prefixy 'key_' ke klíčům attachments
-//TODO: explodovat odpověď na RCPT TO a zjistit chybové kódy
-//TODO: zapsat chybový kód celkového odeslání přes SMTP
-
-
 class Mailer
 {
         
@@ -26,6 +21,7 @@ class Mailer
     
     public $prepared;                       //počet emailů k odeslání
     public $sended;                         //počet odeslaných mailů
+    public $errors;                         //počet chybně odeslaných adres
     
     private $runSMTP = true;
     
@@ -130,11 +126,11 @@ class Mailer
                 
                 foreach ($param as $akey=>$item) {
                     
-                   if (isset($this->indexes[self::ATTACHMENTS][$akey])) $index = ++$this->indexes[self::ATTACHMENTS][$akey];
-						 else $this->indexes[self::ATTACHMENTS][$akey] = $index = 0;
+                   if (isset($this->indexes[self::ATTACHMENTS]['key_'.$akey])) $index = ++$this->indexes[self::ATTACHMENTS]['key_'.$akey];
+						 else $this->indexes[self::ATTACHMENTS]['key_'.$akey] = $index = 0;
                          
-                    $this->data[self::ATTACHMENTS][$akey][$index] = $item;
-                    $email[self::ATTACHMENTS][$akey] = $index;
+                    $this->data[self::ATTACHMENTS]['key_'.$akey][$index] = $item;
+                    $email[self::ATTACHMENTS]['key_'.$akey] = $index;
                     
                 }
 
@@ -167,12 +163,15 @@ class Mailer
 
         $counter = 0;
         $timer = microtime(true);
+        $localerrors = 0;
         
         array_splice($this->emails,0,$this->sended);
         
         foreach ($this->emails as $email) {
             
             for ($i=0;$i<3;$i++) $this->boundary[$i] = md5(microtime(true).uniqid());
+
+            $this->fullemail['smtp_replies']=array();
             
             foreach ($email as $key=>$param) {
                 
@@ -243,9 +242,6 @@ class Mailer
             
             $body = $this->createMIME();
 
-//            App::dump($email);
-//            App::dump($this->fullemail);
-//            App::dump($this->encoded);
     App::lg('Encode end',$this);
             
             $smtp = $this->SMTPmail($body);
@@ -253,6 +249,10 @@ class Mailer
             App::dump($smtp);
 
     App::lg('SMTP send',$this);
+
+//            App::dump($email);
+            App::dump($this->fullemail);
+//            App::dump($this->encoded);
 
             $stat = fstat($this->f_emails);
             $fpos = $stat['size'];
@@ -317,15 +317,28 @@ class Mailer
 					. 'MAIL FROM: <' . $this->encoded['fromEmail'] . '>' . self::EOL
 					. $recipients
 					. 'DATA' , $talk));
+                    
+            //zpracování odpovědí SMTP serveru na odesílatele a příjemce
+            if ($replies[3][0]!='2') {$this->logError($this->encoded['toEmail'] . ' Err. ' . $replies[3]);}
+            $this->fullemail['smtp_replies'][0] = substr($replies[3],0,3);
+            for ($i=4;$i<=4+count($this->encoded['bccEmails']);$i++) {
+
+                if ($replies[$i][0]!='2') {$this->logError($this->encoded['bccEmails'][$i-5] . ' Err. ' . $replies[$i]); $this->errors++; $localerrors++;}
+                $this->fullemail['smtp_replies'][$i-3] = substr($replies[$i],0,3);
+                
+            }
             
-            //zpracovat odpovědi SMTP serveru
+            $reply = $this->sockTalk($SMTPIN, $mail, $talk);
             
-            $msgid = substr(strrchr($this->sockTalk($SMTPIN, $mail, $talk),' '),1);
+            //zpracování odpovědi SMTP serveru na odeslané tělo emailu
+            $this->fullemail['msgid'] = trim(strrchr($reply,' '));
+            if ($reply[0]!='2') {$this->logError('SMTP' . ' Err. ' . $reply); $this->errors += count($this->encoded['bccEmails'])+1-$localerrors;}
+            $this->fullemail['smtp_replies'][] = substr($reply,0,3);
+            
 			$this->sockTalk($SMTPIN, 'QUIT', $talk);
 			socket_close($SMTPIN);
 
 		}
-        $talk['msgid'] = $msgid;
 		return $talk;
 
 
@@ -355,7 +368,7 @@ class Mailer
     			$talk[] = $command;
     		}
     
-    		return $talk[] = socket_read($socket,512);
+    		return $talk[] = socket_read($socket,512,PHP_BINARY_READ);
       
       }
 
@@ -428,6 +441,13 @@ class Mailer
             file_put_contents($this->storage.'/data.dat',serialize($this->data));
             file_put_contents($this->storage.'/indexes.dat',serialize($this->indexes));
             file_put_contents($this->storage.'/emails.dat',serialize($this->emails));
+        
+    }
+    
+    private function logError($txt) {
+        
+//        App::dump($txt); //dočasně chyby dumpovat, pak napsat zápis do errors.txt
+        file_put_contents($this->storage.'/errors.dat',trim($txt).self::EOL,FILE_APPEND);
         
     }
 

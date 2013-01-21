@@ -19,6 +19,10 @@ try {
 			. "&line=$line" . '"><i>' . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a></small>]</pre>";
 }
 
+$a = array(array('12'));
+App::dump($a);
+App::dump($a[0][0]);
+
 if (DEBUG) {
 	App::lg('Zobrazeni debuggeru', $app);
 	echo '<hr>Generovani odpovedi: <b>' . App::runtime() . '</b>'
@@ -26,6 +30,7 @@ if (DEBUG) {
 	echo ' / <a href="' . WEBROOT . '">homepage</a> / <a href="'
 			. WEBROOT . "?mail=1\">odeslat email</a>\n";
 	echo "</div>\n</div>\n";
+
 	if (TIMEDEBUG) {
 		$tdHelp = array(
 			'OVLADANI LOGU' => array(
@@ -54,7 +59,8 @@ if (DEBUG) {
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 //		echo "<script src=\"" . WEBROOT . JS . "/timedebug.combined.js\"></script>\n";
 
-		echo "<script>\nTimeDebug.dumps = ". json_encode(App::$timeDebugData) . ";\n"
+		echo "<script>TimeDebug.local = " . (LOCAL ? 'true' : 'false') . ";\n"
+				. "TimeDebug.dumps = ". json_encode(App::$timeDebugData) . ";\n"
 				. "TimeDebug.indexes = ". json_encode(App::$timeDebug) . ";\n"
 				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(Dumper::dump($tdHelp, array('html' => TRUE)))): "''") . ";\n"
 				. "TimeDebug.init(1);\n</script>\n</body>\n</html>";

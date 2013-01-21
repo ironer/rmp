@@ -12,6 +12,8 @@
 
 var TimeDebug = {};
 
+TimeDebug.local = false;
+
 TimeDebug.logView = document.getElementById('logView');
 TimeDebug.logContainer = TimeDebug.logView.parentNode;
 TimeDebug.logRows = [];
@@ -29,8 +31,9 @@ TimeDebug.tdListeners = [];
 TimeDebug.tdFullWidth = false;
 TimeDebug.tdWidth = 400;
 
-TimeDebug.help = JAK.cel('div', 'nette-dump-help');
+TimeDebug.help = JAK.cel('div', 'nd-help');
 TimeDebug.helpHtml = '';
+TimeDebug.helpSpaceX = 0;
 
 TimeDebug.visibleTitles = [];
 TimeDebug.titleActive = null;
@@ -52,11 +55,15 @@ TimeDebug.init = function(logId) {
 	var logNodes = TimeDebug.logView.childNodes;
 
 	for(var i = 0, j = logNodes.length, k; i < j; ++i) {
-		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre' && JAK.DOM.hasClass(logNodes[i], 'nette-dump-row')) {
-			TimeDebug.logRows.push(logNodes[i]);
-			logNodes[i].onclick = TimeDebug.logClick;
-			links = logNodes[i].getElementsByTagName('a');
-			for(k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
+		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
+			if (logNodes[i].className == 'nd') {
+				logNodes[i].ondblclick = TimeDebug.changeVar;
+			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-row')) {
+				TimeDebug.logRows.push(logNodes[i]);
+				logNodes[i].onclick = TimeDebug.logClick;
+				links = logNodes[i].getElementsByTagName('a');
+				for(k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
+			}
 		}
 	}
 
@@ -67,23 +74,37 @@ TimeDebug.init = function(logId) {
 	TimeDebug.tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.insertBefore(TimeDebug.tdContainer, document.body.childNodes[0]);
 
-	TimeDebug.help.innerHTML = '<span class="nette-dump-titled"><span id="tId_0" class="nette-dump-title"><strong class="nette-dump-inner">'
+	TimeDebug.help.innerHTML = '<span class="nd-titled"><span id="tId_0" class="nd-title"><strong class="nd-inner">'
 			+ TimeDebug.helpHtml
-//			+ '<hr><div class="nette-dump-menu">'
-//			+ '<a href="" onclick="return false;">[ulozit nastaveni do cookie]</a>'
-//			+ '     <a href="" onclick="return false;">[nahrat cookie]</a>'
-//			+ '     <a href="" onclick="return false;">[smazat cookie]</a>'
-//			+ '</div><hr>'
+			+ '<hr><div class="nd-menu">'
+			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">odeslat</a>     |' : '')
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">export</a>'
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">import</a>'
+			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">ulozit</a>'
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">nahrat</a>'
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">smazat</a>'
+			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">obnovit</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+			+ '</div><hr>'
 			+ '</strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
 	TimeDebug.help.onmousedown = TimeDebug.logAction;
 	TimeDebug.setTitles(TimeDebug.help);
+	TimeDebug.helpSpaceX = TimeDebug.help.clientWidth + JAK.DOM.scrollbarWidth();
 
 	TimeDebug.setTitles(TimeDebug.logView);
 	TimeDebug.showDump(logId);
 	window.onresize = TimeDebug.windowResize;
 	document.onkeydown = TimeDebug.readKeyDown;
+	TimeDebug.tdView.ondblclick = TimeDebug.changeVar;
 };
+
+TimeDebug.changeVar = function(e) {
+	e = e || window.event;
+
+	var el = JAK.Events.getTarget(e);
+
+	console.debug(el.className);
+}
 
 TimeDebug.logAction = function(e) {
 	e = e || window.event;
@@ -114,7 +135,7 @@ TimeDebug.logAction = function(e) {
 			TimeDebug.tdContainer.style.width = '100%';
 			JAK.DOM.setStyle(TimeDebug.logContainer, {width: TimeDebug.tdContainer.clientWidth + 'px', overflow: 'visible'});
 
-			TimeDebug.logContainer.className = 'nette-dump-fullscreen';
+			TimeDebug.logContainer.className = 'nd-fullscreen';
 			TimeDebug.tdFullWidth = true;
 		} else {
 			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
@@ -138,7 +159,8 @@ TimeDebug.logResizing = function(e) {
 	if (e.button != JAK.Browser.mouse.left) {
 		TimeDebug.endLogResize();
 	} else {
-		TimeDebug.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - 20, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 0);
+		TimeDebug.tdWidth = Math.max(0, Math.min(TimeDebug.viewSize.width - TimeDebug.helpSpaceX,
+				TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX));
 
 		document.body.style.marginLeft = TimeDebug.tdContainer.style.width = el.style.left = TimeDebug.tdWidth + 'px';
 
@@ -154,9 +176,9 @@ TimeDebug.endLogResize = function() {
 
 TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
-	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('logId_' + TimeDebug.logRowActiveId), 'nette-dump-active');
+	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('logId_' + TimeDebug.logRowActiveId), 'nd-active');
 
-	JAK.DOM.addClass(document.getElementById('logId_' + id), 'nette-dump-active');
+	JAK.DOM.addClass(document.getElementById('logId_' + id), 'nd-active');
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 		if (TimeDebug.tdListeners.length) {
 			JAK.Events.removeListeners(TimeDebug.tdListeners);
@@ -180,7 +202,7 @@ TimeDebug.setTitles = function(el) {
 
 	titleStrongs = el.getElementsByTagName('strong');
 	for (var i = titleStrongs.length; i-- > 0;) {
-		if ((titleStrong = titleStrongs[i]).className == 'nette-dump-inner') {
+		if ((titleStrong = titleStrongs[i]).className == 'nd-inner') {
 			titleSpan = titleStrong.parentNode.parentNode;
 			titleSpan.tdTitle = titleStrong.parentNode;
 			titleSpan.tdTitle.tdInner = titleStrong;
@@ -224,7 +246,7 @@ TimeDebug.showTitle = function(e) {
 			tdTitleRows = this.tdTitle.tdInner.childNodes;
 			for (var i = 0, j = tdTitleRows.length, c = 1; i < j; ++i) {
 				if (tdTitleRows[i].nodeType == 1 && tdTitleRows[i].tagName.toLowerCase() == 'i' && ++c % 2) {
-					tdTitleRows[i].className = "nette-dump-even";
+					tdTitleRows[i].className = "nd-even";
 				}
 			}
 		}
@@ -263,7 +285,7 @@ TimeDebug.getParents = function(el) {
 	var tag, parents = [];
 
 	while ((tag = (el = el.parentNode).tagName.toLowerCase()) != 'body') {
-		if (tag == 'strong' && el.className == 'nette-dump-inner') parents.push(el = el.parentNode);
+		if (tag == 'strong' && el.className == 'nd-inner') parents.push(el = el.parentNode);
 		else if (el.id === 'tdView') {
 			parents.push(el);
 			break;
@@ -473,18 +495,18 @@ TimeDebug.logClick = function(e) {
 	if (e.altKey) {
 	} else if (e.ctrlKey || e.metaKey) {
 		TimeDebug.logRowsChosen[id - 1] = !TimeDebug.logRowsChosen[id - 1];
-		if (TimeDebug.logRowsChosen[id - 1]) JAK.DOM.addClass(TimeDebug.logRows[id - 1], 'nette-dump-chosen');
-		else JAK.DOM.removeClass(TimeDebug.logRows[id - 1], 'nette-dump-chosen');
+		if (TimeDebug.logRowsChosen[id - 1]) JAK.DOM.addClass(TimeDebug.logRows[id - 1], 'nd-chosen');
+		else JAK.DOM.removeClass(TimeDebug.logRows[id - 1], 'nd-chosen');
 	} else if (e.shiftKey) {
 		var unset = false;
-		if (JAK.DOM.hasClass(this, 'nette-dump-chosen')) unset = true;
+		if (JAK.DOM.hasClass(this, 'nd-chosen')) unset = true;
 		for(var i = Math.min(TimeDebug.logRowActiveId, id), j = Math.max(TimeDebug.logRowActiveId, id); i <= j; i++) {
 			if (unset) {
 				TimeDebug.logRowsChosen[i - 1] = false;
-				JAK.DOM.removeClass(TimeDebug.logRows[i - 1], 'nette-dump-chosen');
+				JAK.DOM.removeClass(TimeDebug.logRows[i - 1], 'nd-chosen');
 			} else {
 				TimeDebug.logRowsChosen[i - 1] = true;
-				JAK.DOM.addClass(TimeDebug.logRows[i - 1], 'nette-dump-chosen');
+				JAK.DOM.addClass(TimeDebug.logRows[i - 1], 'nd-chosen');
 			}
 		}
 	} else {

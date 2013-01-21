@@ -1,33 +1,33 @@
-pre.nette-dump div {
+pre.nd div {
 	padding-left: 3ex;
 	margin-bottom: 5px;
 }
-.nette-dump-row pre.nette-dump div {
+.nd-row pre.nd div {
 	margin-bottom: 0;
 }
-pre.nette-dump div div {
+pre.nd div div {
 	border-left: 1px solid rgba(0, 0, 0, 0.1);
 	margin-left: 0.5ex;
 }
-pre.nette-dump {
+pre.nd {
 	margin: 0;
 	border: medium none;
 	padding: 0;
 }
-.nette-dump-array, .nette-dump-object, .nette-dump-active .nette-dump-array.nette-dump-titled:hover {
+.nd-array, .nd-object, .nd-active .nd-array.nd-titled:hover {
 	color: #c22;
 }
-.nette-dump-string, .nette-dump-active .nette-dump-string.nette-dump-titled:hover {
+.nd-string, .nd-active .nd-string.nd-titled:hover {
 	position: relative;
 	color: #35d;
 }
-.nette-dump-string b {
+.nd-string b {
 	color: #f34;
 }
-.nette-dump-titled:hover {
+.nd-titled:hover {
 	background: #9f3;
 }
-.nette-dump-title {
+.nd-title {
 	position: absolute;
 	display: none;
 	z-index: 100;
@@ -45,17 +45,17 @@ pre.nette-dump {
 	overflow-y: auto;
 	outline: 0;
 }
-.nette-dump-array .nette-dump-title {
+.nd-array .nd-title {
 	background: #fed;
 	border-top: 8px solid #fed;
 	border-bottom: 8px solid #fed;
 }
-.nette-dump-title .nette-dump-title {
+.nd-title .nd-title {
 	background: #dfe;
 	border-top: 8px solid #dfe;
 	border-bottom: 8px solid #dfe;
 }
-.nette-dump-inner {
+.nd-inner {
 	display: block;
 	position: relative;
 	font-weight: normal;
@@ -74,7 +74,7 @@ pre.nette-dump {
 	-ms-user-select: text;
 	user-select: text;
 }
-.nette-dump-inner i {
+.nd-inner i {
 	display: block;
 	position: relative;
 	font-style: normal;
@@ -82,36 +82,36 @@ pre.nette-dump {
 	padding-left: 31px;
 	color: #129;
 }
-.nette-dump-inner i b {
+.nd-inner i b {
 	color: #e23;
 }
-.nette-dump-color i.nette-dump-even {
+.nd-color i.nd-even {
 	color: #921;
 }
-.nette-dump-color i.nette-dump-even b {
+.nd-color i.nd-even b {
 	color: #000;
 }
-.nette-dump-number {
+.nd-number {
 	color: #090;
 }
-.nette-dump-null, .nette-dump-bool {
+.nd-null, .nd-bool {
 	color: #850;
 }
-.nette-dump-visibility {
+.nd-visibility {
 	color: #999;
 	font-size: 85%;
 }
-.nette-dump-indent {
+.nd-indent {
 	display: none;
 }
-.nette-dump-path {
+.nd-path {
 	font-weight: bold;
 	color: #4a25c5;
 }
-.nette-dump-editor {
+.nd-editor {
 	color: #00e;
 }
-.nette-dump-row {
+.nd-row {
 	overflow-x: auto;
 	white-space: pre-wrap;
 	white-space: -moz-pre-wrap !important;
@@ -129,32 +129,32 @@ pre.nette-dump {
 	-ms-user-select: none;
 	user-select: none;
 }
-.nette-dump-chosen {
+.nd-chosen {
 	background-color: #cdf;
 }
-.nette-dump-active {
+.nd-active {
 	background-color: #006;
 	color: #eee;
 }
-.nette-dump-active small>.nette-dump-array, .nette-dump-active small>.nette-dump-object {
+.nd-active small>.nd-array, .nd-active small>.nd-object {
 	color: #ff8b8e;
 }
-.nette-dump-active small>.nette-dump-string {
+.nd-active small>.nd-string {
 	color: #9bf;
 }
-.nette-dump-active small>.nette-dump-number {
+.nd-active small>.nd-number {
 	color: #3f3;
 }
-.nette-dump-active small>.nette-dump-null, .nette-dump-active small>.nette-dump-bool {
+.nd-active small>.nd-null, .nd-active small>.nd-bool {
 	color: #fea;
 }
-.nette-dump-active .nette-dump-path {
+.nd-active .nd-path {
 	color: #bbf;
 }
-.nette-dump-active .nette-dump-editor {
+.nd-active .nd-editor {
 	color: #fe6;
 }
-.nette-dump-fullscreen .nette-dump-active {
+.nd-fullscreen .nd-active {
 	position: absolute;
 	display: block;
 	top: 1px;
@@ -167,24 +167,24 @@ pre.nette-dump {
 	overflow-x: hidden;
 	overflow-y: auto;
 }
-.nette-dump-fullscreen .nette-dump-active small {
+.nd-fullscreen .nd-active small {
 	font-size: 100%;
 }
-.nette-dump-help {
+.nd-help {
 	position: absolute;
 	top: 0;
 	color: #888;
 	font-size: 15px;
 }
-.nette-dump-help .nette-dump-title {
+.nd-help .nd-title {
 	background: #ffe;
 	border-top: 8px solid #ffe;
 	border-bottom: 8px solid #ffe;
 }
-.nette-dump-help a {
+.nd-help a {
 	text-decoration: none;
 }
-.nette-dump-menu {
+.nd-menu {
 	text-align: center;
 }
 #tdContainer {
@@ -221,11 +221,11 @@ pre.nette-dump {
 	position: static;
 	overflow: visible;
 }
-#logContainer.nette-dump-fullscreen {
+#logContainer.nd-fullscreen {
 	height: 1px;
 	top: -1px;
 }
-#logContainer.nette-dump-fullscreen:after {
+#logContainer.nd-fullscreen:after {
 	margin-top: 40px;
 	display: block;
 	content: "";
@@ -239,7 +239,7 @@ pre.nette-dump {
 	background: linear-gradient(to bottom,  rgba(0,0,102,1) 0%,rgba(255,255,255,0) 100%);
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000066', endColorstr='#00ffffff',GradientType=0 );
 }
-.nette-dump-fullscreen #logView {
+.nd-fullscreen #logView {
 	overflow: hidden;
 	height: 1px;
 	width: 1px;

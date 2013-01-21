@@ -22,7 +22,8 @@ class Dumper
 			NO_BREAK = 'nobreak', // return dump without line breaks (defaults to false)
 			FORCE_HTML = 'html', // force HTML output
 			APP_RECURSION = 'apprecursion', // force { RECURSION } on all nested objects with class 'App'
-			ID_PREFIX = 'idprefix'; // sets the prefix of auto incrementing tags' ids for dumped titles (defaults to 'tId')
+			ID_PREFIX = 'idprefix', // sets the prefix of auto incrementing tags' ids for dumped titles (defaults to 'tId')
+			PARENT_KEY = 'parentkey'; // sets parent key for children's div to attribute 'data-parentkey' for arrays and objects
 
 	/** @var array */
 	public static $terminalColors = array(
@@ -96,7 +97,7 @@ class Dumper
 	 */
 	public static function findLocation($getMethod = FALSE)
 	{
-		$backtrace = (debug_backtrace(FALSE));
+		$backtrace = debug_backtrace(FALSE);
 		foreach ($backtrace as $id => $item) {
 			if (isset($item['class']) && $item['class'] === 'Dumper') {
 				continue;
@@ -121,7 +122,7 @@ class Dumper
 						$args = array();
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
-								if(is_array($arg) && $cnt = count($arg)) {
+								if(TIMEDEBUG && is_array($arg) && $cnt = count($arg)) {
 									$args[] = '<span class="nette-dump-array nette-dump-titled"><span id="tId_' . ++self::$titleId
 											. '" class="nette-dump-title"><strong class="nette-dump-inner"><pre class="nette-dump">'
 											.self::dumpVar($arg, array(
@@ -263,6 +264,8 @@ class Dumper
 
 	private static function dumpArray(&$var, $options, $level)
 	{
+		$parentKey = isset($options[self::PARENT_KEY]) ? $options[self::PARENT_KEY] : FALSE;
+
 		static $marker;
 		if ($marker === NULL) {
 			$marker = uniqid("\x00", TRUE);
@@ -278,13 +281,14 @@ class Dumper
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($var) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
-			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . count($var) . ")</span>\n<div" . ($collapsed ? ' class="nette-collapsed"' : '') . ">";
+			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . count($var) . ")</span>\n<div"
+					. ($collapsed ? ' class="nette-collapsed"' : '') . (TIMEDEBUG && $parentKey ? " data-parentkey=\"$parentKey\">" : '>');
 			$var[$marker] = TRUE;
 			foreach ($var as $k => &$v) {
 				if ($k !== $marker) {
-					$out .= '<span class="nette-dump-indent">   ' . str_repeat('|  ', $level) . '</span>'
-							. '<span class="nette-dump-key">' . (preg_match('#^\w+\z#', $k) ? $k : self::encodeString($k)) . '</span> => '
-							. self::dumpVar($v, $options, $level + 1);
+					$out .= '<span class="nette-dump-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nette-dump-key">'
+							. (preg_match('#^\w+\z#', $k) ? $myKey = $k : '"' . ($myKey = self::encodeString($k, TRUE)) . '"')
+							. '</span> => ' . self::dumpVar($v, array(self::PARENT_KEY => $myKey) + $options, $level + 1);
 				}
 			}
 			unset($var[$marker]);
@@ -298,11 +302,14 @@ class Dumper
 
 	private static function dumpObject(&$var, $options, $level)
 	{
+		$parentKey = isset($options[self::PARENT_KEY]) ? $options[self::PARENT_KEY] : FALSE;
+
 		$fields = (array) $var;
 
 		static $list = array();
 		$varClass = get_class($var);
 		$out = '<span class="nette-dump-object">' . $varClass . "</span> (" . count($fields) . ')';
+
 
 		if (empty($fields)) {
 			return $options[self::NO_BREAK] ? $out : "$out\n";
@@ -312,7 +319,8 @@ class Dumper
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($fields) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
-			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . "</span>\n<div" . ($collapsed ? ' class="nette-collapsed"' : '') . ">";
+			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . "</span>\n<div"
+					. ($collapsed ? ' class="nette-collapsed"' : '') . (TIMEDEBUG && $parentKey ? " data-parentkey=\"$parentKey\">" : '>');
 			$list[] = $var;
 			foreach ($fields as $k => &$v) {
 				$vis = '';
@@ -320,9 +328,9 @@ class Dumper
 					$vis = ' <span class="nette-dump-visibility">' . ($k[1] === '*' ? 'protected' : 'private') . '</span>';
 					$k = substr($k, strrpos($k, "\x00") + 1);
 				}
-				$out .= '<span class="nette-dump-indent">   ' . str_repeat('|  ', $level) . '</span>'
-						. '<span class="nette-dump-key">' . (preg_match('#^\w+\z#', $k) ? $k : self::encodeString($k)) . "</span>$vis => "
-						. self::dumpVar($v, $options, $level + 1);
+				$out .= '<span class="nette-dump-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nette-dump-key">'
+						. (preg_match('#^\w+\z#', $k) ? $myKey = $k : '"' . ($myKey = self::encodeString($k, TRUE)) . '"')
+						. "</span>$vis => " . self::dumpVar($v, array(self::PARENT_KEY => $myKey) + $options, $level + 1);
 			}
 			array_pop($list);
 			return $out . '</div>';

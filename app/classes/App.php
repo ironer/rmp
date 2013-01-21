@@ -12,10 +12,8 @@ class App
 	public $stop = FALSE;
 
 	private $request;
-	private $services = array();
-	private $calls = array();
-	private $data = array();
-	private $response;
+	private $get = array();
+	private $post = array();
 
 	private $router = 'router';
 	private $model = 'model';
@@ -27,10 +25,18 @@ class App
 		'dpus' => array()
 	);
 
+	private $services = array();
+	private $data = array();
+	private $calls = array();
+	private $response = array();
 
 	public function __construct($_id = 'myapp') {
 		$this->id = $_id;
-		$this->request = urldecode(substr($_SERVER['REQUEST_URI'], strlen(WEBPATH) + 1));
+		$this->request = urldecode(substr($_SERVER['REQUEST_URI'], $i = strlen(WEBPATH) + 1,
+			(($j = strpos($_SERVER['REQUEST_URI'], '?')) === FALSE ? strlen($_SERVER['REQUEST_URI']) : $j - $i)));
+		// TODO: osetrit a vyprazdnit $_GET a $_POST
+		$this->get = $_GET;
+		$this->post = $_POST;
 		App::$currentApp = $this;
 		App::lg("Vytvorena aplikace '$_id'", $this);
 	}
@@ -178,13 +184,20 @@ class App
 	}
 
 
-	public static function dump() {
+	public static function dump(&$arg0 = NULL, &$arg1 = NULL, &$arg2 = NULL, &$arg3 = NULL, &$arg4 = NULL, &$arg5 = NULL, &$arg6 = NULL, &$arg7 = NULL, &$arg8 = NULL, &$arg9 = NULL) {
+		if (func_num_args() > 10) {
+			throw new Exception("Staticka metoda 'dump' muze prijmout nejvyse 10 argumentu.");
+		}
 		if (App::$setDumper) App::setDumper();
-		$vars = func_get_args();
+		$stack = debug_backtrace(FALSE);
 		echo '<hr>';
-		foreach ($vars as $var) {
+		foreach ($stack[0]["args"] as &$var) {
 			echo Dumper::dump($var, array('location' => TRUE, 'loclink' => LOCAL, 'html' => TRUE));
 			echo '<hr>';
+//			$test = 'rmd';
+//			$var->{$test}["routers"]["router"]->id = 'zluva';
+			// TODO: napsat nalezeni referencni cesty v objektu (poli), je treba rozeznavat typ containeru
+			// TODO: generovat dumpum idcka
 		}
 	}
 

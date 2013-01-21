@@ -36,6 +36,6 @@ $mailer->saveData();
 
 $mailer->go(3);
 
-App::dump('Odesláno '.$mailer->sended.' z ' . $mailer->prepared);
+App::lg('Odesláno '.$mailer->sended.' z ' . $mailer->prepared);
 
 return $router;

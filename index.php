@@ -57,6 +57,7 @@ if (DEBUG) {
 				. "TimeDebug.init(1);\n</script>\n</body>\n</html>";
 	} else {
 		App::dump($app);
+
 		echo "</body>\n</html>";
 	}
 }

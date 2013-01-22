@@ -8,6 +8,9 @@
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
 // TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
+
+// TODO: vytvorit unit testy
+// TODO: zkontrolovat dumpovani resources
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
 
 var TimeDebug = {};
@@ -56,8 +59,8 @@ TimeDebug.init = function(logId) {
 
 	for(var i = 0, j = logNodes.length, k; i < j; ++i) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
-			if (logNodes[i].className == 'nd') {
-				logNodes[i].ondblclick = TimeDebug.changeVar;
+			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
+				logNodes[i].onmousedown = TimeDebug.changeVar;
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-row')) {
 				TimeDebug.logRows.push(logNodes[i]);
 				logNodes[i].onclick = TimeDebug.logClick;
@@ -74,17 +77,19 @@ TimeDebug.init = function(logId) {
 	TimeDebug.tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.insertBefore(TimeDebug.tdContainer, document.body.childNodes[0]);
 
-	TimeDebug.help.innerHTML = '<span class="nd-titled"><span id="tId_0" class="nd-title"><strong class="nd-inner">'
+	TimeDebug.help.innerHTML = '<span class="nd-titled"><span id="tId_1" class="nd-title"><strong class="nd-inner">'
+			+ '<hr><div class="nd-menu">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+			+ '<span class="nd-titled"><span id="tId_1" class="nd-title"><strong class="nd-inner">'
 			+ TimeDebug.helpHtml
-			+ '<hr><div class="nd-menu">'
-			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">odeslat</a>     |' : '')
-			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">export</a>'
-			+ '&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">import</a>'
-			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">ulozit</a>'
-			+ '&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">nahrat</a>'
-			+ '&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">smazat</a>'
-			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="" onclick="return false;">obnovit</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
-			+ '</div><hr>'
+			+ '</strong></span>napoveda</span>'
+			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>export</span>'
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>import</span>'
+			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>ulozit</span>'
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>nahrat</span>'
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
+			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>obnovit</span>'
+			+ (TimeDebug.local ? '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>odeslat</span>' : '')
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
 	TimeDebug.help.onmousedown = TimeDebug.logAction;
@@ -95,16 +100,26 @@ TimeDebug.init = function(logId) {
 	TimeDebug.showDump(logId);
 	window.onresize = TimeDebug.windowResize;
 	document.onkeydown = TimeDebug.readKeyDown;
-	TimeDebug.tdView.ondblclick = TimeDebug.changeVar;
+	TimeDebug.tdView.onmousedown = TimeDebug.changeVar;
 };
 
 TimeDebug.changeVar = function(e) {
 	e = e || window.event;
 
+	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.left) return true;
+
+	JAK.Events.stopEvent(e);
+	JAK.Events.cancelDef(e);
 	var el = JAK.Events.getTarget(e);
 
-	console.debug(el.className);
-}
+	if (el.className == 'nd-key') {
+		console.debug(el.className);
+	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
+		console.debug(el.className);
+	}
+
+	return true;
+};
 
 TimeDebug.logAction = function(e) {
 	e = e || window.event;
@@ -475,7 +490,7 @@ TimeDebug.pinTitle = function(e) {
 	e = e || window.event;
 	JAK.Events.stopEvent(e);
 
-	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return false;
+	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) return false;
 
 	if (TimeDebug.titleHideTimeout) {
 		window.clearTimeout(TimeDebug.titleHideTimeout);

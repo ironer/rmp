@@ -27,7 +27,7 @@ class App
 
 	private $services = array();
 	private $data = array();
-	private $calls = array();
+	private $goto = array();
 	private $response = array();
 
 	public function __construct($_id = 'myapp') {
@@ -79,7 +79,7 @@ class App
 	{
 		if ($this->stop) return $this;
 
-		// TODO: napsat jednoduchy iterator pro require_once vraceneho dpu pripadne volani calls s 1 parametrem (asoc. polem)
+		// TODO: napsat jednoduchy iterator pro require_once vraceneho procesoru pripadne volani goto pole poli lambda funkci s 1 parametrem (asoc. polem)
 		// TODO: vsechny metody controleru se musi volat s jednim argumentem - asociativnim polem
 
 		App::lg("Running data processing units...", $this);

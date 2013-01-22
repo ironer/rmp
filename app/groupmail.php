@@ -19,6 +19,8 @@ $app = new App('GM', null, false, "asd asd asadasdass\nssssssss sssdsdsds dada\n
 
 if (!empty($_GET['mail'])) {
 	return $app->route('mailrouter')->getModel()->control();
+}  elseif (!empty($_GET['imap'])) {
+	return $app->route('imaprouter')->getModel()->control();
 }  else {
 	return $app->route()->getModel()->control();
 }

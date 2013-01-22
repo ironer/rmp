@@ -45,7 +45,7 @@ class Dumper
 	/** @var array */
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
 
-	public static $titleId = 0;
+	public static $titleId = 9;
 
 	/**
 	 * Dumps variable to the output.
@@ -79,7 +79,7 @@ class Dumper
 	public static function toHtml($var, array $options = NULL)
 	{
 		list($file, $line, $code) = empty($options[self::LOCATION]) ? NULL : self::findLocation();
-		return '<pre' . (!empty($options[self::DUMP_ID]) ? ' id="' . $options[self::DUMP_ID] . '"': '') . ' class="nd">'
+		return '<pre' . (!empty($options[self::DUMP_ID]) ? ' id="' . $options[self::DUMP_ID] . '" class="nd nd-dump">': ' class="nd">')
 				. self::dumpVar($var, (array) $options + array(
 					self::DEPTH => 4,
 					self::TRUNCATE => 70,

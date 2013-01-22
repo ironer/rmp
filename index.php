@@ -26,9 +26,8 @@ App::dump($a[0][0]);
 if (DEBUG) {
 	App::lg('Zobrazeni debuggeru', $app);
 	echo '<hr>Generovani odpovedi: <b>' . App::runtime() . '</b>'
-			. ' / Max. pouzita pamet: <b>' . App::maxMem() . '</b> / Max. alokovana pamet: <b>' . App::maxMem(TRUE) . '</b>';
-	echo ' / <a href="' . WEBROOT . '">homepage</a> / <a href="'
-			. WEBROOT . "?mail=1\">odeslat email</a>\n";
+			. ' / Max. pamet: <b>' . App::maxMem() . '</b> / Max. alokovana: <b>' . App::maxMem(TRUE) . '</b>';
+	echo ' / <a href="' . WEBROOT . '">homepage</a> / <a href="' . WEBROOT . "?mail=1\">odeslat email</a> / <a href=\"" . WEBROOT . "?imap=1\">zpracovat imap</a>\n";
 	echo "</div>\n</div>\n";
 
 	if (TIMEDEBUG) {

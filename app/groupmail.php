@@ -18,10 +18,10 @@ require_once(CLASSES . '/App.php');
 $app = new App('GM', null, false, "asd asd asadasdass\nssssssss sssdsdsds dada\nasd asd asadasdass\nssssssss sssdsdsds dada\nasd asd asadasdass", array('1' => 'test', 2 => "asd asd asadasdass\nssssssss sssdsdsds dada\nasd asd as", 'zluva' => "asd asd asadasdass\nssssssss sssdsdsds dada\nasd asd as", 7 => array(array(), array(1 => 'nevidim'), 'test' => 'zluvy')), 178);
 
 if (!empty($_GET['mail'])) {
-	return $app->route('mailrouter')->getModel()->control();
+	return $app->route('mailrouter')->getModel()->process();
 }  elseif (!empty($_GET['imap'])) {
-	return $app->route('imaprouter')->getModel()->control();
+	return $app->route('imaprouter')->getModel()->process();
 }  else {
-	return $app->route()->getModel()->control();
+	return $app->route()->getModel()->process();
 }
 

@@ -214,8 +214,8 @@ pre.nd {
 	padding: 8px;
 	overflow: hidden;
 }
-#tdView .nd-key:hover {
-	background: #9f3;
+#tdView .nd-key:hover, .nd-top:hover, .nd-dump .nd-key:hover {
+	background: #fc8;
 }
 #logContainer {
 	display: block;

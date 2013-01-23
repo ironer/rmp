@@ -17,12 +17,12 @@ class App
 
 	private $router = 'router';
 	private $model = 'model';
-	private $dpu = 'dpu';
+	private $processor = 'processor';
 
-	private $rmd = array(
+	private $rmp = array(
 		'routers' => array(),
 		'models' => array(),
-		'dpus' => array()
+		'processors' => array()
 	);
 
 	private $services = array();
@@ -54,12 +54,12 @@ class App
 			}
 
 			App::lg("Volani routeru '$this->router'", $this);
-			$this->rmd['routers'][$this->router] = require_once(ROUTERS . "/$this->router.php");
+			$this->rmp['routers'][$this->router] = require_once(ROUTERS . "/$this->router.php");
 
-			if (get_class($this->rmd['routers'][$this->router]) !== 'Router') {
+			if (get_class($this->rmp['routers'][$this->router]) !== 'Router') {
 				throw new Exception("Aplikace '$this->id' ocekava odkaz na router. '$this->router.php' nevraci objekt tridy 'Router'.");
 			}
-		} while (($_router = $this->rmd['routers'][$this->router]->go()) !== $this->router);
+		} while (($_router = $this->rmp['routers'][$this->router]->go()) !== $this->router);
 
 		return $this;
 	}
@@ -75,14 +75,14 @@ class App
 	}
 
 
-	public function control()
+	public function process()
 	{
 		if ($this->stop) return $this;
 
 		// TODO: napsat jednoduchy iterator pro require_once vraceneho procesoru pripadne volani goto pole poli lambda funkci s 1 parametrem (asoc. polem)
 		// TODO: vsechny metody controleru se musi volat s jednim argumentem - asociativnim polem
 
-		App::lg("Running data processing units...", $this);
+		App::lg("Running processors...", $this);
 
 		return $this;
 	}
@@ -128,7 +128,7 @@ class App
 		return App::num(memory_get_peak_usage($real) / 1024, 0, 'kB');
 	}
 
-
+	// TODO: dopsat md5 jedinecne otisky pro jednotlive objekty
 	public static function lg($text = '', $object = NULL, $reset = FALSE) {
 		if (DEBUG) {
 			if (App::$setDumper) App::setDumper();
@@ -209,10 +209,10 @@ class App
 			header('Content-type: text/html; charset=utf-8');
 			header("Cache-control: private");
 			echo "<!DOCTYPE html>\n<html style=\"height: 100%\">\n<head>\n<meta charset=\"utf-8\">\n<title>Debuging session</title>\n";
-			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/nette-dump.css\">\n";
+			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/timedebug.css\">\n";
 			echo "</head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logView\">\n";
 		} else {
-			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/nette-dump.css\">\n";
+			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/timedebug.css\">\n";
 		}
 		require_once(CLASSES . '/Dumper.php');
 		App::$setDumper = FALSE;

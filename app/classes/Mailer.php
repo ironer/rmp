@@ -159,6 +159,12 @@ class Mailer
         
         $this->f_emails = fopen($this->storage.'/send.dat','a');
         $this->f_index  = fopen($this->storage.'/sendindex.dat','a');
+        if (is_file($this->storage.'/sendindex.dat')) {
+            $fileindex = unserialize(file_get_contents($this->storage.'/sendindex.dat'));
+            $this->sended = count($fileinex);
+        } else {
+            $this->sended = 0;
+        }
         if (is_file($this->storage.'/encoded.dat')) $this->encoded = unserialize(file_get_contents($this->storage.'/encoded.dat'));
 
         $counter = 0;

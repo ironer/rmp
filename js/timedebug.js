@@ -57,7 +57,7 @@ TimeDebug.actionData = { element: null, listeners: [] };
 TimeDebug.init = function(logId) {
 	TimeDebug.logContainer.style.overflow = 'scroll';
 	TimeDebug.logView.style.padding = '8px';
-	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 ' + TimeDebug.tdWidth + 'px', overflow:'hidden'});
+	JAK.DOM.setStyle(document.body, {minWidth:0, height:'100%', padding:0, margin:'0 0 0 ' + TimeDebug.tdWidth + 'px', overflow:'hidden'});
 	TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
 	if (TimeDebug.local) JAK.DOM.addClass(document.body, 'nd-local');
 

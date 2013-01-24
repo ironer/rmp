@@ -130,11 +130,11 @@ pre.nd {
 	user-select: none;
 }
 .nd-chosen {
-	background-color: #cdf;
+	background: #cdf;
 }
 .nd-active {
-	background-color: #006;
 	color: #eee;
+	background: #006;
 }
 .nd-active small>.nd-array, .nd-active small>.nd-object {
 	color: #ff8b8e;
@@ -220,7 +220,7 @@ pre.nd {
 	padding: 8px;
 	overflow: hidden;
 }
-#tdView .nd-key:hover, .nd-top:hover, .nd-dump .nd-key:hover {
+.nd-local #tdView .nd-key:hover, .nd-local .nd-top:hover, .nd-local .nd-dump .nd-key:hover {
 	background: #fc8;
 }
 #logContainer {
@@ -230,9 +230,9 @@ pre.nd {
 	overflow: hidden;
 }
 #logView {
-	float: left;
 	position: static;
 	overflow: visible;
+	min-width: 400px;
 }
 #logContainer.nd-fullscreen {
 	height: 1px;
@@ -289,9 +289,10 @@ pre.nd {
 	overflow: auto;
 	z-index: 10002;
 	padding: 3px;
-	background: #269;
 	color: #fff;
+	background: #269;
 	border: 1px solid #38b;
+	outline: 0;
 	-moz-box-shadow: 3px 2px 8px #888;
 	-webkit-box-shadow: 3px 2px 8px #888;
 	box-shadow: 3px 2px 8px #888;

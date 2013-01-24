@@ -42,15 +42,22 @@ if (DEBUG) {
 			'OVLADANI TITULKU' => array(
 				'↑' => 'skrolovani nahoru',
 				'↓' => 'skrolovani dolu',
-				'Left Click' => 'prispendlit titulek',
+				'Left Click' => 'prispendlit/odspendlit titulek',
 				'Alt + LC' => 'presunout titulek',
 				'Ctrl/Cmd + LC' => 'zmenit velikost titulku',
 				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost titulku',
-				'Shift + Alt + LC' => 'zavrit titulek (s podtitulky)'
+				'Shift + Alt + LC' => 'zavrit titulek (s podtitulky)',
+				'klavesa Esc' => 'zavrit vse a zakladni nastaveni'
 			),
 			'OVLADANI HVEZDICKY' => array(
 				'Alt + LC' => 'zmena velikosti oken',
 				'Shift + LC' => 'maximalizovany rezim'
+			),
+			'TIMEDEBUG PROMENNYCH (pouze local)' => array(
+				'Right Click' => 'otevrit modal konzoli pro zadani',
+				'Esc / (RC na masku)' => 'zavrit otevrenou konzoli',
+				'klavesa Enter' => 'ulozit zmeny a zavrit konzoli',
+				'Shift + Enter' => 'v konzoli dalsi radek'
 			)
 		);
 

@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler 2013
  */
 
-
 // TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -50,6 +49,7 @@ TimeDebug.spaceY = 0;
 TimeDebug.zIndexMax = 100;
 
 TimeDebug.tdConsole = null;
+TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
 
 TimeDebug.actionData = { element: null, listeners: [] };
@@ -147,6 +147,15 @@ TimeDebug.consoleOpen = function(el, callback) {
 	TimeDebug.tdConsole.callback = callback || TimeDebug.tdStop;
 	TimeDebug.tdConsole.mask.onmousedown = TimeDebug.catchMask;
 	TimeDebug.tdConsole.area.oncontextmenu = TimeDebug.restoreContextMenu;
+
+	TimeDebug.textareaTimeout = window.setTimeout(TimeDebug.textareaFocus, 1);
+};
+
+TimeDebug.textareaFocus = function() {
+	if (TimeDebug.textareaTimeout) {
+		window.clearTimeout(TimeDebug.textareaTimeout);
+		TimeDebug.textareaTimeout = null;
+	}
 	TimeDebug.tdConsole.area.focus();
 };
 

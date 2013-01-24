@@ -208,7 +208,7 @@ class App
 		if (!preg_match('#^Content-Type: text/html#im', implode("\n", headers_list()))) {
 			header('Content-type: text/html; charset=utf-8');
 			header("Cache-control: private");
-			echo "<!DOCTYPE html>\n<html style=\"height: 100%\">\n<head>\n<meta charset=\"utf-8\">\n<title>Debuging session</title>\n";
+			echo "<!DOCTYPE html>\n<html style=\"height: 100%\">\n<head>\n<meta charset=\"utf-8\">\n<title>TimeDebug</title>\n";
 			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/timedebug.css\">\n";
 			echo "</head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logView\">\n";
 		} else {

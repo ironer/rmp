@@ -55,10 +55,13 @@ TimeDebug.changes = [];
 TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.init = function(logId) {
-	TimeDebug.logContainer.style.overflow = 'scroll';
-	TimeDebug.logView.style.padding = '8px';
-	JAK.DOM.setStyle(document.body, {minWidth:0, height:'100%', padding:0, margin:'0 0 0 ' + TimeDebug.tdWidth + 'px', overflow:'hidden'});
+	document.body.parentNode.style.height = '100%';
+	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 ' + TimeDebug.tdWidth + 'px', overflow:'hidden'});
 	TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
+	JAK.DOM.setStyle(TimeDebug.logContainer, {overflow:'scroll'});
+	TimeDebug.logView.style.padding = '8px';
+	TimeDebug.viewSize = JAK.DOM.getDocSize();
+
 	if (TimeDebug.local) JAK.DOM.addClass(document.body, 'nd-local');
 
 	var links;

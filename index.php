@@ -1,5 +1,7 @@
 <?php
 
+// zjistit si activeElement pri podivnem posouvani v Safari
+
 define('DEBUG', TRUE);
 define('TIMEDEBUG', TRUE);
 define('LOCAL', $_SERVER['SERVER_NAME'] == 'localhost');
@@ -28,7 +30,6 @@ if (DEBUG) {
 	echo '<hr>Generovani odpovedi: <b>' . App::runtime() . '</b>'
 			. ' / Max. pamet: <b>' . App::maxMem() . '</b> / Max. alokovana: <b>' . App::maxMem(TRUE) . '</b>';
 	echo ' / <a href="' . WEBROOT . '">homepage</a> / <a href="' . WEBROOT . "?mail=1\">odeslat email</a> / <a href=\"" . WEBROOT . "?imap=1\">zpracovat imap</a>\n";
-	echo "</div>\n</div>\n";
 
 	if (TIMEDEBUG) {
 		$tdHelp = array(
@@ -61,6 +62,7 @@ if (DEBUG) {
 			)
 		);
 
+		echo "</div>\n</div>\n";
 		echo "<script src=\"" . WEBROOT . JS . "/vendor/jak.packer.js\"></script>\n";
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 //		echo "<script src=\"" . WEBROOT . JS . "/timedebug.combined.js\"></script>\n";
@@ -69,10 +71,10 @@ if (DEBUG) {
 				. "TimeDebug.dumps = ". json_encode(App::$timeDebugData) . ";\n"
 				. "TimeDebug.indexes = ". json_encode(App::$timeDebug) . ";\n"
 				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(Dumper::dump($tdHelp, array('html' => TRUE)))): "''") . ";\n"
-				. "TimeDebug.init(1);\n</script>\n</body>\n</html>";
+				. "TimeDebug.init(1);\n</script>\n";
 	} else {
 		App::dump($app);
-
-		echo "</body>\n</html>";
+		echo "</div>\n</div>\n";
 	}
+	echo "<script>\ndocument.body.style.visibility = 'visible';\n</script>\n</body>\n</html>";
 }

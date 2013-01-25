@@ -22,6 +22,8 @@ if (!empty($_GET['mail'])) {
 }  elseif (!empty($_GET['imap'])) {
 	return $app->route('imaprouter')->getModel()->process();
 }  else {
-	return $app->route()->getModel()->process();
+	$app->route();
+	App::dump($app);
+	return $app->getModel()->process();
 }
 

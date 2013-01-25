@@ -1134,7 +1134,7 @@ JAK.DOM.addClass = function (element, className) {
 	if (JAK.DOM.hasClass(element, className)) {
 		return;
 	}
-	element.className += " " + className;
+	element.className = element.className ? element.className + " " + className : className;
 };
 JAK.DOM.removeClass = function (element, className) {
 	var names = element.className.split(" ");

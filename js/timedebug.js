@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler 2013
  */
 
-// TODO: vytrhnout log pres layout fixed
 // TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -25,6 +24,7 @@ TimeDebug.logWrapper = TimeDebug.logView.parentNode;
 TimeDebug.logContainer = TimeDebug.logWrapper.parentNode;
 TimeDebug.logRows = [];
 TimeDebug.logRowsChosen = [];
+TimeDebug.logRowActive = null;
 TimeDebug.logRowActiveId = 0;
 TimeDebug.dumps = [];
 TimeDebug.indexes = [];
@@ -209,13 +209,14 @@ TimeDebug.logAction = function(e) {
 
 			document.body.style.marginLeft = TimeDebug.help.style.left = 0;
 			TimeDebug.tdContainer.style.width = '100%';
-			TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+			TimeDebug.logContainer.style.width = TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
 		} else {
 			TimeDebug.tdFullWidth = false;
 			JAK.DOM.removeClass(document.body.parentNode, 'nd-fullscreen');
 
 			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
 			TimeDebug.logContainer.style.width = 'auto';
+			TimeDebug.logRowActive.removeAttribute('style');
 		}
 
 		TimeDebug.resizeWrapper();
@@ -248,9 +249,13 @@ TimeDebug.endLogResize = function() {
 
 TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
-	if (TimeDebug.logRowActiveId) JAK.DOM.removeClass(document.getElementById('logId_' + TimeDebug.logRowActiveId), 'nd-active');
+	if (TimeDebug.logRowActive) {
+		JAK.DOM.removeClass(TimeDebug.logRowActive, 'nd-active');
+		TimeDebug.logRowActive.removeAttribute('style');
+	}
 
-	JAK.DOM.addClass(document.getElementById('logId_' + id), 'nd-active');
+	JAK.DOM.addClass(TimeDebug.logRowActive = document.getElementById('logId_' + id), 'nd-active');
+
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 		if (TimeDebug.tdListeners.length) {
 			JAK.Events.removeListeners(TimeDebug.tdListeners);
@@ -265,7 +270,10 @@ TimeDebug.showDump = function(id) {
 		TimeDebug.setTitles(TimeDebug.tdView);
 		TimeDebug.resizeWrapper();
 	}
+
+	if (TimeDebug.tdFullWidth) TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
 	TimeDebug.logRowActiveId = id;
+
 	return true;
 };
 
@@ -616,19 +624,12 @@ TimeDebug.readKeyDown = function(e) {
 			if (tdNext === TimeDebug.logRowActiveId) return true;
 			TimeDebug.showDump(tdNext);
 			return false;
-		} else if (e.keyCode == 38) {
-			console.debug(this);
-			if (TimeDebug.titleActive) {
+		} else if (e.keyCode == 38 && TimeDebug.titleActive) {
 				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);
 				return false;
-			}
-		} else if (e.keyCode == 40) {
-			console.debug(this);
-			TimeDebug.logContainer.scrollTop = 0;
-			if (TimeDebug.titleActive) {
+		} else if (e.keyCode == 40 && TimeDebug.titleActive) {
 				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop + 16) / 16);
 				return false;
-			}
 		} else if (e.keyCode == 27) {
 			if (TimeDebug.tdConsole) return TimeDebug.consoleClose();
 			if (!TimeDebug.visibleTitles.length) return true;
@@ -656,7 +657,9 @@ TimeDebug.readKeyDown = function(e) {
 TimeDebug.windowResize = function() {
 	TimeDebug.resizeWrapper();
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
-	if (TimeDebug.tdFullWidth) TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+	if (TimeDebug.tdFullWidth) {
+		TimeDebug.logContainer.style.width = TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+	}
 	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
 };
 

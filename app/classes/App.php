@@ -205,15 +205,12 @@ class App
 	}
 
 	private static function setDumper() {
-		if (!preg_match('#^Content-Type: text/html#im', implode("\n", headers_list()))) {
-			header('Content-type: text/html; charset=utf-8');
-			header("Cache-control: private");
-			echo "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>TimeDebug</title>\n";
-			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/timedebug.css\">\n";
-			echo "</head>\n<body style=\"visibility: hidden\">\n<div id=\"logContainer\">\n<div id=\"logView\">\n";
-		} else {
-			echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/timedebug.css\">\n";
-		}
+		header('Content-type: text/html; charset=utf-8');
+		header("Cache-control: private");
+		echo "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>TimeDebug</title>\n";
+		echo "<link rel=\"stylesheet\" href=\"" . WEBROOT . CSS . "/timedebug.css\">\n";
+		echo "</head>\n<body class=\"nd-loading\">\n<div id=\"logContainer\">\n<div id=\"logWrapper\">\n<div id=\"logView\">\n";
+
 		require_once(CLASSES . '/Dumper.php');
 		App::$setDumper = FALSE;
 	}

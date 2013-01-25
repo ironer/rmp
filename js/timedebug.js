@@ -4,6 +4,7 @@
  * @author: Stefan Fiedler 2013
  */
 
+// TODO: vytrhnout log pres layout fixed
 // TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -20,7 +21,8 @@ var TimeDebug = {};
 TimeDebug.local = false;
 
 TimeDebug.logView = document.getElementById('logView');
-TimeDebug.logContainer = TimeDebug.logView.parentNode;
+TimeDebug.logWrapper = TimeDebug.logView.parentNode;
+TimeDebug.logContainer = TimeDebug.logWrapper.parentNode;
 TimeDebug.logRows = [];
 TimeDebug.logRowsChosen = [];
 TimeDebug.logRowActiveId = 0;
@@ -55,14 +57,9 @@ TimeDebug.changes = [];
 TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.init = function(logId) {
-	document.body.parentNode.style.height = '100%';
-	JAK.DOM.setStyle(document.body, {height:'100%', margin:'0 0 0 ' + TimeDebug.tdWidth + 'px', overflow:'hidden'});
-	TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
-	JAK.DOM.setStyle(TimeDebug.logContainer, {overflow:'scroll'});
-	TimeDebug.logView.style.padding = '8px';
+	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
+	document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
-
-	if (TimeDebug.local) JAK.DOM.addClass(document.body, 'nd-local');
 
 	var links;
 	var logNodes = TimeDebug.logView.childNodes;
@@ -207,20 +204,18 @@ TimeDebug.logAction = function(e) {
 		document.body.focus();
 	} else {
 		if (!TimeDebug.tdFullWidth) {
-			document.body.style.marginLeft = TimeDebug.logView.style.padding = TimeDebug.help.style.left = 0;
-			TimeDebug.tdView.style.paddingTop = '50px';
-			TimeDebug.tdContainer.style.width = '100%';
-			JAK.DOM.setStyle(TimeDebug.logContainer, {width: TimeDebug.tdContainer.clientWidth + 'px', overflow: 'visible'});
-
-			TimeDebug.logContainer.className = 'nd-fullscreen';
 			TimeDebug.tdFullWidth = true;
-		} else {
-			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
-			TimeDebug.tdView.style.padding = TimeDebug.logView.style.padding = '8px';
-			JAK.DOM.setStyle(TimeDebug.logContainer, {width: 'auto', overflow: 'scroll'});
+			JAK.DOM.addClass(document.body.parentNode, 'nd-fullscreen');
 
-			TimeDebug.logContainer.className = '';
+			document.body.style.marginLeft = TimeDebug.help.style.left = 0;
+			TimeDebug.tdContainer.style.width = '100%';
+			TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+		} else {
 			TimeDebug.tdFullWidth = false;
+			JAK.DOM.removeClass(document.body.parentNode, 'nd-fullscreen');
+
+			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
+			TimeDebug.logContainer.style.width = 'auto';
 		}
 
 		TimeDebug.resizeWrapper();
@@ -616,16 +611,24 @@ TimeDebug.readKeyDown = function(e) {
 			TimeDebug.showDump(tdNext);
 			return false;
 		} else if (e.keyCode == 39 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId < TimeDebug.indexes.length) {
+			TimeDebug.logView.blur();
 			tdNext = TimeDebug.selected() ? TimeDebug.getNext() : TimeDebug.logRowActiveId + 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
 			TimeDebug.showDump(tdNext);
 			return false;
-		} else if (e.keyCode == 38 && TimeDebug.titleActive) {
-			TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);
-			return false;
-		} else if (e.keyCode == 40 && TimeDebug.titleActive) {
-			TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop + 16) / 16);
-			return false;
+		} else if (e.keyCode == 38) {
+			console.debug(this);
+			if (TimeDebug.titleActive) {
+				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);
+				return false;
+			}
+		} else if (e.keyCode == 40) {
+			console.debug(this);
+			TimeDebug.logContainer.scrollTop = 0;
+			if (TimeDebug.titleActive) {
+				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop + 16) / 16);
+				return false;
+			}
 		} else if (e.keyCode == 27) {
 			if (TimeDebug.tdConsole) return TimeDebug.consoleClose();
 			if (!TimeDebug.visibleTitles.length) return true;

@@ -1,7 +1,5 @@
 <?php
 
-// zjistit si activeElement pri podivnem posouvani v Safari
-
 define('DEBUG', TRUE);
 define('TIMEDEBUG', TRUE);
 define('LOCAL', $_SERVER['SERVER_NAME'] == 'localhost');
@@ -62,7 +60,7 @@ if (DEBUG) {
 			)
 		);
 
-		echo "</div>\n</div>\n";
+		echo "</div>\n</div>\n</div>\n";
 		echo "<script src=\"" . WEBROOT . JS . "/vendor/jak.packer.js\"></script>\n";
 		echo "<script src=\"" . WEBROOT . JS . "/timedebug.js\"></script>\n";
 //		echo "<script src=\"" . WEBROOT . JS . "/timedebug.combined.js\"></script>\n";
@@ -74,7 +72,7 @@ if (DEBUG) {
 				. "TimeDebug.init(1);\n</script>\n";
 	} else {
 		App::dump($app);
-		echo "</div>\n</div>\n";
+		echo "</div>\n</div>\n</div>\n";
 	}
-	echo "<script>\ndocument.body.style.visibility = 'visible';\n</script>\n</body>\n</html>";
+	echo "<script>\ndocument.body.className = '';\ndocument.body.removeAttribute('class');\n</script>\n</body>\n</html>";
 }

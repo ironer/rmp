@@ -3,6 +3,9 @@
 class Router
 {
 
+	// TODO: napsat firewall
+	// TODO: napsat lazy decrypter vstupu pouzivajici blowfish nebo twofish
+
 	public $id;
 	public $container;
 

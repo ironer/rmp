@@ -270,7 +270,7 @@ class Dumper
 
 	private static function dumpArray(&$var, $options, $level)
 	{
-		$parentKey = isset($options[self::PARENT_KEY]) ? $options[self::PARENT_KEY] : FALSE;
+		$parentKey = isset($options[self::PARENT_KEY]) ? '1' . $options[self::PARENT_KEY] : FALSE;
 
 		static $marker;
 		if ($marker === NULL) {
@@ -287,14 +287,15 @@ class Dumper
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($var) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
-			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . count($var) . ")</span>\n<div"
-					. ($collapsed ? ' class="nette-collapsed"' : '') . (TIMEDEBUG && $parentKey ? " data-pk=\"$parentKey\">" : '>');
+			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . count($var)
+					. ")</span>\n<div" . ($collapsed ? ' class="nette-collapsed"' : '')
+					. (TIMEDEBUG && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"1\">" : '>'));
 			$var[$marker] = TRUE;
 			foreach ($var as $k => &$v) {
 				if ($k !== $marker) {
 					$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nd-key">'
 							. (preg_match('#^\w+\z#', $k) ? $myKey = $k : '"' . ($myKey = self::encodeString($k, TRUE)) . '"')
-							. '</span> => ' . self::dumpVar($v, array(self::PARENT_KEY => "1$myKey") + $options, $level + 1);
+							. '</span> => ' . self::dumpVar($v, array(self::PARENT_KEY => "$myKey") + $options, $level + 1);
 				}
 			}
 			unset($var[$marker]);
@@ -308,14 +309,14 @@ class Dumper
 
 	private static function dumpObject(&$var, $options, $level)
 	{
-		$parentKey = isset($options[self::PARENT_KEY]) ? $options[self::PARENT_KEY] : FALSE;
+		$parentKey = isset($options[self::PARENT_KEY]) ? '0' . $options[self::PARENT_KEY] : FALSE;
 
 		$fields = (array) $var;
 
 		static $list = array();
 		$varClass = get_class($var);
-		$out = '<span class="nd-object' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top') . '">' . $varClass . "</span> (" . count($fields) . ')';
-
+		$out = '<span class="nd-object' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top') . '">' . $varClass
+				. "</span> (" . count($fields) . ')';
 
 		if (empty($fields)) {
 			return $options[self::NO_BREAK] ? $out : "$out\n";
@@ -326,7 +327,8 @@ class Dumper
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($fields) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
 			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . "</span>\n<div"
-					. ($collapsed ? ' class="nette-collapsed"' : '') . (TIMEDEBUG && $parentKey ? " data-pk=\"$parentKey\">" : '>');
+					. ($collapsed ? ' class="nette-collapsed"' : '')
+					. (TIMEDEBUG && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"0$varClass\">" : '>'));
 			$list[] = $var;
 			foreach ($fields as $k => &$v) {
 				$vis = '';
@@ -336,7 +338,7 @@ class Dumper
 				}
 				$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nd-key">'
 						. (preg_match('#^\w+\z#', $k) ? $myKey = $k : '"' . ($myKey = self::encodeString($k, TRUE)) . '"')
-						. "</span>$vis => " . self::dumpVar($v, array(self::PARENT_KEY => "0$myKey") + $options, $level + 1);
+						. "</span>$vis => " . self::dumpVar($v, array(self::PARENT_KEY => "$myKey") + $options, $level + 1);
 			}
 			array_pop($list);
 			return $out . '</div>';

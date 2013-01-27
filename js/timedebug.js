@@ -133,7 +133,31 @@ TimeDebug.changeVar = function(e) {
 };
 
 TimeDebug.saveVarChange = function() {
-	console.debug(TimeDebug.tdConsole.parentNode.className);
+	var el = TimeDebug.tdConsole.parentNode;
+	var key;
+	var input = TimeDebug.tdConsole.area.value;
+	var retVal = [];
+
+	TimeDebug.consoleClose();
+
+	if (JAK.DOM.hasClass(el, 'nd-key')) {
+		retVal.push('2' + el.innerHTML);
+		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
+			retVal.push(key);
+		}
+		if (JAK.DOM.hasClass(el, 'nd-dump')) {
+			retVal.push(el.id, 'dump');
+		} else {
+			retVal.push(TimeDebug.logRowActive.id, 'log');
+		}
+		console.debug('"' + retVal.reverse().join(',') + '" : "' + input + '"');
+	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
+		retVal.push('3' + el.className.split(' ')[0].substring(3));
+		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
+		retVal.push(el.id, 'dump');
+		console.debug('"' + retVal.reverse().join(',') + '" : "' + input + '"');
+	}
+
 };
 
 TimeDebug.consoleOpen = function(el, callback) {
@@ -219,7 +243,7 @@ TimeDebug.logAction = function(e) {
 			TimeDebug.logRowActive.removeAttribute('style');
 		}
 
-		TimeDebug.resizeWrapper();
+		TimeDebug.tdResizeWrapper();
 	}
 
 	return false;
@@ -237,7 +261,7 @@ TimeDebug.logResizing = function(e) {
 
 		document.body.style.marginLeft = TimeDebug.tdContainer.style.width = el.style.left = TimeDebug.tdWidth + 'px';
 
-		TimeDebug.resizeWrapper();
+		TimeDebug.tdResizeWrapper();
 	}
 };
 
@@ -268,7 +292,7 @@ TimeDebug.showDump = function(id) {
 
 		TimeDebug.tdView.innerHTML = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
 		TimeDebug.setTitles(TimeDebug.tdView);
-		TimeDebug.resizeWrapper();
+		TimeDebug.tdResizeWrapper();
 	}
 
 	if (TimeDebug.tdFullWidth) TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
@@ -647,15 +671,14 @@ TimeDebug.readKeyDown = function(e) {
 			TimeDebug.titleActive = null;
 			return false;
 		} else if (e.keyCode == 13 && TimeDebug.tdConsole) {
-			TimeDebug.tdConsole.callback();
-			return TimeDebug.consoleClose();
+			return TimeDebug.tdConsole.callback();
 		}
 	}
 	return true;
 };
 
 TimeDebug.windowResize = function() {
-	TimeDebug.resizeWrapper();
+	TimeDebug.tdResizeWrapper();
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
 	if (TimeDebug.tdFullWidth) {
 		TimeDebug.logContainer.style.width = TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
@@ -663,7 +686,7 @@ TimeDebug.windowResize = function() {
 	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
 };
 
-TimeDebug.resizeWrapper = function() {
+TimeDebug.tdResizeWrapper = function() {
 	var viewWidth = TimeDebug.tdView.clientWidth;
 	var viewHeight = TimeDebug.tdView.clientHeight;
 	if (viewWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width = viewWidth + 'px';

@@ -200,7 +200,6 @@ class App
 			else self::$dumpIdCounters[self::$dumpIdPrefix] = $dumpId = 1;
 			echo Dumper::dump($var, array('location' => TRUE, 'loclink' => LOCAL, 'html' => TRUE, 'dumpid' => self::$dumpIdPrefix . "_$dumpId"));
 			echo '<hr>';
-			// TODO: napsat nalezeni referencni cesty v objektu (poli), je treba rozeznavat typ containeru
 		} unset($var);
 	}
 

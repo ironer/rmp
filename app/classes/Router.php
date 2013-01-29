@@ -18,7 +18,7 @@ class Router
 		if (get_class($_container) === 'App') {
 			$this->id = $_id;
 			$this->container = $_container;
-			App::lg("Vytvoren router '$this->id'", $this);
+			if (DEBUG) TimeDebug::lg("Vytvoren router '$this->id'", $this);
 		} else {
 			throw new Exception("Konstruktor routeru ocekava odkaz na kontajner. Druhy argument neni objekt tridy 'App'.");
 		}
@@ -27,7 +27,7 @@ class Router
 
 	public function go()
 	{
-		App::lg("Routovani...", $this);
+		if (DEBUG) TimeDebug::lg("Routovani...", $this);
 
 		return $this->id;
 	}

@@ -233,7 +233,8 @@ TimeDebug.logAction = function(e) {
 
 			document.body.style.marginLeft = TimeDebug.help.style.left = 0;
 			TimeDebug.tdContainer.style.width = '100%';
-			TimeDebug.logContainer.style.width = TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+			TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+			TimeDebug.logRowActive.style.width = (TimeDebug.tdContainer.clientWidth - 48) + 'px';
 		} else {
 			TimeDebug.tdFullWidth = false;
 			JAK.DOM.removeClass(document.body.parentNode, 'nd-fullscreen');
@@ -295,7 +296,7 @@ TimeDebug.showDump = function(id) {
 		TimeDebug.tdResizeWrapper();
 	}
 
-	if (TimeDebug.tdFullWidth) TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+	if (TimeDebug.tdFullWidth) TimeDebug.logRowActive.style.width = (TimeDebug.tdContainer.clientWidth - 48) + 'px';
 	TimeDebug.logRowActiveId = id;
 
 	return true;
@@ -681,7 +682,8 @@ TimeDebug.windowResize = function() {
 	TimeDebug.tdResizeWrapper();
 	TimeDebug.viewSize = JAK.DOM.getDocSize();
 	if (TimeDebug.tdFullWidth) {
-		TimeDebug.logContainer.style.width = TimeDebug.logRowActive.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+		TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
+		TimeDebug.logRowActive.style.width = (TimeDebug.tdContainer.clientWidth - 48) + 'px';
 	}
 	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
 };

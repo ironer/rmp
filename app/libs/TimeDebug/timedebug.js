@@ -4,6 +4,7 @@
  * @author: Stefan Fiedler
  */
 
+
 // TODO: opravit prefixovani
 // TODO: menit obsah promenne TimeDebug.dumps
 // TODO: enter ulozi data z textarea pro editaci

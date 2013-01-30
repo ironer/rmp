@@ -229,6 +229,8 @@ class TimeDebug
 		foreach ($backtrace as $id => $item) {
 			if (isset($item['file']) && strpos($item['file'], __DIR__) === 0) {
 				continue;
+			} elseif (isset($backtrace[$id + 1], $item['class']) && $item['class'] === 'TimeDebug') {
+				continue;
 			} elseif (!isset($item['file'], $item['line']) || !is_file($item['file'])) {
 				break;
 			} else {
@@ -250,8 +252,8 @@ class TimeDebug
 						$args = array();
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
-								if(self::$advancedLog && is_array($arg) && $cnt = count($arg)) {
-									$args[] = '<span class="nd-array nd-titled"><span id="tId_' . ++self::$titleId
+								if(self::$advancedLog && is_array($arg) && (++self::$titleId) && $cnt = count($arg)) {
+									$args[] = '<span class="nd-array nd-titled"><span id="tId_' . self::$titleId
 											. '" class="nd-title"><strong class="nd-inner"><pre class="nd">'
 											.self::dumpVar($arg, array(
 												self::APP_RECURSION => FALSE,
@@ -336,10 +338,12 @@ class TimeDebug
 
 
 	private static function dumpString(&$var, $options, $level) {
+		++self::$titleId;
+
 		if ($options[self::TRUNCATE] && ($varLen = strlen($var)) > $options[self::TRUNCATE]) {
 			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 2048)), TRUE)
 					. '&hellip;"</span> (' . $varLen . ')';
-			$retTitle = self::$advancedLog ? '<span id="tId_' . ++self::$titleId
+			$retTitle = self::$advancedLog ? '<span id="tId_' . self::$titleId
 					. '" class="nd-title nd-color"><strong class="nd-inner"><i>'
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE))

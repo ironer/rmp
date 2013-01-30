@@ -128,8 +128,6 @@ class TimeDebug
 			$text = htmlspecialchars($text);
 		}
 
-		$tdParam = '';
-
 		if (self::$advancedLog && isset($objects)) {
 			$dumpVars = array();
 			foreach($objects as $curObj) {
@@ -143,10 +141,12 @@ class TimeDebug
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = count(self::$timeDebugData);
 				self::$timeDebugData[] = $dump;
 			}
-			$tdParam = "id=\"logId_" . count(self::$timeDebug) . "\"";
-		}
+			if(isset(self::$idCounters['logs'][self::$idPrefix])) $logId = ++self::$idCounters['logs'][self::$idPrefix];
+			else self::$idCounters['logs'][self::$idPrefix] = $logId = 1;
+			$tdParams = 'id="' . self::$idPrefix . "L_$logId" . '" class="nd-row nd-log"';
+		} else $tdParams = 'class="nd-row"';
 
-		echo "<pre $tdParam class=\"nd-row\">[" . str_pad(self::runtime(self::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
+		echo "<pre $tdParams>[" . str_pad(self::runtime(self::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
 				. str_pad(self::memory(self::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $text [<small>";
 
 		if (self::$local) {
@@ -173,7 +173,7 @@ class TimeDebug
 			if (is_array($var)) $var[0][0] = 'jana';
 			if(isset(self::$idCounters['dumps'][self::$idPrefix])) $dumpId = ++self::$idCounters['dumps'][self::$idPrefix];
 			else self::$idCounters['dumps'][self::$idPrefix] = $dumpId = 1;
-			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => self::$idPrefix . "_$dumpId"));
+			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => self::$idPrefix . "D_$dumpId"));
 			echo '<hr>';
 		} unset($var);
 	}

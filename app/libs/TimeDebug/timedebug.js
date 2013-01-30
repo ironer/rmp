@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-
 // TODO: opravit prefixovani
 // TODO: menit obsah promenne TimeDebug.dumps
 // TODO: enter ulozi data z textarea pro editaci
@@ -71,7 +70,7 @@ TimeDebug.init = function(logId) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
 				logNodes[i].onmousedown = TimeDebug.changeVar;
-			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-row')) {
+			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-log')) {
 				TimeDebug.logRows.push(logNodes[i]);
 				logNodes[i].onclick = TimeDebug.logClick;
 				links = logNodes[i].getElementsByTagName('a');
@@ -155,7 +154,7 @@ TimeDebug.saveVarChange = function() {
 		}
 		console.debug('"' + retVal.reverse().join(',') + '" : "' + input + '"');
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
-		retVal.push('3' + el.className.split(' ')[0].substring(3));
+		retVal.push('3' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
 		retVal.push(el.id, 'dump');
 		console.debug('"' + retVal.reverse().join(',') + '" : "' + input + '"');
@@ -282,7 +281,7 @@ TimeDebug.showDump = function(id) {
 		TimeDebug.logRowActive.removeAttribute('style');
 	}
 
-	JAK.DOM.addClass(TimeDebug.logRowActive = document.getElementById('logId_' + id), 'nd-active');
+	JAK.DOM.addClass(TimeDebug.logRowActive = TimeDebug.logRows[id - 1], 'nd-active');
 
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 		if (TimeDebug.tdListeners.length) {

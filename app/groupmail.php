@@ -29,7 +29,7 @@ if (!empty($_GET['mail'])) {
 	return $app->route('imaprouter')->getModel()->process();
 }  else {
 	$app->route();
-	TimeDebug::dump($app);
+	App::dump($app);
 	return $app->getModel()->process();
 }
 

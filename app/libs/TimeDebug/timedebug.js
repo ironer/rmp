@@ -1,9 +1,11 @@
 /**
- * Copyright (c) 2013 Stefan Fiedler (http://ironer.cz)
+ * Copyright (c) 2013 Stefan Fiedler
  * Object for TimeDebug GUI
- * @author: Stefan Fiedler 2013
+ * @author: Stefan Fiedler
  */
 
+// TODO: opravit prefixovani
+// TODO: menit obsah promenne TimeDebug.dumps
 // TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani

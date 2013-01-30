@@ -113,16 +113,17 @@ class TimeDebug
 			self::$lastMemory = self::$startMem;
 		}
 
-		if ($object && isset($object->id)) {
+		if ($object) {
 			$objects = array($object);
-			$path = array($object->id);
+			$path =  isset($object->id) ? array($object->id) : array();
 
-			while (isset($object->container->id)) {
+			while (isset($object->container)) {
 				array_unshift($objects, $object = $object->container);
-				$path[] = $object->id;
+				if (isset($object->id)) $path[] = $object->id;
 			}
 
-			$text = '<span class="nd-path">' . htmlspecialchars(implode('/', array_reverse($path))) . '</span> ' . htmlspecialchars($text);
+			$text = ($path ? '<span class="nd-path">' . htmlspecialchars(implode('/', array_reverse($path))) . '</span> ' : '')
+					. htmlspecialchars($text);
 		} else {
 			$text = htmlspecialchars($text);
 		}
@@ -165,9 +166,11 @@ class TimeDebug
 		if (!self::$initialized) throw new Exception("Trida TimeDebug nebyla inicializovana statickou metodou 'init'.");
 		if (func_num_args() > 10) throw new Exception("Staticka metoda 'dump' muze prijmout nejvyse 10 argumentu.");
 
+		$callbackIndex = (func_num_args() == 0) ? 1 : 0;
 		$backtrace = debug_backtrace(FALSE);
 		echo '<hr>';
-		foreach ($backtrace[0]["args"] as &$var) {
+		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
+			if (is_array($var)) $var[0][0] = 'jana';
 			if(isset(self::$idCounters['dumps'][self::$idPrefix])) $dumpId = ++self::$idCounters['dumps'][self::$idPrefix];
 			else self::$idCounters['dumps'][self::$idPrefix] = $dumpId = 1;
 			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => self::$idPrefix . "_$dumpId"));

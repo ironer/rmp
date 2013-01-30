@@ -7,6 +7,7 @@
 class App
 {
 
+	public $test = "asdasdas dasd asd asdasd asd asd asd asd asdasdassda\ns dasd asd asdasd asd asd asd asd asdasdassdas dasd a\nsd asdasd asd asd asd asd asdasdas";
 	public $id;
 	public $stop = FALSE;
 
@@ -39,7 +40,7 @@ class App
 		$this->get = $_GET;
 		$this->post = $_POST;
 		App::$currentApp = $this;
-		if (DEBUG) TimeDebug::lg("Vytvorena aplikace '$id'", $this);
+		App::lg("Vytvorena aplikace '$id'", $this);
 	}
 
 
@@ -54,7 +55,7 @@ class App
 				throw new Exception("Router '$this->router' (soubor '$this->router.php') nenalezen v adresari routeru '" . ROUTERS . "'.");
 			}
 
-			if (DEBUG) TimeDebug::lg("Volani routeru '$this->router'", $this);
+			App::lg("Volani routeru '$this->router'", $this);
 			$this->rmp['routers'][$this->router] = require_once(ROUTERS . "/$this->router.php");
 
 			if (get_class($this->rmp['routers'][$this->router]) !== 'Router') {
@@ -70,7 +71,7 @@ class App
 	public function getModel() {
 		if ($this->stop) return $this;
 
-		if (DEBUG) TimeDebug::lg("Model...", $this);
+		App::lg("Model...", $this);
 
 		return $this;
 	}
@@ -83,7 +84,7 @@ class App
 		// TODO: napsat jednoduchy iterator pro require_once vraceneho procesoru pripadne volani goto pole poli lambda funkci s 1 parametrem (asoc. polem)
 		// TODO: vsechny metody controleru se musi volat s jednim argumentem - asociativnim polem
 
-		if (DEBUG) TimeDebug::lg("Running processors...", $this);
+		App::lg("Running processors...", $this);
 
 		return $this;
 	}
@@ -93,7 +94,7 @@ class App
 	public function go() {
 		if ($this->stop) return FALSE;
 
-		if (DEBUG) TimeDebug::lg("Spusteni aplikace '$this->id'!", $this);
+		App::lg("Spusteni aplikace '$this->id'!", $this);
 
 		return $this->id;
 	}
@@ -102,4 +103,16 @@ class App
 
 	private static $currentApp = NULL;
 
+
+
+	public static function lg($text = '', $object = NULL, $reset = FALSE) {
+		if (DEBUG) TimeDebug::lg($text, $object, $reset);
+	}
+
+
+
+	public static function dump(&$arg0 = NULL, &$arg1 = NULL, &$arg2 = NULL, &$arg3 = NULL, &$arg4 = NULL, &$arg5 = NULL, &$arg6 = NULL, &$arg7 = NULL, &$arg8 = NULL, &$arg9 = NULL) {
+		if (func_num_args() > 10) throw new Exception("Staticka metoda 'dump' muze prijmout nejvyse 10 argumentu.");
+		if (DEBUG) TimeDebug::dump();
+	}
 }

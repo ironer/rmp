@@ -20,8 +20,8 @@ try {
 }
 
 $a = array(array('12'));
-TimeDebug::dump($a);
-TimeDebug::dump($a[0][0]);
+App::dump($a);
+App::dump($a[0][0]);
 
 if (DEBUG) {
 	TimeDebug::lg('Zobrazeni debuggeru', $app);

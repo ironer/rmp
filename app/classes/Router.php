@@ -1,7 +1,6 @@
 <?php
 
-class Router
-{
+class Router {
 
 	// TODO: napsat firewall
 	// TODO: napsat lazy decrypter vstupu pouzivajici blowfish nebo twofish
@@ -13,8 +12,7 @@ class Router
 	private $usedRoute = array();
 
 
-	public function __construct($_id, $_container)
-	{
+	public function __construct($_id, $_container) {
 		if (get_class($_container) === 'App') {
 			$this->id = $_id;
 			$this->container = $_container;
@@ -25,8 +23,7 @@ class Router
 	}
 
 
-	public function go()
-	{
+	public function go() {
 		App::lg("Routovani...", $this);
 
 		return $this->id;

@@ -4,10 +4,8 @@
  * @author: Stefan Fiedler 2013
  */
 
-class App
-{
+class App {
 
-	public $test = "asdasdas dasd asd asdasd asd asd asd asd asdasdassda\ns dasd asd asdasd asd asd asd asd asdasdassdas dasd a\nsd asdasd asd asd asd asd asdasdas";
 	public $id;
 	public $stop = FALSE;
 
@@ -31,7 +29,6 @@ class App
 	private $response = array();
 
 
-
 	public function __construct($id = 'myapp') {
 		$this->id = $id;
 		$this->request = urldecode(substr($_SERVER['REQUEST_URI'], $i = strlen(WEBPATH) + 1,
@@ -42,7 +39,6 @@ class App
 		App::$currentApp = $this;
 		App::lg("Vytvorena aplikace '$id'", $this);
 	}
-
 
 
 	public function route($router = '') {
@@ -67,7 +63,6 @@ class App
 	}
 
 
-
 	public function getModel() {
 		if ($this->stop) return $this;
 
@@ -75,7 +70,6 @@ class App
 
 		return $this;
 	}
-
 
 
 	public function process() {
@@ -90,7 +84,6 @@ class App
 	}
 
 
-
 	public function go() {
 		if ($this->stop) return FALSE;
 
@@ -100,9 +93,7 @@ class App
 	}
 
 
-
 	private static $currentApp = NULL;
-
 
 
 	public static function lg($text = '', $object = NULL, $reset = FALSE) {
@@ -110,9 +101,9 @@ class App
 	}
 
 
-
 	public static function dump(&$arg0 = NULL, &$arg1 = NULL, &$arg2 = NULL, &$arg3 = NULL, &$arg4 = NULL, &$arg5 = NULL, &$arg6 = NULL, &$arg7 = NULL, &$arg8 = NULL, &$arg9 = NULL) {
 		if (func_num_args() > 10) throw new Exception("Staticka metoda 'dump' muze prijmout nejvyse 10 argumentu.");
 		if (DEBUG) TimeDebug::dump();
 	}
+
 }

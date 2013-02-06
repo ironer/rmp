@@ -4,7 +4,10 @@
  * @author: Stefan Fiedler
  */
 
+
 // TODO: opravit prefixovani
+// TODO: dat na Esc confirm
+// TODO: delat nastavitelnou rekurzni tridu hlavniho containeru
 // TODO: menit obsah promenne TimeDebug.dumps
 // TODO: enter ulozi data z textarea pro editaci
 

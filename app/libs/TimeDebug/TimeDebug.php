@@ -1,7 +1,6 @@
 <?php
 
-class TimeDebug
-{
+class TimeDebug {
 
 	const DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 4)
 			TRUNCATE = 'truncate', // how truncate long strings? (defaults to 70)
@@ -35,8 +34,7 @@ class TimeDebug
 	private static $timeDebugMD5 = array();
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
-	
-	
+
 	
 	public static function init($advancedLog = FALSE, $local = FALSE, $root = '', $startTime = 0, $startMem = 0) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
@@ -56,7 +54,6 @@ class TimeDebug
 
 		if (self::$advancedLog) register_shutdown_function(array(__CLASS__, '_closeDebug'));
 	}
-
 
 
 	public static function _closeDebug() {
@@ -90,7 +87,7 @@ class TimeDebug
 			)
 		);
 
-		echo "<script>";
+		echo "\n<script>\n";
 		readfile(__DIR__ . '/jak.packer.js');
 		echo "\n";
 		readfile(__DIR__ . '/timedebug.js');
@@ -100,7 +97,6 @@ class TimeDebug
 				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
 				. "TimeDebug.init(1);\n</script>\n";
 	}
-
 
 
 	public static function lg($text = '', $object = NULL, $reset = FALSE) {
@@ -159,8 +155,7 @@ class TimeDebug
 		echo ($code ? " $code" : '') . '</small>]</pre>';
 	}
 
-	
-	
+
 	public static function dump(&$arg0 = NULL, &$arg1 = NULL, &$arg2 = NULL, &$arg3 = NULL, &$arg4 = NULL, &$arg5 = NULL, &$arg6 = NULL, &$arg7 = NULL, &$arg8 = NULL, &$arg9 = NULL) {
 
 		if (!self::$initialized) throw new Exception("Trida TimeDebug nebyla inicializovana statickou metodou 'init'.");
@@ -179,12 +174,10 @@ class TimeDebug
 	}
 
 
-
 	public static function runtime($minus = NULL) {
 		if ($minus === NULL) $minus = self::$startTime;
 		return self::num(((self::$lastRuntime = microtime(TRUE)) - $minus) * 1000, 0, 'ms', $minus !== self::$startTime);
 	}
-
 
 
 	public static function memory($minus = NULL) {
@@ -193,17 +186,14 @@ class TimeDebug
 	}
 
 
-
 	public static function maxMem($real = FALSE) {
 		return self::num(memory_get_peak_usage($real) / 1024, 0, 'kB');
 	}
 
 
-	
 	private static function num($val = 0, $decs = 2, $units = '', $delta = FALSE) {
 		return ($delta && ($val = round($val, $decs)) > 0 ? '+' : '') . number_format($val, $decs, ',', ' ') . ($units ? " $units" : '');
 	}
-
 
 
 	private static function toHtml($var, array $options = NULL) {
@@ -222,14 +212,11 @@ class TimeDebug
 						. htmlspecialchars(substr($file, strlen(self::$root))) . "</i> <b>@$line</b></a> $code</small>" : '') . "</pre>\n";
 	}
 
-	
 
 	private static function findLocation($getMethod = FALSE) {
 		$backtrace = debug_backtrace(FALSE);
 		foreach ($backtrace as $id => $item) {
-			if (isset($item['file']) && strpos($item['file'], __DIR__) === 0) {
-				continue;
-			} elseif (isset($backtrace[$id + 1], $item['class']) && $item['class'] === 'TimeDebug') {
+			if (isset($backtrace[$id + 1], $item['class']) && $item['class'] === 'TimeDebug') {
 				continue;
 			} elseif (!isset($item['file'], $item['line']) || !is_file($item['file'])) {
 				break;
@@ -286,16 +273,11 @@ class TimeDebug
 
 				}
 
-				return array(
-					$item['file'],
-					$item['line'],
-					$code
-				);
+				return array($item['file'], $item['line'], $code);
 			}
 		}
 		return false;
 	}
-
 
 
 	private static function dumpVar(&$var, array $options, $level = 0) {
@@ -306,7 +288,6 @@ class TimeDebug
 		}
 	}
 
-	
 
 	private static function dumpNull(&$var, $options, $level) {
 		return '<span class="nd-null' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top') . '">NULL</span>'
@@ -314,12 +295,10 @@ class TimeDebug
 	}
 
 
-	
 	private static function dumpBoolean(&$var, $options, $level) {
 		return '<span class="nd-bool' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top') . '">'
 				. ($var ? 'TRUE' : 'FALSE') . "</span>" . ($options[self::NO_BREAK] ? '' : "\n");
 	}
-
 
 	
 	private static function dumpInteger(&$var, $options, $level) {
@@ -328,13 +307,11 @@ class TimeDebug
 	}
 
 
-
 	private static function dumpDouble(&$var, $options, $level) {
 		$var = var_export($var, TRUE);
 		return '<span class="nd-number' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top') . '">' . $var
 				. (strpos($var, '.') === FALSE ? '.0' : '') . "</span>" . ($options[self::NO_BREAK] ? '' : "\n");
 	}
-
 
 
 	private static function dumpString(&$var, $options, $level) {
@@ -360,7 +337,6 @@ class TimeDebug
 		return '<span class="nd-string' . $retClass . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top') . '">'
 				. $retTitle . $retVal . ($options[self::NO_BREAK] ? '' : "\n");
 	}
-
 
 
 	private static function dumpArray(&$var, $options, $level)
@@ -400,7 +376,6 @@ class TimeDebug
 			return $out . count($var) . ")" . ($options[self::NO_BREAK] ? '' : " [ ... ]\n");
 		}
 	}
-
 
 
 	private static function dumpObject(&$var, $options, $level)
@@ -445,7 +420,6 @@ class TimeDebug
 	}
 
 
-
 	private static function dumpResource(&$var, $options, $level)
 	{
 		$type = get_resource_type($var);
@@ -460,7 +434,6 @@ class TimeDebug
 		}
 		return $options[self::NO_BREAK] ? $out : "$out\n";
 	}
-
 
 
 	private static function encodeString($s, $truncated = FALSE)

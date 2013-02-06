@@ -6,7 +6,6 @@
 
 
 // TODO: opravit prefixovani
-// TODO: dat na Esc confirm
 // TODO: delat nastavitelnou rekurzni tridu hlavniho containeru
 // TODO: menit obsah promenne TimeDebug.dumps
 // TODO: enter ulozi data z textarea pro editaci
@@ -662,7 +661,7 @@ TimeDebug.readKeyDown = function(e) {
 				return false;
 		} else if (e.keyCode == 27) {
 			if (TimeDebug.tdConsole) return TimeDebug.consoleClose();
-			if (!TimeDebug.visibleTitles.length) return true;
+			if (!TimeDebug.visibleTitles.length || !confirm('Opravdu resetovat nastaveni?')) return true;
 			if (TimeDebug.titleHideTimeout) {
 				window.clearTimeout(TimeDebug.titleHideTimeout);
 				TimeDebug.titleHideTimeout = null;

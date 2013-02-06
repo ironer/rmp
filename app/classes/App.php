@@ -76,7 +76,7 @@ class App {
 		if ($this->stop) return $this;
 
 		// TODO: napsat jednoduchy iterator pro require_once vraceneho procesoru pripadne volani goto pole poli lambda funkci s 1 parametrem (asoc. polem)
-		// TODO: vsechny metody controleru se musi volat s jednim argumentem - asociativnim polem
+		// TODO: vsechny metody procesoru se musi volat s jednim argumentem - asociativnim polem
 
 		App::lg("Running processors...", $this);
 

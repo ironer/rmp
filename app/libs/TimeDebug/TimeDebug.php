@@ -34,7 +34,6 @@ class TimeDebug {
 	private static $idCounters = array('dumps' => array(), 'logs' => array(), 'titles' => array());
 
 	private static $timeDebug = array();
-	private static $timeDebugData = array();
 	private static $timeDebugMD5 = array();
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
@@ -96,7 +95,6 @@ class TimeDebug {
 		echo "\n";
 		readfile(__DIR__ . '/timedebug.js');
 		echo "\nTimeDebug.local = " . (self::$local ? 'true' : 'false') . ";\n"
-				. "TimeDebug.dumps = ". json_encode(self::$timeDebugData) . ";\n"
 				. "TimeDebug.indexes = ". json_encode(self::$timeDebug) . ";\n"
 				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
 				. "TimeDebug.init(1);\n</script>\n";
@@ -138,8 +136,8 @@ class TimeDebug {
 			if (isset(self::$timeDebugMD5[$dumpMD5])) {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5];
 			} else {
-				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = count(self::$timeDebugData);
-				self::$timeDebugData[] = $dump;
+				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = $cnt = count(self::$timeDebugMD5);
+				echo '<pre id="tdView_' . $cnt . '" class="td-view-dump">' . $dump . '</pre>';
 			}
 			$tdParams = 'id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
 		} else $tdParams = 'class="nd-row"';

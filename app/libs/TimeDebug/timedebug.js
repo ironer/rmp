@@ -34,7 +34,7 @@ TimeDebug.indexes = [];
 TimeDebug.tdContainer = JAK.mel('div', {id:'tdContainer'});
 TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
 TimeDebug.tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
-TimeDebug.tdView = JAK.mel('div', {id:'tdView'});
+TimeDebug.tdView = JAK.mel('pre', {id:'tdView'});
 TimeDebug.tdView.activeChilds = [];
 TimeDebug.tdListeners = [];
 TimeDebug.tdFullWidth = false;
@@ -76,6 +76,8 @@ TimeDebug.init = function(logId) {
 				logNodes[i].onclick = TimeDebug.logClick;
 				links = logNodes[i].getElementsByTagName('a');
 				for (k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
+			} else if (JAK.DOM.hasClass(logNodes[i], 'td-view-dump')) {
+				TimeDebug.dumps.push(logNodes[i]);
 			}
 		}
 	}
@@ -111,7 +113,7 @@ TimeDebug.init = function(logId) {
 	window.onresize = TimeDebug.windowResize;
 	document.onkeydown = TimeDebug.readKeyDown;
 	document.body.oncontextmenu = TimeDebug.tdFalse;
-	TimeDebug.tdView.onmousedown = TimeDebug.changeVar;
+	TimeDebug.tdInnerWrapper.onmousedown = TimeDebug.changeVar;
 };
 
 TimeDebug.changeVar = function(e) {
@@ -287,16 +289,29 @@ TimeDebug.showDump = function(id) {
 	JAK.DOM.addClass(TimeDebug.logRowActive = TimeDebug.logRows[id - 1], 'nd-active');
 
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
-		if (TimeDebug.tdListeners.length) {
-			JAK.Events.removeListeners(TimeDebug.tdListeners);
-			TimeDebug.tdListeners.length = 0;
-		}
-		for (var i = TimeDebug.tdView.activeChilds.length, j; i-- > 0;) {
-			if ((j = TimeDebug.visibleTitles.indexOf(TimeDebug.tdView.activeChilds[i])) !== -1) TimeDebug.visibleTitles.splice(j, 1);
-		}
-		TimeDebug.tdView.activeChilds.length = 0;
+		var activeCount = TimeDebug.tdView.activeChilds.length;
+		if (activeCount) {
 
-		TimeDebug.tdView.innerHTML = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
+		} else{
+			if (TimeDebug.tdListeners.length) {
+				JAK.Events.removeListeners(TimeDebug.tdListeners);
+				TimeDebug.tdListeners.length = 0;
+			}
+			for (var i = activeCount, j; i-- > 0;) {
+				if ((j = TimeDebug.visibleTitles.indexOf(TimeDebug.tdView.activeChilds[i])) !== -1) TimeDebug.visibleTitles.splice(j, 1);
+			}
+			TimeDebug.tdView.activeChilds.length = 0;
+		}
+
+		(TimeDebug.tdView.oriId && (TimeDebug.tdView.id = TimeDebug.tdView.oriId)) || TimeDebug.tdInnerWrapper.removeChild(TimeDebug.tdView);
+
+		TimeDebug.tdView = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
+		if (!TimeDebug.tdView.oriId) {
+			TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
+			TimeDebug.tdView.oriId = TimeDebug.tdView.id;
+			TimeDebug.tdView.activeChilds = [];
+		}
+		TimeDebug.tdView.id = 'tdView';
 		TimeDebug.setTitles(TimeDebug.tdView);
 		TimeDebug.tdResizeWrapper();
 	}

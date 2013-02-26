@@ -203,8 +203,13 @@ pre.nd {
 	min-height: 100%;
 	float: left;
 }
-#tdView {
+.td-view-dump {
+	display: none;
+}
+#tdContainer #tdView {
+	display: block;
 	position: relative;
+	margin: 0;
 	padding: 8px;
 }
 #logContainer {

@@ -14,7 +14,7 @@ class TimeDebug {
 			LOCATION = 'location', // show location string? (defaults to false)
 			LOCATION_LINK = 'loclink', // show location string as link (defaults to true)
 			NO_BREAK = 'nobreak', // return dump without line breaks (defaults to false)
-			APP_RECURSION = 'apprecursion', // force { RECURSION } on all nested objects with class 'App'
+			APP_RECURSION = 'apprecursion', // force { RECURSION } on all nested objects with given self::$recClass
 			TAG_ID_PREFIX = 'tagidprefix', // sets the prefix of auto incrementing tags' ids for dumped titles (defaults to 'tId')
 			PARENT_KEY = 'parentkey', // sets parent key for children's div to attribute 'data-pk' for arrays and objects
 			DUMP_ID = 'dumpid'; // id for .nd 'pre' in HTML form
@@ -27,6 +27,8 @@ class TimeDebug {
 	private static $startMem;
 	private static $lastRuntime;
 	private static $lastMemory;
+
+	public static $recClass = 'App';
 
 	public static $idPrefix = 'td';
 	private static $idCounters = array('dumps' => array(), 'logs' => array(), 'titles' => array());
@@ -203,7 +205,7 @@ class TimeDebug {
 					self::COLLAPSE => FALSE,
 					self::COLLAPSE_COUNT => 7,
 					self::NO_BREAK => FALSE,
-					self::APP_RECURSION => is_object($var) && (get_class($var) != 'App')
+					self::APP_RECURSION => is_object($var) && (get_class($var) != self::$recClass)
 				))
 				. ($file ? '<small>in <' . (empty($options[self::LOCATION_LINK]) ? 'span' : 'a href="editor://open/?file='
 						. rawurlencode($file) . "&amp;line=$line\"" ) . " class=\"nd-editor\"><i>"
@@ -396,7 +398,7 @@ class TimeDebug {
 		if (empty($fields)) {
 			return $options[self::NO_BREAK] ? $out : "$out\n";
 
-		} elseif (in_array($var, $list, TRUE) || ($options[self::APP_RECURSION] && $varClass === 'App')) {
+		} elseif (in_array($var, $list, TRUE) || ($options[self::APP_RECURSION] && $varClass === self::$recClass)) {
 			return $out . " { <i>RECURSION</i> }" . ($options[self::NO_BREAK] ? '' : "\n");
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {

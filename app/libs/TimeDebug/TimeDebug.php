@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Author of base class 'Dumper': David Grudl 2004
+ * Author: Stefan Fiedler 2013
+ */
+
+// TODO: exportovat zvlast komprinovane logovane objekty jedinecne a jejich titulky
+
 class TimeDebug {
 
 	const DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 4)
@@ -165,7 +172,7 @@ class TimeDebug {
 		$backtrace = debug_backtrace(FALSE);
 		echo '<hr>';
 		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
-			if (is_array($var)) $var[0][0] = 'jana';
+			//if (is_array($var)) $var[0][0] = 'jana';
 			if(isset(self::$idCounters['dumps'][self::$idPrefix])) $dumpId = ++self::$idCounters['dumps'][self::$idPrefix];
 			else self::$idCounters['dumps'][self::$idPrefix] = $dumpId = 1;
 			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => self::$idPrefix . "D_$dumpId"));

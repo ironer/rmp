@@ -19,10 +19,11 @@ class Mailer
 	public $id;
 	public $container;
     
-    public $prepared;                       //počet emailů k odeslání
-    public $sended;                         //počet odeslaných mailů
-    public $errors;                         //počet chybně odeslaných adres
-    
+    public $prepared=0;                       //počet emailů k odeslání
+    public $sent=0;                         //počet odeslaných mailů
+    public $errors=0;                         //počet chybně odeslaných adres
+    public $localerrors;                        
+        
     private $runSMTP = true;
     
 	private $indexes = array(
@@ -33,7 +34,8 @@ class Mailer
 		'subject' => 0,
 		'text' => 0,
 		'html' => 0,
-		'attachments' => array()
+		'attachments' => array(),
+		'headers' => 0
 	);
 
 	private $data = array(
@@ -44,7 +46,8 @@ class Mailer
 		'subject' => array(),
 		'text' => array(),
 		'html' => array(),
-		'attachments' => array()
+		'attachments' => array(),
+		'headers' => array()
 	);
     
 	private $emails = array();
@@ -145,7 +148,7 @@ class Mailer
             }
             
         }
-                
+        
         $this->emails[] = $email;
         $this->prepared++;
                     
@@ -153,17 +156,15 @@ class Mailer
     
 
 	public function go($count=0) {
-
+        
         App::lg('Start go',$this);
-        
-        
-        $this->f_emails = fopen($this->storage.'/send.dat','a');
-        $this->f_index  = fopen($this->storage.'/sendindex.dat','a');
+//        App::dump($this->emails);
+//        App::dump($this->data);
         if (is_file($this->storage.'/sendindex.dat')) {
-            $fileindex = unserialize(file_get_contents($this->storage.'/sendindex.dat'));
-            $this->sended = count($fileinex);
+            $fileindex = explode("\n",file_get_contents($this->storage.'/sendindex.dat'));
+            $this->sent = count($fileindex)-1;
         } else {
-            $this->sended = 0;
+            $this->sent = 0;
         }
         if (is_file($this->storage.'/encoded.dat')) $this->encoded = unserialize(file_get_contents($this->storage.'/encoded.dat'));
 
@@ -171,10 +172,16 @@ class Mailer
         $timer = microtime(true);
         $localerrors = 0;
         
-        array_splice($this->emails,0,$this->sended);
+        echo 'sent '.$this->sent;
+        
+        array_splice($this->emails,0,$this->sent);
+        
+        echo ' tosend '.count($this->emails);
         
         foreach ($this->emails as $email) {
             
+//            App::dump($email);
+                        
             for ($i=0;$i<3;$i++) $this->boundary[$i] = md5(microtime(true).uniqid());
 
             $this->fullemail['smtp_replies']=array();
@@ -242,6 +249,16 @@ class Mailer
                                             
                         break;
 
+                    case 'headers':
+                        
+                        foreach ($this->data['headers'][$email[$key]] as $akey=>$header) {
+                            
+                            $this->encoded['headers'][$akey] = $header;
+                                 
+                        }
+                                            
+                        break;
+
                  }
                  
             }
@@ -249,25 +266,24 @@ class Mailer
             $body = $this->createMIME();
 
     App::lg('Encode end',$this);
-            
+
             $smtp = $this->SMTPmail($body);
             
             App::dump($smtp);
+            
 
     App::lg('SMTP send',$this);
 
-//            App::dump($email);
-            App::dump($this->fullemail);
-//            App::dump($this->encoded);
-
+            $this->f_emails = fopen($this->storage.'/send.dat','a');
+            $this->f_index  = fopen($this->storage.'/sendindex.dat','a');
             $stat = fstat($this->f_emails);
             $fpos = $stat['size'];
-            fputs($this->f_index,str_pad($smtp['msgid'],$this->msgid_len,' ',STR_PAD_RIGHT).str_pad($fpos,$this->index_len,' ',STR_PAD_RIGHT).self::EOL);
+            fputs($this->f_index,str_pad($this->fullemail['msgid'],$this->msgid_len,' ',STR_PAD_RIGHT).str_pad($fpos,$this->index_len,' ',STR_PAD_RIGHT).self::EOL);
             fputs($this->f_emails,serialize($this->fullemail).self::EOL);
             
-            $this->sended++;
+            $this->sent++;
             $counter++;
-            if ($counter == $count) {file_put_contents($this->storage.'/encoded.dat',$this->encoded); fclose($this->f_emails); fclose($this->f_index); return;}
+            if ($counter == $count) {file_put_contents($this->storage.'/encoded.dat',serialize($this->encoded)); fclose($this->f_emails); fclose($this->f_index); return;}
 
         }
         	   
@@ -308,8 +324,10 @@ class Mailer
 
 	private function SMTPmail ($body) {
         
+        $this->localerrors = 0;
+                        
 		if (($SMTPIN = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) && socket_connect($SMTPIN, self::$SmtpServer, self::$SmtpPort)) {
-
+            
 			$mail = "To: ".$this->encoded['toFull'] . self::EOL
                 . "Subject:".$this->encoded['subject'] . self::EOL
                 . implode(self::EOL,$this->encoded['headers']) . self::EOL . self::EOL
@@ -329,7 +347,7 @@ class Mailer
             $this->fullemail['smtp_replies'][0] = substr($replies[3],0,3);
             for ($i=4;$i<=4+count($this->encoded['bccEmails']);$i++) {
 
-                if ($replies[$i][0]!='2') {$this->logError($this->encoded['bccEmails'][$i-5] . ' Err. ' . $replies[$i]); $this->errors++; $localerrors++;}
+                if ($replies[$i][0]!='2') {$this->logError($this->encoded['bccEmails'][$i-5] . ' Err. ' . $replies[$i]); $this->errors++; $this->localerrors++;}
                 $this->fullemail['smtp_replies'][$i-3] = substr($replies[$i],0,3);
                 
             }
@@ -338,7 +356,7 @@ class Mailer
             
             //zpracování odpovědi SMTP serveru na odeslané tělo emailu
             $this->fullemail['msgid'] = trim(strrchr($reply,' '));
-            if ($reply[0]!='2') {$this->logError('SMTP' . ' Err. ' . $reply); $this->errors += count($this->encoded['bccEmails'])+1-$localerrors;}
+            if ($reply[0]!='2') {$this->logError('SMTP' . ' Err. ' . $reply); $this->errors += count($this->encoded['bccEmails'])+1-$this->localerrors;}
             $this->fullemail['smtp_replies'][] = substr($reply,0,3);
             
 			$this->sockTalk($SMTPIN, 'QUIT', $talk);
@@ -373,9 +391,17 @@ class Mailer
     			}
     			$talk[] = $command;
     		}
-    
-    		return $talk[] = socket_read($socket,512,PHP_BINARY_READ);
-      
+///for windows server ojebávka!!
+if ($_SERVER['SERVER_NAME'] == 'localhost') {
+            $buff = '';
+            $ln = socket_read($socket,1024,PHP_BINARY_READ); $buff .= $ln;
+            if (substr($ln,0,3)=='334' && !strpos($ln,'success'))
+                do {$ln = socket_read($socket,1024,PHP_BINARY_READ); $buff .= $ln;} while(substr($ln,0,3)!='354');
+            return $talk[] = $buff;      
+}else{
+//standard version for Linux server
+    		return $talk[] = socket_read($socket,1024,PHP_BINARY_READ); 
+}
       }
 
 	}
@@ -432,10 +458,11 @@ class Mailer
             if (is_file($this->storage.'/data.dat')) $this->data = unserialize(file_get_contents($this->storage.'/data.dat'));
             if (is_file($this->storage.'/indexes.dat')) $this->indexes = unserialize(file_get_contents($this->storage.'/indexes.dat'));
             if (is_file($this->storage.'/emails.dat')) $this->emails = unserialize(file_get_contents($this->storage.'/emails.dat'));
+            if (is_file($this->storage.'/encoded.dat')) $this->encoded = unserialize(file_get_contents($this->storage.'/encoded.dat'));
             
             if (is_array($this->emails)) $this->prepared = count($this->emails); else $this->prepared = 0;
             
-            if (is_file($this->storage.'/sendindex.dat')) $this->sended = filesize($this->storage.'/sendindex.dat')/($this->msgid_len+$this->index_len+2); else $this->sended = 0;
+            if (is_file($this->storage.'/sendindex.dat')) $this->sent = filesize($this->storage.'/sendindex.dat')/($this->msgid_len+$this->index_len+2); else $this->sent = 0;
             
         }
         

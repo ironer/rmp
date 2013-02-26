@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-
 // TODO: opravit prefixovani
 // TODO: delat nastavitelnou rekurzni tridu hlavniho containeru
 // TODO: menit obsah promenne TimeDebug.dumps
@@ -121,6 +120,7 @@ TimeDebug.changeVar = function(e) {
 	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.right) return true;
 
 	var el = JAK.Events.getTarget(e);
+	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
@@ -130,6 +130,7 @@ TimeDebug.changeVar = function(e) {
 	} else if (el.className == 'nd-key') {
 		TimeDebug.consoleOpen(el, TimeDebug.saveVarChange);
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
+		TimeDebug.hideTitle(TimeDebug.titleActive);
 		TimeDebug.consoleOpen(el, TimeDebug.saveVarChange);
 	}
 
@@ -330,7 +331,7 @@ TimeDebug.setTitles = function(el) {
 TimeDebug.showTitle = function(e) {
 	e = e || window.event;
 
-	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || TimeDebug.actionData.element !== null) return false;
+	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || TimeDebug.actionData.element !== null || TimeDebug.tdConsole !== null) return false;
 	var tdTitleRows, tdParents;
 
 	JAK.Events.stopEvent(e);
@@ -536,13 +537,14 @@ TimeDebug.titleAutosize = function(el) {
 	} else {
 		el.style.width = el.tdWidth = 'auto';
 		tdCheckWidthDif = true;
+
 	}
 
 	if (el.resized) {
 		el.style.height = (TimeDebug.spaceY < el.userHeight ? el.tdHeight = TimeDebug.spaceY : el.tdHeight = el.userHeight) + 'px';
 	} else if (TimeDebug.spaceY < el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
 		el.style.height = (el.tdHeight = TimeDebug.spaceY) + 'px';
-		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0))) {
+		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.offsetWidth, 0))) {
 			el.style.width = (el.tdWidth = el.oriWidth + tdWidthDif) + 'px';
 		}
 	} else {
@@ -595,6 +597,7 @@ TimeDebug.pinTitle = function(e) {
 	}
 
 	var el = JAK.Events.getTarget(e);
+	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
 
 	if (!JAK.DOM.hasClass(el, 'nd-titled')) return false;
 
@@ -661,7 +664,9 @@ TimeDebug.readKeyDown = function(e) {
 				return false;
 		} else if (e.keyCode == 27) {
 			if (TimeDebug.tdConsole) return TimeDebug.consoleClose();
-			if (!TimeDebug.visibleTitles.length || !confirm('Opravdu resetovat nastaveni?')) return true;
+			if (!(TimeDebug.visibleTitles.length - (TimeDebug.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni?')) {
+				return true;
+			}
 			if (TimeDebug.titleHideTimeout) {
 				window.clearTimeout(TimeDebug.titleHideTimeout);
 				TimeDebug.titleHideTimeout = null;

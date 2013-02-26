@@ -1,11 +1,9 @@
 <?php
 
 /**
- * Author of base class 'Dumper': David Grudl 2004
- * Author: Stefan Fiedler 2013
+ * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
+ * Author of 'TimeDebug': 2013 Stefan Fiedler
  */
-
-// TODO: exportovat zvlast komprinovane logovane objekty jedinecne a jejich titulky
 
 class TimeDebug {
 
@@ -21,8 +19,6 @@ class TimeDebug {
 			PARENT_KEY = 'parentkey', // sets parent key for children's div to attribute 'data-pk' for arrays and objects
 			DUMP_ID = 'dumpid'; // id for .nd 'pre' in HTML form
 
-	// TODO: dopsat id prefix pro zmenu prefixu
-	
 	private static $initialized = FALSE;
 	private static $advancedLog;
 	private static $local;
@@ -34,7 +30,6 @@ class TimeDebug {
 
 	public static $idPrefix = 'td';
 	private static $idCounters = array('dumps' => array(), 'logs' => array(), 'titles' => array());
-	public static $titleId = 9;
 
 	private static $timeDebug = array();
 	private static $timeDebugData = array();
@@ -144,9 +139,7 @@ class TimeDebug {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = count(self::$timeDebugData);
 				self::$timeDebugData[] = $dump;
 			}
-			if(isset(self::$idCounters['logs'][self::$idPrefix])) $logId = ++self::$idCounters['logs'][self::$idPrefix];
-			else self::$idCounters['logs'][self::$idPrefix] = $logId = 1;
-			$tdParams = 'id="' . self::$idPrefix . "L_$logId" . '" class="nd-row nd-log"';
+			$tdParams = 'id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
 		} else $tdParams = 'class="nd-row"';
 
 		echo "<pre $tdParams>[" . str_pad(self::runtime(self::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
@@ -173,9 +166,7 @@ class TimeDebug {
 		echo '<hr>';
 		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
 			//if (is_array($var)) $var[0][0] = 'jana';
-			if(isset(self::$idCounters['dumps'][self::$idPrefix])) $dumpId = ++self::$idCounters['dumps'][self::$idPrefix];
-			else self::$idCounters['dumps'][self::$idPrefix] = $dumpId = 1;
-			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => self::$idPrefix . "D_$dumpId"));
+			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => self::$idPrefix . 'D_' . self::incCounter('dumps')));
 			echo '<hr>';
 		} unset($var);
 	}
@@ -220,6 +211,12 @@ class TimeDebug {
 	}
 
 
+	private static function incCounter($cType = 'titles') {
+		if(isset(self::$idCounters[$cType][self::$idPrefix])) return ++self::$idCounters[$cType][self::$idPrefix];
+		else return self::$idCounters[$cType][self::$idPrefix] = 1;
+	}
+
+
 	private static function findLocation($getMethod = FALSE) {
 		$backtrace = debug_backtrace(FALSE);
 		foreach ($backtrace as $id => $item) {
@@ -246,8 +243,8 @@ class TimeDebug {
 						$args = array();
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
-								if(self::$advancedLog && is_array($arg) && (++self::$titleId) && $cnt = count($arg)) {
-									$args[] = '<span class="nd-array nd-titled"><span id="tId_' . self::$titleId
+								if(self::$advancedLog && is_array($arg) && $titleId = self::incCounter() && $cnt = count($arg)) {
+									$args[] = '<span class="nd-array nd-titled"><span id="' . self::$idPrefix . 'T_' . $titleId
 											. '" class="nd-title"><strong class="nd-inner"><pre class="nd">'
 											.self::dumpVar($arg, array(
 												self::APP_RECURSION => FALSE,
@@ -322,16 +319,16 @@ class TimeDebug {
 
 
 	private static function dumpString(&$var, $options, $level) {
-		++self::$titleId;
+		$titleId = self::incCounter();
 
 		if ($options[self::TRUNCATE] && ($varLen = strlen($var)) > $options[self::TRUNCATE]) {
-			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 2048)), TRUE)
+			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 512)), TRUE)
 					. '&hellip;"</span> (' . $varLen . ')';
-			$retTitle = self::$advancedLog ? '<span id="tId_' . self::$titleId
+			$retTitle = self::$advancedLog ? '<span id="' . self::$idPrefix . 'T_' . $titleId
 					. '" class="nd-title nd-color"><strong class="nd-inner"><i>'
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
-						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 4096)), TRUE))
-					. ($varLen > 4096 ? '&hellip; &lt; TRUNCATED to 4kB &gt;' : '') . '</i></strong></span>' : '';
+						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 1024)), TRUE))
+					. ($varLen > 1024 ? '&hellip; &lt; TRUNCATED to 1kB &gt;' : '') . '</i></strong></span>' : '';
 			$retClass = self::$advancedLog ? ' nd-titled' : '';
 		} else {
 			$retTitle = '';

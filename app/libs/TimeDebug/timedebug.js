@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: opravit prefixovani
+
 // TODO: delat nastavitelnou rekurzni tridu hlavniho containeru
 // TODO: menit obsah promenne TimeDebug.dumps
 // TODO: enter ulozi data z textarea pro editaci
@@ -73,6 +73,7 @@ TimeDebug.init = function(logId) {
 				logNodes[i].onmousedown = TimeDebug.changeVar;
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-log')) {
 				TimeDebug.logRows.push(logNodes[i]);
+				logNodes[i].logId = TimeDebug.logRows.length;
 				logNodes[i].onclick = TimeDebug.logClick;
 				links = logNodes[i].getElementsByTagName('a');
 				for (k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
@@ -87,9 +88,9 @@ TimeDebug.init = function(logId) {
 	TimeDebug.tdContainer.appendChild(TimeDebug.tdOuterWrapper);
 	document.body.insertBefore(TimeDebug.tdContainer, document.body.childNodes[0]);
 
-	TimeDebug.help.innerHTML = '<span class="nd-titled"><span id="tId_1" class="nd-title"><strong class="nd-inner">'
+	TimeDebug.help.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
 			+ '<hr><div class="nd-menu">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
-			+ '<span class="nd-titled"><span id="tId_1" class="nd-title"><strong class="nd-inner">'
+			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title"><strong class="nd-inner">'
 			+ TimeDebug.helpHtml
 			+ '</strong></span>napoveda</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>export</span>'
@@ -615,7 +616,7 @@ TimeDebug.pinTitle = function(e) {
 
 TimeDebug.logClick = function(e) {
 	e = e || window.event;
-	var id = parseInt(this.id.split('_')[1]);
+	var id = parseInt(this.logId);
 
 	if (e.altKey) {
 	} else if (e.ctrlKey || e.metaKey) {

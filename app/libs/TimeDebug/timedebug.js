@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-
 // TODO: moznost pojmenovat si titulky a davat do titulku popis prislusneho logu
 // TODO: enter ulozi data z textarea pro editaci
 
@@ -290,21 +289,10 @@ TimeDebug.showDump = function(id) {
 	JAK.DOM.addClass(TimeDebug.logRowActive = TimeDebug.logRows[id - 1], 'nd-active');
 
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
-//		var activeCount = TimeDebug.tdView.activeChilds.length;
-//		if (activeCount) {
-//
-//		} else{
-
-//			for (var i = activeCount, j; i-- > 0;) {
-//				if ((j = TimeDebug.visibleTitles.indexOf(TimeDebug.tdView.activeChilds[i])) !== -1) TimeDebug.visibleTitles.splice(j, 1);
-//			}
-//			TimeDebug.tdView.activeChilds.length = 0;
-//		}
 
 		if (TimeDebug.tdListeners.length) {
 			JAK.Events.removeListeners(TimeDebug.tdListeners);
 			TimeDebug.tdListeners.length = 0;
-			console.debug('Odebrany listenery: ' + (TimeDebug.tdView.oriId || TimeDebug.tdView.id));
 		}
 
 		(TimeDebug.tdView.oriId && (TimeDebug.tdView.id = TimeDebug.tdView.oriId)) || TimeDebug.tdInnerWrapper.removeChild(TimeDebug.tdView);
@@ -314,7 +302,6 @@ TimeDebug.showDump = function(id) {
 		if (!TimeDebug.tdView.oriId) {
 			TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
 			TimeDebug.tdView.oriId = TimeDebug.tdView.id;
-			console.debug('Vygenerovano oriId: ' + TimeDebug.tdView.oriId);
 			TimeDebug.tdView.activeChilds = [];
 		}
 		TimeDebug.tdView.id = 'tdView';
@@ -351,8 +338,6 @@ TimeDebug.setTitles = function(el) {
 		TimeDebug.tdListeners = TimeDebug.tdListeners.concat(listeners);
 		if (!el.titleListener) el.titleListener = true;
 	}
-
-	console.debug('Pridano ' + listeners.length + ' listeneru pro: ' + (el.oriId || el.id) + ', je '+ TimeDebug.tdListeners.length + ' TimeDebug listeneru.');
 };
 
 TimeDebug.showTitle = function(e) {
@@ -434,19 +419,26 @@ TimeDebug.getMaxZIndex = function() {
 	for (var retVal = 100, i = TimeDebug.visibleTitles.length; i-- > 0;) {
 		retVal = Math.max(retVal, TimeDebug.visibleTitles[i].style.zIndex);
 	}
+
 	return retVal;
 };
 
 TimeDebug.titleAction = function(e) {
 	e = e || window.event;
 
-	console.debug('action');
-
 	if (!this.pined || e.button != JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 
-	if (this.style.zIndex < TimeDebug.zIndexMax) this.style.zIndex = ++TimeDebug.zIndexMax;
+	if (this.style.zIndex < TimeDebug.zIndexMax) {
+		this.style.zIndex = ++TimeDebug.zIndexMax;
+
+		if (TimeDebug.zIndexMax > TimeDebug.visibleTitles.length + 1000) {
+			TimeDebug.visibleTitles.sort(function(a,b) { return parseInt(a.style.zIndex) - parseInt(b.style.zIndex); });
+			for (var i = 0, j = TimeDebug.visibleTitles.length; i < j;) TimeDebug.visibleTitles[i].style.zIndex = ++i + 100;
+			TimeDebug.zIndexMax = j + 100;
+		}
+	}
 
 	if (e.altKey) {
 		if (!e.ctrlKey && !e.metaKey) {

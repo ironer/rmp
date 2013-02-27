@@ -204,12 +204,22 @@ pre.nd {
 	float: left;
 }
 .td-view-dump {
+	position: absolute;
 	display: none;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+#tdContainer .td-view-dump {
+	display: block;
+	margin: 0;
+	padding: 8px 0 0 8px;
 }
 #tdContainer #tdView {
-	display: block;
+	background: #fff;
 	position: relative;
-	margin: 0;
+	width: auto;
+	height: auto;
 	padding: 8px;
 }
 #logContainer {

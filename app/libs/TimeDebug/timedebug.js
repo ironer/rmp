@@ -5,7 +5,7 @@
  */
 
 
-// TODO: menit obsah promenne TimeDebug.dumps
+// TODO: moznost pojmenovat si titulky a davat do titulku popis prislusneho logu
 // TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -70,10 +70,12 @@ TimeDebug.init = function(logId) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
 				logNodes[i].onmousedown = TimeDebug.changeVar;
+				TimeDebug.setTitles(logNodes[i]);
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-log')) {
 				TimeDebug.logRows.push(logNodes[i]);
 				logNodes[i].logId = TimeDebug.logRows.length;
 				logNodes[i].onclick = TimeDebug.logClick;
+				TimeDebug.setTitles(logNodes[i]);
 				links = logNodes[i].getElementsByTagName('a');
 				for (k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
 			} else if (JAK.DOM.hasClass(logNodes[i], 'td-view-dump')) {
@@ -108,7 +110,6 @@ TimeDebug.init = function(logId) {
 	TimeDebug.setTitles(TimeDebug.help);
 	TimeDebug.helpSpaceX = TimeDebug.help.clientWidth + JAK.DOM.scrollbarWidth();
 
-	TimeDebug.setTitles(TimeDebug.logView);
 	TimeDebug.showDump(logId);
 	window.onresize = TimeDebug.windowResize;
 	document.onkeydown = TimeDebug.readKeyDown;
@@ -289,26 +290,31 @@ TimeDebug.showDump = function(id) {
 	JAK.DOM.addClass(TimeDebug.logRowActive = TimeDebug.logRows[id - 1], 'nd-active');
 
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
-		var activeCount = TimeDebug.tdView.activeChilds.length;
-		if (activeCount) {
+//		var activeCount = TimeDebug.tdView.activeChilds.length;
+//		if (activeCount) {
+//
+//		} else{
 
-		} else{
-			if (TimeDebug.tdListeners.length) {
-				JAK.Events.removeListeners(TimeDebug.tdListeners);
-				TimeDebug.tdListeners.length = 0;
-			}
-			for (var i = activeCount, j; i-- > 0;) {
-				if ((j = TimeDebug.visibleTitles.indexOf(TimeDebug.tdView.activeChilds[i])) !== -1) TimeDebug.visibleTitles.splice(j, 1);
-			}
-			TimeDebug.tdView.activeChilds.length = 0;
+//			for (var i = activeCount, j; i-- > 0;) {
+//				if ((j = TimeDebug.visibleTitles.indexOf(TimeDebug.tdView.activeChilds[i])) !== -1) TimeDebug.visibleTitles.splice(j, 1);
+//			}
+//			TimeDebug.tdView.activeChilds.length = 0;
+//		}
+
+		if (TimeDebug.tdListeners.length) {
+			JAK.Events.removeListeners(TimeDebug.tdListeners);
+			TimeDebug.tdListeners.length = 0;
+			console.debug('Odebrany listenery: ' + (TimeDebug.tdView.oriId || TimeDebug.tdView.id));
 		}
 
 		(TimeDebug.tdView.oriId && (TimeDebug.tdView.id = TimeDebug.tdView.oriId)) || TimeDebug.tdInnerWrapper.removeChild(TimeDebug.tdView);
 
 		TimeDebug.tdView = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
+		TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
 		if (!TimeDebug.tdView.oriId) {
 			TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
 			TimeDebug.tdView.oriId = TimeDebug.tdView.id;
+			console.debug('Vygenerovano oriId: ' + TimeDebug.tdView.oriId);
 			TimeDebug.tdView.activeChilds = [];
 		}
 		TimeDebug.tdView.id = 'tdView';
@@ -334,13 +340,19 @@ TimeDebug.setTitles = function(el) {
 
 			listeners.push(JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, TimeDebug.showTitle),
 					JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, TimeDebug.hideTimer),
-					JAK.Events.addListener(titleSpan, 'click', titleSpan, TimeDebug.pinTitle),
-					JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, TimeDebug.titleAction)
+					JAK.Events.addListener(titleSpan, 'click', titleSpan, TimeDebug.pinTitle)
 			);
+
+			if (!el.titleListener) JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, TimeDebug.titleAction);
 		}
 	}
 
-	if (el === TimeDebug.tdView) TimeDebug.tdListeners = TimeDebug.tdListeners.concat(listeners);
+	if (el === TimeDebug.tdView) {
+		TimeDebug.tdListeners = TimeDebug.tdListeners.concat(listeners);
+		if (!el.titleListener) el.titleListener = true;
+	}
+
+	console.debug('Pridano ' + listeners.length + ' listeneru pro: ' + (el.oriId || el.id) + ', je '+ TimeDebug.tdListeners.length + ' TimeDebug listeneru.');
 };
 
 TimeDebug.showTitle = function(e) {
@@ -427,6 +439,8 @@ TimeDebug.getMaxZIndex = function() {
 
 TimeDebug.titleAction = function(e) {
 	e = e || window.event;
+
+	console.debug('action');
 
 	if (!this.pined || e.button != JAK.Browser.mouse.left) return true;
 

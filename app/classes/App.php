@@ -8,6 +8,7 @@ class App {
 
 	public $id;
 	public $stop = FALSE;
+	public $test = 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Fusce tellus. Etiam posuere lacus quis dolor. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nulla accumsan, elit sit amet varius semper, nulla mauris mollis quam, tempor suscipit diam nulla vel leo. Etiam commodo dui eget wisi. Donec ipsum massa, ullamcorper in, auctor et, scelerisque sed, est. Nullam dapibus fermentum ipsum. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Ut tempus purus at lorem. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.';
 
 	private $request;
 	private $get = array();

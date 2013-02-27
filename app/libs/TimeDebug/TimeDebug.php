@@ -137,7 +137,7 @@ class TimeDebug {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5];
 			} else {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = $cnt = count(self::$timeDebugMD5);
-				echo '<pre id="tdView_' . $cnt . '" class="td-view-dump">' . $dump . '</pre>';
+				echo '<pre id="tdView_' . ++$cnt . '" class="td-view-dump">' . $dump . '</pre>';
 			}
 			$tdParams = 'id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
 		} else $tdParams = 'class="nd-row"';

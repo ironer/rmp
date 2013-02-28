@@ -17,7 +17,8 @@ class TimeDebug {
 			APP_RECURSION = 'apprecursion', // force { RECURSION } on all nested objects with given self::$recClass
 			TAG_ID_PREFIX = 'tagidprefix', // sets the prefix of auto incrementing tags' ids for dumped titles (defaults to 'tId')
 			PARENT_KEY = 'parentkey', // sets parent key for children's div to attribute 'data-pk' for arrays and objects
-			DUMP_ID = 'dumpid'; // id for .nd 'pre' in HTML form
+			DUMP_ID = 'dumpid', // id for .nd 'pre' in HTML form
+			TDVIEW_INDEX = 'tdindex'; // data-tdindex of .nd 'pre' in tdView
 
 	private static $initialized = FALSE;
 	private static $advancedLog;
@@ -127,9 +128,9 @@ class TimeDebug {
 		}
 
 		if (self::$advancedLog && isset($objects)) {
-			$dumpVars = array();
+			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
-				$dumpVars[] = self::toHtml($curObj);
+				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
 			}
 			$dump = implode('<hr>', $dumpVars);
 			$dumpMD5 = md5($dump);
@@ -137,7 +138,7 @@ class TimeDebug {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5];
 			} else {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = $cnt = count(self::$timeDebugMD5);
-				echo '<pre id="tdView_' . ++$cnt . '" class="td-view-dump">' . $dump . '</pre>';
+				echo '<pre id="tdView_' . ++$cnt . '" class="nd-view-dump">' . $dump . '</pre>';
 			}
 			$tdParams = 'id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
 		} else $tdParams = 'class="nd-row"';
@@ -196,7 +197,8 @@ class TimeDebug {
 
 	private static function toHtml($var, array $options = NULL) {
 		list($file, $line, $code) = empty($options[self::LOCATION]) ? NULL : self::findLocation();
-		return '<pre' . (!empty($options[self::DUMP_ID]) ? ' id="' . $options[self::DUMP_ID] . '" class="nd nd-dump">': ' class="nd">')
+		return '<pre' . (!empty($options[self::DUMP_ID]) ? ' id="' . $options[self::DUMP_ID] . '" class="nd nd-dump"': ' class="nd"')
+				. (isset($options[self::TDVIEW_INDEX]) ? ' data-tdindex="' . $options[self::TDVIEW_INDEX] . '">' : '>')
 				. self::dumpVar($var, (array) $options + array(
 					self::DEPTH => 4,
 					self::TRUNCATE => 70,

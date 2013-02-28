@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: moznost pojmenovat si titulky a davat do titulku popis prislusneho logu
 // TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -54,6 +53,7 @@ TimeDebug.zIndexMax = 100;
 TimeDebug.tdConsole = null;
 TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
+TimeDebug.changeList = JAK.mel('div');
 
 TimeDebug.actionData = { element: null, listeners: [] };
 
@@ -77,7 +77,7 @@ TimeDebug.init = function(logId) {
 				TimeDebug.setTitles(logNodes[i]);
 				links = logNodes[i].getElementsByTagName('a');
 				for (k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
-			} else if (JAK.DOM.hasClass(logNodes[i], 'td-view-dump')) {
+			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-view-dump')) {
 				TimeDebug.dumps.push(logNodes[i]);
 			}
 		}
@@ -129,7 +129,7 @@ TimeDebug.changeVar = function(e) {
 
 	if (el.id == 'tdConsoleMask') {
 		TimeDebug.consoleClose();
-	} else if (el.className == 'nd-key') {
+	} else if (JAK.DOM.hasClass(el, 'nd-key')) {
 		TimeDebug.consoleOpen(el, TimeDebug.saveVarChange);
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
 		TimeDebug.hideTitle(TimeDebug.titleActive);
@@ -140,10 +140,12 @@ TimeDebug.changeVar = function(e) {
 };
 
 TimeDebug.saveVarChange = function() {
-	var el = TimeDebug.tdConsole.parentNode;
+	var varEl = TimeDebug.tdConsole.parentNode;
+	var el = varEl;
 	var key;
 	var input = TimeDebug.tdConsole.area.value;
 	var retVal = [];
+	var text;
 
 	TimeDebug.consoleClose();
 
@@ -155,16 +157,21 @@ TimeDebug.saveVarChange = function() {
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
 			retVal.push(el.id, 'dump');
 		} else {
-			retVal.push(TimeDebug.logRowActive.id, 'log');
+			retVal.push(parseInt(el.getAttribute('data-tdindex')), TimeDebug.logRowActive.id, 'log');
 		}
-		console.debug('"' + retVal.reverse().join(',') + '" : "' + input + '"');
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
 		retVal.push('3' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
 		retVal.push(el.id, 'dump');
-		console.debug('"' + retVal.reverse().join(',') + '" : "' + input + '"');
-	}
+	} else return false;
 
+	TimeDebug.changes.push({'path':retVal.reverse().join(','), 'value':input, 'varEl':varEl});
+	text = '"' + retVal.join(',') + '" : "' + input + '"';
+	varEl.title = input;
+	JAK.DOM.addClass(varEl, 'nd-var-change');
+	console.debug(text);
+	console.debug(varEl.className);
+	return true;
 };
 
 TimeDebug.consoleOpen = function(el, callback) {
@@ -177,7 +184,6 @@ TimeDebug.consoleOpen = function(el, callback) {
 
 	TimeDebug.tdConsole.callback = callback || TimeDebug.tdStop;
 	TimeDebug.tdConsole.mask.onmousedown = TimeDebug.catchMask;
-	TimeDebug.tdConsole.area.oncontextmenu = TimeDebug.restoreContextMenu;
 
 	TimeDebug.textareaTimeout = window.setTimeout(TimeDebug.textareaFocus, 1);
 };
@@ -188,12 +194,6 @@ TimeDebug.textareaFocus = function() {
 		TimeDebug.textareaTimeout = null;
 	}
 	TimeDebug.tdConsole.area.focus();
-};
-
-TimeDebug.restoreContextMenu = function(e) {
-	e = e || window.event;
-	JAK.Events.stopEvent(e);
-	return true;
 };
 
 TimeDebug.catchMask = function(e) {
@@ -214,7 +214,7 @@ TimeDebug.consoleClose = function() {
 TimeDebug.logAction = function(e) {
 	e = e || window.event;
 
-	if ((e.altKey ? e.shiftKey || TimeDebug.tdFullWidth : !e.shiftKey) || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.left) return true;
+	if ((e.altKey ? e.shiftKey || TimeDebug.tdFullWidth : !e.shiftKey) || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
@@ -261,7 +261,7 @@ TimeDebug.logResizing = function(e) {
 	e = e || window.event;
 	var el = TimeDebug.actionData.element;
 
-	if (e.button != JAK.Browser.mouse.left) {
+	if (e.button !== JAK.Browser.mouse.left) {
 		TimeDebug.endLogResize();
 	} else {
 		TimeDebug.tdWidth = Math.max(0, Math.min(TimeDebug.viewSize.width - TimeDebug.helpSpaceX,
@@ -426,7 +426,7 @@ TimeDebug.getMaxZIndex = function() {
 TimeDebug.titleAction = function(e) {
 	e = e || window.event;
 
-	if (!this.pined || e.button != JAK.Browser.mouse.left) return true;
+	if (!this.pined || e.button !== JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 
@@ -479,7 +479,7 @@ TimeDebug.titleResizing = function(e) {
 	e = e || window.event;
 	var el = TimeDebug.actionData.element;
 
-	if (e.button != JAK.Browser.mouse.left) {
+	if (e.button !== JAK.Browser.mouse.left) {
 		TimeDebug.endTitleAction();
 	} else {
 		el.userWidth = el.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - el.tdLeft - 20, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 16);
@@ -510,7 +510,7 @@ TimeDebug.titleDragging = function(e) {
 	e = e || window.event;
 	var el = TimeDebug.actionData.element;
 
-	if (e.button != JAK.Browser.mouse.left) {
+	if (e.button !== JAK.Browser.mouse.left) {
 		TimeDebug.endTitleAction();
 	} else {
 		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 36, TimeDebug.actionData.offsetX + e.screenX - TimeDebug.actionData.startX), 0);
@@ -610,7 +610,7 @@ TimeDebug.pinTitle = function(e) {
 	e = e || window.event;
 	JAK.Events.stopEvent(e);
 
-	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.left) return false;
+	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left) return false;
 
 	if (TimeDebug.titleHideTimeout) {
 		window.clearTimeout(TimeDebug.titleHideTimeout);

@@ -203,17 +203,22 @@ pre.nd {
 	min-height: 100%;
 	float: left;
 }
-.td-view-dump {
+.nd-view-dump {
 	position: absolute;
 	display: none;
 	width: 1px;
 	height: 1px;
 	overflow: hidden;
 }
-#tdContainer .td-view-dump {
+#tdContainer .nd-view-dump {
 	display: block;
 	margin: 0;
 	padding: 8px 0 0 8px;
+}
+span.nd-var-change {
+	font-weight: bold;
+	background: #8df;
+	color: #039;
 }
 #tdContainer #tdView {
 	background: #fff;

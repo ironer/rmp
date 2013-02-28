@@ -31,7 +31,8 @@ if (!empty($_GET['mail'])) {
 	return $app->route('readrouter')->getModel()->process();
 }  else {
 	$app->route();
-	App::dump($app);
+	$test = 'zluva';
+	App::dump($app, $test);
 	return $app->getModel()->process();
 }
 

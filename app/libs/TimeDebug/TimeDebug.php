@@ -130,7 +130,7 @@ class TimeDebug {
 		if (self::$advancedLog && isset($objects)) {
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
-				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => ++$i));
+				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
 			}
 			$dump = implode('<hr>', $dumpVars);
 			$dumpMD5 = md5($dump);

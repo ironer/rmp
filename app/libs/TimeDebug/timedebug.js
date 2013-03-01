@@ -119,9 +119,13 @@ TimeDebug.init = function(logId) {
 
 TimeDebug.updateChangeList = function() {
 	var change, retVal = [];
-	for (var i = 0, j = TimeDebug.changes.length; i < j; ++i) {
+	var j = TimeDebug.changes.length;
+	if (j) TimeDebug.changes[j-1].lastChange = true;
+	TimeDebug.changes.sort(function(a,b) { return parseFloat(a.runtime) - parseFloat(b.runtime); });
+	for (var i = 0; i < j; ++i) {
 		change = TimeDebug.changes[i];
-		retVal.push('<pre class="nd-change-data">[' + change.runtime + ' ms] <b>' + change.path + '</b> ' + change.value + '</pre>');
+		retVal.push('<pre' + (change.lastChange ? ' id="tdLastChange"' : '') + ' class="nd-change-data">[' + change.runtime + '] <b>' + change.path + '</b> ' + change.value + '</pre>');
+		change.lastChange = false;
 	}
 	TimeDebug.tdChangeList.innerHTML = retVal.join('');
 };

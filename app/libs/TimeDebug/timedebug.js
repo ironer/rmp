@@ -4,6 +4,9 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: seradit zmeny promenych podle pozice v dokumentu
+// TODO: opravit sirku po pridelani scroll baru kvuli scrolloveani v ose y u titulku
+// TODO: opravit zmeny podle aktualniho
 // TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -164,6 +167,7 @@ TimeDebug.saveVarChange = function() {
 	var revPath = [];
 	var runTime;
 	var change;
+	var logClone = false;
 
 	TimeDebug.consoleClose();
 
@@ -178,6 +182,7 @@ TimeDebug.saveVarChange = function() {
 		} else {
 			revPath.push(parseInt(el.getAttribute('data-tdindex')), TimeDebug.logRowActive.id, 'log');
 			runTime = parseFloat(TimeDebug.logRowActive.getAttribute('data-runtime'));
+			logClone = true;
 		}
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('3' + el.className.split(' ')[0].split('-')[1]);
@@ -191,6 +196,19 @@ TimeDebug.saveVarChange = function() {
 		change.data.value = input;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
+
+		if (logClone) {
+			var newEl = varEl.cloneNode(true);
+			newEl.hideEl = varEl;
+			varEl.parentNode.insertBefore(newEl, varEl);
+			varEl.style.display = 'none';
+			if (typeof(TimeDebug.logRowActive.varChanges) == 'undefined') TimeDebug.logRowActive.varChanges = [newEl];
+			else TimeDebug.logRowActive.varChanges.push(newEl);
+			change.logRow = TimeDebug.logRowActive;
+			JAK.Events.addListener(change, 'mouseover', change.logRow, TimeDebug.showLog);
+			varEl = newEl;
+		}
+
 		change.data = {'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input, 'varEl':varEl};
 		TimeDebug.changes.push(change);
 		varEl.varListRow = change;
@@ -326,14 +344,30 @@ TimeDebug.endLogResize = function() {
 	TimeDebug.actionData.element = null;
 };
 
+TimeDebug.showVarChanges = function(changes) {
+	for (var i = changes.length; i-- > 0;) {
+		changes[i].style.display = 'inline';
+		changes[i].hideEl.style.display = 'none';
+	}
+};
+
+TimeDebug.hideVarChanges = function(changes) {
+	for (var i = changes.length; i-- > 0;) {
+		changes[i].style.display = 'none';
+		changes[i].hideEl.style.display = 'inline';
+	}
+};
+
 TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
 	if (TimeDebug.logRowActive) {
 		JAK.DOM.removeClass(TimeDebug.logRowActive, 'nd-active');
 		TimeDebug.logRowActive.removeAttribute('style');
+		if (TimeDebug.logRowActive.varChanges) TimeDebug.hideVarChanges(TimeDebug.logRowActive.varChanges);
 	}
 
 	JAK.DOM.addClass(TimeDebug.logRowActive = TimeDebug.logRows[id - 1], 'nd-active');
+	if (TimeDebug.logRowActive.varChanges) TimeDebug.showVarChanges(TimeDebug.logRowActive.varChanges);
 
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 
@@ -680,6 +714,10 @@ TimeDebug.pinTitle = function(e) {
 	}
 	return false;
 };
+
+TimeDebug.showLog = function() {
+	TimeDebug.showDump(this.logId);
+}
 
 TimeDebug.logClick = function(e) {
 	e = e || window.event;

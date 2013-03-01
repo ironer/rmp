@@ -182,7 +182,7 @@ pre.nd {
 	background: #fc8;
 }
 #tdLastChange {
-	background: #cdf;
+	background: #fe9;
 }
 .nd-help .nd-title {
 	background: #ffe;
@@ -277,7 +277,7 @@ span.nd-var-change {
 {
 	background: #fc8;
 }
-.nd-fullscreen #tdView {
+.nd-fullscreen #tdContainer #tdView {
 	padding-top: 50px;
 }
 .nd-fullscreen #logContainer {

@@ -141,7 +141,7 @@ TimeDebug.changeVar = function(e) {
 };
 
 TimeDebug.updateChangeList = function(el) {
-	var change, retVal = [];
+	var change;
 	var j = TimeDebug.changes.length;
 	if (el) el.lastChange = true;
 	TimeDebug.changes.sort(function(a,b) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.path > b.data.path); });
@@ -151,7 +151,7 @@ TimeDebug.updateChangeList = function(el) {
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
-		} else change.id = '';
+		} else change.removeAttribute('id');
 		TimeDebug.tdChangeList.appendChild(change);
 	}
 };
@@ -191,17 +191,30 @@ TimeDebug.saveVarChange = function() {
 		change.data.value = input;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
-		change.data = {'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input, 'varEl':varEl}
+		change.data = {'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input, 'varEl':varEl};
 		TimeDebug.changes.push(change);
 		varEl.varListRow = change;
 		JAK.DOM.addClass(varEl, 'nd-var-change');
+		change.listeners = [
+			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
+			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
+			JAK.Events.addListener(change, 'mouseover', varEl, TimeDebug.hoverChange),
+			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverChange)
+		];
 	}
 
 	varEl.title = input;
 
-	console.debug(TimeDebug.changes.length);
 	TimeDebug.updateChangeList(change);
 	return true;
+};
+
+TimeDebug.hoverChange = function() {
+	JAK.DOM.addClass(this, 'nd-hovered');
+};
+
+TimeDebug.unhoverChange = function() {
+	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 
 TimeDebug.consoleOpen = function(el, callback) {
@@ -239,6 +252,7 @@ TimeDebug.catchMask = function(e) {
 };
 
 TimeDebug.consoleClose = function() {
+	if (TimeDebug.tdConsole.parentNode.varListRow) JAK.DOM.removeClass(TimeDebug.tdConsole.parentNode.varListRow, 'nd-hovered');
 	TimeDebug.tdConsole.parentNode.removeChild(TimeDebug.tdConsole);
 	TimeDebug.tdConsole = null;
 	return false;

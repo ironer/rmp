@@ -117,19 +117,6 @@ TimeDebug.init = function(logId) {
 	TimeDebug.tdInnerWrapper.onmousedown = TimeDebug.changeVar;
 };
 
-TimeDebug.updateChangeList = function() {
-	var change, retVal = [];
-	var j = TimeDebug.changes.length;
-	if (j) TimeDebug.changes[j-1].lastChange = true;
-	TimeDebug.changes.sort(function(a,b) { return parseFloat(a.runtime) - parseFloat(b.runtime); });
-	for (var i = 0; i < j; ++i) {
-		change = TimeDebug.changes[i];
-		retVal.push('<pre' + (change.lastChange ? ' id="tdLastChange"' : '') + ' class="nd-change-data">[' + change.runtime + '] <b>' + change.path + '</b> ' + change.value + '</pre>');
-		change.lastChange = false;
-	}
-	TimeDebug.tdChangeList.innerHTML = retVal.join('');
-};
-
 TimeDebug.changeVar = function(e) {
 	e = e || window.event;
 
@@ -153,6 +140,22 @@ TimeDebug.changeVar = function(e) {
 	return false;
 };
 
+TimeDebug.updateChangeList = function(el) {
+	var change, retVal = [];
+	var j = TimeDebug.changes.length;
+	if (el) el.lastChange = true;
+	TimeDebug.changes.sort(function(a,b) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.path > b.data.path); });
+	for (var i = 0; i < j; i++) {
+		change = TimeDebug.changes[i];
+		change.innerHTML = '[' + change.data.runtime + '] <b>' + change.data.path + '</b> ' + change.data.value;
+		if (change.lastChange) {
+			change.id = 'tdLastChange';
+			change.lastChange = false;
+		} else change.id = '';
+		TimeDebug.tdChangeList.appendChild(change);
+	}
+};
+
 TimeDebug.saveVarChange = function() {
 	var varEl = TimeDebug.tdConsole.parentNode;
 	var el = varEl;
@@ -160,6 +163,7 @@ TimeDebug.saveVarChange = function() {
 	var input = TimeDebug.tdConsole.area.value;
 	var revPath = [];
 	var runTime;
+	var change;
 
 	TimeDebug.consoleClose();
 
@@ -182,18 +186,30 @@ TimeDebug.saveVarChange = function() {
 		runTime = parseFloat(el.getAttribute('data-runtime'));
 	} else return false;
 
-	TimeDebug.changes.push({'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input, 'varEl':varEl});
+	if (change = varEl.varListRow) {
+		change.data.runtime = runTime;
+		change.data.value = input;
+	} else {
+		change = JAK.mel('pre', {className:'nd-change-data'});
+		change.data = {'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input, 'varEl':varEl}
+		TimeDebug.changes.push(change);
+		varEl.varListRow = change;
+		JAK.DOM.addClass(varEl, 'nd-var-change');
+	}
+
 	varEl.title = input;
-	JAK.DOM.addClass(varEl, 'nd-var-change');
+
 	console.debug(TimeDebug.changes.length);
-	TimeDebug.updateChangeList();
+	TimeDebug.updateChangeList(change);
 	return true;
 };
 
 TimeDebug.consoleOpen = function(el, callback) {
 	TimeDebug.tdConsole = JAK.mel('span', {id:'tdConsole'});
+	var attribs = {id:'tdConsoleArea'};
+	if (el.title) attribs.value = el.title;
 	TimeDebug.tdConsole.mask = JAK.mel('span', {id:'tdConsoleMask'});
-	TimeDebug.tdConsole.area = JAK.mel('textarea', {id:'tdConsoleArea'});
+	TimeDebug.tdConsole.area = JAK.mel('textarea', attribs);
 	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.mask);
 	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.area);
 	el.appendChild(TimeDebug.tdConsole);
@@ -210,6 +226,7 @@ TimeDebug.textareaFocus = function() {
 		TimeDebug.textareaTimeout = null;
 	}
 	TimeDebug.tdConsole.area.focus();
+	TimeDebug.tdConsole.area.select();
 };
 
 TimeDebug.catchMask = function(e) {

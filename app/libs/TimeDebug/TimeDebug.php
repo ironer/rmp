@@ -52,7 +52,7 @@ class TimeDebug {
 		self::$advancedLog = !!($advancedLog);
 		self::$local = !!($local);
 		self::$root = $root;
-		self::$lastRuntime = self::$startTime = $startTime ?: time();
+		self::$lastRuntime = self::$startTime = $startTime ?: microtime(TRUE);
 		self::$lastMemory = self::$startMem = $startMem;
 		self::$initialized = TRUE;
 
@@ -130,7 +130,7 @@ class TimeDebug {
 		if (self::$advancedLog && isset($objects)) {
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
-				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
+				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => ++$i));
 			}
 			$dump = implode('<hr>', $dumpVars);
 			$dumpMD5 = md5($dump);
@@ -140,10 +140,11 @@ class TimeDebug {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = $cnt = count(self::$timeDebugMD5);
 				echo '<pre id="tdView_' . ++$cnt . '" class="nd-view-dump">' . $dump . '</pre>';
 			}
-			$tdParams = 'id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
-		} else $tdParams = 'class="nd-row"';
+			$tdParams = ' id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
+		} else $tdParams = ' class="nd-row"';
 
-		echo "<pre $tdParams>[" . str_pad(self::runtime(self::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
+		echo "<pre data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')  . "\"$tdParams>["
+				. str_pad(self::runtime(self::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
 				. str_pad(self::memory(self::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $text [<small>";
 
 		if (self::$local) {
@@ -197,7 +198,8 @@ class TimeDebug {
 
 	private static function toHtml($var, array $options = NULL) {
 		list($file, $line, $code) = empty($options[self::LOCATION]) ? NULL : self::findLocation();
-		return '<pre' . (!empty($options[self::DUMP_ID]) ? ' id="' . $options[self::DUMP_ID] . '" class="nd nd-dump"': ' class="nd"')
+		return '<pre' . (!empty($options[self::DUMP_ID]) ? ' data-runtime="' . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
+				. '" id="' . $options[self::DUMP_ID] . '" class="nd nd-dump"': ' class="nd"')
 				. (isset($options[self::TDVIEW_INDEX]) ? ' data-tdindex="' . $options[self::TDVIEW_INDEX] . '">' : '>')
 				. self::dumpVar($var, (array) $options + array(
 					self::DEPTH => 4,

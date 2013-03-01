@@ -39,8 +39,8 @@ TimeDebug.tdFullWidth = false;
 TimeDebug.tdWidth = 400;
 
 TimeDebug.help = JAK.cel('div', 'nd-help');
-TimeDebug.helpHtml = '';
 TimeDebug.helpSpaceX = 0;
+TimeDebug.helpHtml = '';
 
 TimeDebug.visibleTitles = [];
 TimeDebug.titleActive = null;
@@ -53,7 +53,7 @@ TimeDebug.zIndexMax = 100;
 TimeDebug.tdConsole = null;
 TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
-TimeDebug.changeList = JAK.mel('div');
+TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
 
 TimeDebug.actionData = { element: null, listeners: [] };
 
@@ -108,12 +108,22 @@ TimeDebug.init = function(logId) {
 	TimeDebug.help.onmousedown = TimeDebug.logAction;
 	TimeDebug.setTitles(TimeDebug.help);
 	TimeDebug.helpSpaceX = TimeDebug.help.clientWidth + JAK.DOM.scrollbarWidth();
+	document.getElementById('menuTitle').appendChild(TimeDebug.tdChangeList);
 
 	TimeDebug.showDump(logId);
 	window.onresize = TimeDebug.windowResize;
 	document.onkeydown = TimeDebug.readKeyDown;
 	document.body.oncontextmenu = TimeDebug.tdFalse;
 	TimeDebug.tdInnerWrapper.onmousedown = TimeDebug.changeVar;
+};
+
+TimeDebug.updateChangeList = function() {
+	var change, retVal = [];
+	for (var i = 0, j = TimeDebug.changes.length; i < j; ++i) {
+		change = TimeDebug.changes[i];
+		retVal.push('<pre class="nd-change-data">[' + change.runtime + ' ms] <b>' + change.path + '</b> ' + change.value + '</pre>');
+	}
+	TimeDebug.tdChangeList.innerHTML = retVal.join('');
 };
 
 TimeDebug.changeVar = function(e) {
@@ -144,33 +154,35 @@ TimeDebug.saveVarChange = function() {
 	var el = varEl;
 	var key;
 	var input = TimeDebug.tdConsole.area.value;
-	var retVal = [];
-	var text;
+	var revPath = [];
+	var runTime;
 
 	TimeDebug.consoleClose();
 
 	if (JAK.DOM.hasClass(el, 'nd-key')) {
-		retVal.push('2' + el.innerHTML);
+		revPath.push('2' + el.innerHTML);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
-			retVal.push(key);
+			revPath.push(key);
 		}
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
-			retVal.push(el.id, 'dump');
+			revPath.push(el.id, 'dump');
+			runTime = parseFloat(el.getAttribute('data-runtime'));
 		} else {
-			retVal.push(parseInt(el.getAttribute('data-tdindex')), TimeDebug.logRowActive.id, 'log');
+			revPath.push(parseInt(el.getAttribute('data-tdindex')), TimeDebug.logRowActive.id, 'log');
+			runTime = parseFloat(TimeDebug.logRowActive.getAttribute('data-runtime'));
 		}
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
-		retVal.push('3' + el.className.split(' ')[0].split('-')[1]);
+		revPath.push('3' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
-		retVal.push(el.id, 'dump');
+		revPath.push(el.id, 'dump');
+		runTime = parseFloat(el.getAttribute('data-runtime'));
 	} else return false;
 
-	TimeDebug.changes.push({'path':retVal.reverse().join(','), 'value':input, 'varEl':varEl});
-	text = '"' + retVal.join(',') + '" : "' + input + '"';
+	TimeDebug.changes.push({'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input, 'varEl':varEl});
 	varEl.title = input;
 	JAK.DOM.addClass(varEl, 'nd-var-change');
-	console.debug(text);
-	console.debug(varEl.className);
+	console.debug(TimeDebug.changes.length);
+	TimeDebug.updateChangeList();
 	return true;
 };
 

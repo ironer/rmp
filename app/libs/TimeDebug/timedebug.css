@@ -167,6 +167,17 @@ pre.nd {
 	font-size: 15px;
 	cursor: default;
 }
+#tdChangeList {
+	color: #000;
+	line-height: 16px;
+	font-size: 13px;
+}
+#tdChangeList pre {
+	margin: 0;
+	padding: 0 8px;
+	height: 16px;
+	overflow: hidden;
+}
 .nd-help .nd-title {
 	background: #ffe;
 	border-top: 8px solid #ffe;

@@ -4,7 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: naformatovat cestu v objektu
+// TODO: oznacit posledni editovanou change konzoli jen pri zmene value
+// TODO: opravit naskrolovani anchoroveho elementu 'tdfindme' normalne a ve fullscreenu (preskrolovat o 4 px resp. 50px nahoru)
 // TODO: nastavit korektni vysku menu obsahujiciho zmeny
 // TODO: udelat mazani zadanych zmen z menu
 
@@ -190,17 +191,29 @@ TimeDebug.changeAction = function(e) {
 
 TimeDebug.printPath = function(path) {
 	path = (path || '').split(',');
-	var i, j = path.length, k, retVal = '';
+	var i, j = path.length, k, close = '', key, retVal = '';
 
 	if (path[0] == 'log') {
-		retVal = '[log:' + path[1] + '(' + path[i = 2] + ')]';
+		retVal = '<b>' + path[1] + '</b>(' + path[i = 2] + ') ';
 	} else if (path[0] == 'dump') {
-		retVal = '[dump:' + path[i = 1] + ']';
-	}
+		retVal = '<b>' + path[i = 1] + '</b> ';
+	} else return '';
 
 	while (++i < j && (k = parseInt(path[i][0])) < 2) {
+		key = path[i].substring(1) || 'array';
+		retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close);
 
+		if (k) {
+			retVal += "["; close = "]";
+		} else {
+			retVal += '->'; close = "";
+		}
 	}
+
+	key = path[i].substring(1);
+	if (k == 2) retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close) + ' =';
+	else if (k == 3) retVal += '<i>(' + key + ')</i> =';
+
 	return retVal;
 };
 
@@ -208,10 +221,12 @@ TimeDebug.updateChangeList = function(el) {
 	var change;
 	var j = TimeDebug.changes.length;
 	if (el) el.lastChange = true;
+
 	TimeDebug.changes.sort(function(a,b) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.varEl.changeIndex > b.data.varEl.changeIndex); });
 	for (var i = 0; i < j; i++) {
 		change = TimeDebug.changes[i];
-		change.innerHTML = '[' + change.data.runtime + '] <b>' + change.data.path + '</b> ' + change.data.value;
+		change.innerHTML = '[' + change.data.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + change.data.value;
+
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;

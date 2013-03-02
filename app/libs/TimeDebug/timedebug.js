@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: opravit oznaceni textu v kozoli po otevreni, at je citelny
+// TODO: po levem clicku na zmenu nascrolovat klic s varChange
 // TODO: naformatovat cestu v objektu
 // TODO: opravit sirku po pridelani scroll baru kvuli scrolloveani v ose y u titulku
 
@@ -168,6 +168,7 @@ TimeDebug.updateChangeList = function(el) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
 		} else change.removeAttribute('id');
+		change.title = change.data.value.indexOf("\n") == -1 ? null : change.data.value;
 		TimeDebug.tdChangeList.appendChild(change);
 	}
 };

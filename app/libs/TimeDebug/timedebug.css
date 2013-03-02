@@ -365,6 +365,8 @@ span.nd-var-change {
 	-webkit-box-shadow: 3px 2px 8px #888;
 	box-shadow: 3px 2px 8px #888;
 }
+#tdConsoleArea::-moz-selection { color: #dff;  background: #147; }
+#tdConsoleArea::selection { color: #dff;  background: #147; }
 hr + hr {
 	display: none;
 }

@@ -275,6 +275,7 @@ span.nd-var-change {
 .nd-local #tdView .nd-key:hover, .nd-local .nd-top:hover, .nd-local .nd-dump .nd-key:hover,
 .nd-local #tdView .nd-key.nd-hovered, .nd-local .nd-top.nd-hovered, .nd-local .nd-dump .nd-key.nd-hovered
 {
+	color: #000;
 	background: #fc8;
 }
 .nd-fullscreen #tdContainer #tdView {
@@ -367,6 +368,10 @@ span.nd-var-change {
 }
 #tdConsoleArea::-moz-selection { color: #dff;  background: #147; }
 #tdConsoleArea::selection { color: #dff;  background: #147; }
+.nd-findme {
+	font-weight: bold;
+	background: #f90;
+}
 hr + hr {
 	display: none;
 }

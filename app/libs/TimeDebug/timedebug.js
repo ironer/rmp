@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: po levem clicku na zmenu nascrolovat klic s varChange
 // TODO: naformatovat cestu v objektu
 // TODO: opravit sirku po pridelani scroll baru kvuli scrolloveani v ose y u titulku
 
@@ -58,6 +57,8 @@ TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
 
 TimeDebug.actionData = { element: null, listeners: [] };
+
+TimeDebug.tdAnchor = null;
 
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
@@ -142,16 +143,21 @@ TimeDebug.changeVar = function(e) {
 	return false;
 };
 
-TimeDebug.startConsole = function(e) {
+TimeDebug.changeAction = function(e) {
 	e = e || window.event;
 
-	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.right) return true;
+	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
 
-	if (this.logRow) TimeDebug.showLog(e, this.logRow);
-	TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
+	if (e.button === JAK.Browser.mouse.right) {
+		if (this.logRow) TimeDebug.showLog(e, this.logRow);
+		TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
+	} else if (e.button === JAK.Browser.mouse.left) {
+		window.location.hash = "tdfindme";
+		window.location.hash = "";
+	} else return true;
 
 	return false;
 };
@@ -245,9 +251,9 @@ TimeDebug.saveVarChange = function() {
 		change.listeners = [
 			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
-			JAK.Events.addListener(change, 'mouseover', varEl, TimeDebug.hoverChange),
-			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverChange),
-			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.startConsole)
+			JAK.Events.addListener(change, 'mouseover', varEl, TimeDebug.hoverVar),
+			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverVar),
+			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
 		];
 		if (mouseOver) change.listeners.push(mouseOver);
 	}
@@ -258,20 +264,34 @@ TimeDebug.saveVarChange = function() {
 	return true;
 };
 
-TimeDebug.hoverChange = function() {
-	var el = JAK.mel('a', {'name':'findme'});
-	el.innerHTML = 'zluva';
+TimeDebug.hoverVar = function() {
+	if (TimeDebug.tdAnchor !== null) {
+		TimeDebug.tdAnchor.search.parentNode.removeChild(TimeDebug.tdAnchor.search);
+		TimeDebug.tdAnchor.search = null;
+	}
+	TimeDebug.tdAnchor = this;
+
+	var el = JAK.mel('a', {'name':'tdfindme','className':'nd-findme'});
+	el.innerHTML = '$>';
 	this.parentNode.insertBefore(el, this);
 	this.search = el;
-//	console.debug(pos);
+	JAK.DOM.addClass(this, 'nd-hovered');
+};
+
+TimeDebug.unhoverVar = function() {
+	if (this.search) {
+		this.search.parentNode.removeChild(this.search);
+		this.search = null;
+		if (this === TimeDebug.tdAnchor) TimeDebug.tdAnchor = null;
+	}
+	JAK.DOM.removeClass(this, 'nd-hovered');
+};
+
+TimeDebug.hoverChange = function() {
 	JAK.DOM.addClass(this, 'nd-hovered');
 };
 
 TimeDebug.unhoverChange = function() {
-	if (this.search) {
-		this.search.parentNode.removeChild(this.search);
-		this.search = null;
-	}
 	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 

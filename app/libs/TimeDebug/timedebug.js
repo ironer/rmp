@@ -4,8 +4,9 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: opravit oznaceni textu v kozoli po otevreni, at je citelny
+// TODO: naformatovat cestu v objektu
 // TODO: opravit sirku po pridelani scroll baru kvuli scrolloveani v ose y u titulku
-// TODO: enter ulozi data z textarea pro editaci
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
@@ -141,6 +142,20 @@ TimeDebug.changeVar = function(e) {
 	return false;
 };
 
+TimeDebug.startConsole = function(e) {
+	e = e || window.event;
+
+	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.right) return true;
+
+	JAK.Events.stopEvent(e);
+	JAK.Events.cancelDef(e);
+
+	if (this.logRow) TimeDebug.showLog(e, this.logRow);
+	TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
+
+	return false;
+};
+
 TimeDebug.updateChangeList = function(el) {
 	var change;
 	var j = TimeDebug.changes.length;
@@ -169,6 +184,7 @@ TimeDebug.saveVarChange = function() {
 	var elIndex = 0;
 	var changeEls;
 	var i, j, k;
+	var mouseOver = false;
 
 	TimeDebug.consoleClose();
 
@@ -205,7 +221,7 @@ TimeDebug.saveVarChange = function() {
 			if (typeof(TimeDebug.logRowActive.varChanges) == 'undefined') TimeDebug.logRowActive.varChanges = [newEl];
 			else TimeDebug.logRowActive.varChanges.push(newEl);
 			change.logRow = TimeDebug.logRowActive;
-			JAK.Events.addListener(change, 'mouseover', change.logRow, TimeDebug.showLog);
+			mouseOver = JAK.Events.addListener(change, 'mouseover', change.logRow, TimeDebug.showLog);
 			JAK.DOM.addClass(newEl, 'nd-var-change');
 			varEl = newEl;
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', logClone);
@@ -229,8 +245,10 @@ TimeDebug.saveVarChange = function() {
 			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
 			JAK.Events.addListener(change, 'mouseover', varEl, TimeDebug.hoverChange),
-			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverChange)
+			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverChange),
+			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.startConsole)
 		];
+		if (mouseOver) change.listeners.push(mouseOver);
 	}
 
 	varEl.title = input;
@@ -311,7 +329,14 @@ TimeDebug.logAction = function(e) {
 
 		document.body.focus();
 	} else {
-		if (!TimeDebug.tdFullWidth) {
+		if (TimeDebug.tdFullWidth) {
+			TimeDebug.tdFullWidth = false;
+			JAK.DOM.removeClass(document.body.parentNode, 'nd-fullscreen');
+
+			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
+			TimeDebug.logContainer.style.width = 'auto';
+			TimeDebug.logRowActive.removeAttribute('style');
+		} else {
 			TimeDebug.tdFullWidth = true;
 			JAK.DOM.addClass(document.body.parentNode, 'nd-fullscreen');
 
@@ -319,13 +344,6 @@ TimeDebug.logAction = function(e) {
 			TimeDebug.tdContainer.style.width = '100%';
 			TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
 			TimeDebug.logRowActive.style.width = (TimeDebug.tdContainer.clientWidth - 48) + 'px';
-		} else {
-			TimeDebug.tdFullWidth = false;
-			JAK.DOM.removeClass(document.body.parentNode, 'nd-fullscreen');
-
-			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
-			TimeDebug.logContainer.style.width = 'auto';
-			TimeDebug.logRowActive.removeAttribute('style');
 		}
 
 		TimeDebug.tdResizeWrapper();
@@ -338,15 +356,15 @@ TimeDebug.logResizing = function(e) {
 	e = e || window.event;
 	var el = TimeDebug.actionData.element;
 
-	if (e.button !== JAK.Browser.mouse.left) {
-		TimeDebug.endLogResize();
-	} else {
+	if (e.button === JAK.Browser.mouse.left) {
 		TimeDebug.tdWidth = Math.max(0, Math.min(TimeDebug.viewSize.width - TimeDebug.helpSpaceX,
 				TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX));
 
 		document.body.style.marginLeft = TimeDebug.tdContainer.style.width = el.style.left = TimeDebug.tdWidth + 'px';
 
 		TimeDebug.tdResizeWrapper();
+	} else {
+		TimeDebug.endLogResize();
 	}
 };
 
@@ -572,13 +590,13 @@ TimeDebug.titleResizing = function(e) {
 	e = e || window.event;
 	var el = TimeDebug.actionData.element;
 
-	if (e.button !== JAK.Browser.mouse.left) {
-		TimeDebug.endTitleAction();
-	} else {
+	if (e.button === JAK.Browser.mouse.left) {
 		el.userWidth = el.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - el.tdLeft - 20, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 16);
 		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(TimeDebug.viewSize.height - el.tdTop - 35, TimeDebug.actionData.height + e.screenY - TimeDebug.actionData.startY), 16) / 16);
 
-		JAK.DOM.setStyle(el, { width: el.tdWidth + 'px', height: el.tdHeight + 'px' });
+		JAK.DOM.setStyle(el, { width:el.tdWidth + 'px', height:el.tdHeight + 'px' });
+	} else {
+		TimeDebug.endTitleAction();
 	}
 };
 
@@ -603,15 +621,15 @@ TimeDebug.titleDragging = function(e) {
 	e = e || window.event;
 	var el = TimeDebug.actionData.element;
 
-	if (e.button !== JAK.Browser.mouse.left) {
-		TimeDebug.endTitleAction();
-	} else {
+	if (e.button === JAK.Browser.mouse.left) {
 		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 36, TimeDebug.actionData.offsetX + e.screenX - TimeDebug.actionData.startX), 0);
 		el.tdTop = Math.max(Math.min(TimeDebug.viewSize.height - 51, TimeDebug.actionData.offsetY + e.screenY - TimeDebug.actionData.startY), 0);
 
-		JAK.DOM.setStyle(el, { left: el.tdLeft + 'px', top: el.tdTop + 'px' });
+		JAK.DOM.setStyle(el, { left:el.tdLeft + 'px', top:el.tdTop + 'px' });
 
 		TimeDebug.titleAutosize(el);
+	} else {
+		TimeDebug.endTitleAction();
 	}
 };
 
@@ -717,18 +735,18 @@ TimeDebug.pinTitle = function(e) {
 
 	if (TimeDebug.titleActive && TimeDebug.titleActive !== el.tdTitle) TimeDebug.hideTitle();
 
-	if (TimeDebug.titleActive !== null) {
-		TimeDebug.titleActive.pined = true;
-		TimeDebug.titleActive = null;
-	} else {
+	if (TimeDebug.titleActive === null) {
 		TimeDebug.titleActive = el.tdTitle;
 		TimeDebug.titleActive.pined = false;
+	} else {
+		TimeDebug.titleActive.pined = true;
+		TimeDebug.titleActive = null;
 	}
 	return false;
 };
 
-TimeDebug.showLog = function() {
-	TimeDebug.showDump(this.logId);
+TimeDebug.showLog = function(e, el) {
+	TimeDebug.showDump(el.logId || this.logId);
 };
 
 TimeDebug.logClick = function(e) {

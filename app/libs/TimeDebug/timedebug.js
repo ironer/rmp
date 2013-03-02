@@ -4,6 +4,7 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: naskrolovani vybraneho logu pri kliku na logovou zmenu (udelat logAnchor)
 // TODO: naformatovat cestu v objektu
 // TODO: opravit sirku po pridelani scroll baru kvuli scrolloveani v ose y u titulku
 
@@ -118,6 +119,29 @@ TimeDebug.init = function(logId) {
 	document.onkeydown = TimeDebug.readKeyDown;
 	document.body.oncontextmenu = TimeDebug.tdFalse;
 	TimeDebug.tdInnerWrapper.onmousedown = TimeDebug.changeVar;
+	if (window.addEventListener) window.addEventListener('DOMMouseScroll', TimeDebug.mouseWheel, false);
+	window.onmousewheel = document.onmousewheel = TimeDebug.mouseWheel;
+};
+
+TimeDebug.mouseWheel = function(e) {
+	e = e || window.event;
+	var el = JAK.Events.getTarget(e);
+	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
+
+	if (TimeDebug.titleActive === null && !JAK.DOM.hasClass(el, 'nd-titled')) return true;
+
+	JAK.Events.stopEvent(e);
+	JAK.Events.cancelDef(e);
+
+	el = TimeDebug.titleActive || el.tdTitle;
+
+	var delta = 0;
+
+	if (e.wheelDelta) delta = (e.wheelDelta / 120 > 0 ? -16 : 16);
+	else if (e.detail) delta = (e.detail / 3 < 0 ? -16 : 16);
+
+	el.scrollTop = Math.max(0, 16 * parseInt((el.scrollTop + delta) / 16));
+	return false;
 };
 
 TimeDebug.changeVar = function(e) {
@@ -156,10 +180,17 @@ TimeDebug.changeAction = function(e) {
 		TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
 		window.location.hash = "tdfindme";
-		window.location.hash = "";
+		window.location.hash = null;
 	} else return true;
 
 	return false;
+};
+
+TimeDebug.printPath = function(path) {
+	path = (path || '').split(',');
+
+	alert(path);
+
 };
 
 TimeDebug.updateChangeList = function(el) {
@@ -174,7 +205,8 @@ TimeDebug.updateChangeList = function(el) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
 		} else change.removeAttribute('id');
-		change.title = change.data.value.indexOf("\n") == -1 ? null : change.data.value;
+		if (change.data.value.indexOf("\n") === -1) change.removeAttribute('title');
+		else change.title = change.data.value;
 		TimeDebug.tdChangeList.appendChild(change);
 	}
 };
@@ -811,21 +843,21 @@ TimeDebug.readKeyDown = function(e) {
 	var tdNext;
 
 	if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
-		if (e.keyCode == 37 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId > 1) {
+		if (e.keyCode == 38 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId > 1) {
 			tdNext = TimeDebug.selected() ? TimeDebug.getPrevious() : TimeDebug.logRowActiveId - 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
 			TimeDebug.showDump(tdNext);
 			return false;
-		} else if (e.keyCode == 39 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId < TimeDebug.indexes.length) {
+		} else if (e.keyCode == 40 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId < TimeDebug.indexes.length) {
 			TimeDebug.logView.blur();
 			tdNext = TimeDebug.selected() ? TimeDebug.getNext() : TimeDebug.logRowActiveId + 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
 			TimeDebug.showDump(tdNext);
 			return false;
-		} else if (e.keyCode == 38 && TimeDebug.titleActive) {
+		} else if (e.keyCode == 37 && TimeDebug.titleActive) {
 				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);
 				return false;
-		} else if (e.keyCode == 40 && TimeDebug.titleActive) {
+		} else if (e.keyCode == 39 && TimeDebug.titleActive) {
 				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop + 16) / 16);
 				return false;
 		} else if (e.keyCode == 27) {

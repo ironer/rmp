@@ -63,15 +63,15 @@ class TimeDebug {
 	public static function _closeDebug() {
 		$tdHelp = array(
 			'OVLADANI LOGU' => array(
-				'←' => 'posun na predchozi (oznaceny) log',
-				'→' => 'posun na nasledujici (oznaceny) log',
+				'↑' => 'posun na predchozi (oznaceny) log',
+				'↓' => 'posun na nasledujici (oznaceny) log',
 				'Left Click' => 'vyber logu',
 				'Ctrl/Cmd + LC' => 'oznaceni/odznaceni logu',
 				'Shift + LC' => 'oznaceni/odznaceni rozsahu logu'
 			),
 			'OVLADANI TITULKU' => array(
-				'↑' => 'skrolovani nahoru',
-				'↓' => 'skrolovani dolu',
+				'MouseWheel Up' => 'skrolovani nahoru',
+				'MouseWheel Down' => 'skrolovani dolu',
 				'Left Click' => 'prispendlit/odspendlit titulek',
 				'Alt + LC' => 'presunout titulek',
 				'Ctrl/Cmd + LC' => 'zmenit velikost titulku',

@@ -259,10 +259,19 @@ TimeDebug.saveVarChange = function() {
 };
 
 TimeDebug.hoverChange = function() {
+	var el = JAK.mel('a', {'name':'findme'});
+	el.innerHTML = 'zluva';
+	this.parentNode.insertBefore(el, this);
+	this.search = el;
+//	console.debug(pos);
 	JAK.DOM.addClass(this, 'nd-hovered');
 };
 
 TimeDebug.unhoverChange = function() {
+	if (this.search) {
+		this.search.parentNode.removeChild(this.search);
+		this.search = null;
+	}
 	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 

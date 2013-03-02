@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: naskrolovani vybraneho logu pri kliku na logovou zmenu (udelat logAnchor)
 // TODO: naformatovat cestu v objektu
 // TODO: opravit sirku po pridelani scroll baru kvuli scrolloveani v ose y u titulku
 
@@ -60,6 +59,7 @@ TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
 TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.tdAnchor = null;
+TimeDebug.logAnchor = JAK.mel('a', {'name':'loganchor', 'id':'logAnchor'});
 
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
@@ -179,7 +179,8 @@ TimeDebug.changeAction = function(e) {
 		if (this.logRow) TimeDebug.showLog(e, this.logRow);
 		TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
-		window.location.hash = "tdfindme";
+		window.location.hash = 'tdfindme';
+		if (this.logRow && !TimeDebug.tdFullWidth) window.location.hash = 'loganchor';
 		window.location.hash = null;
 	} else return true;
 
@@ -460,6 +461,8 @@ TimeDebug.showDump = function(id) {
 
 	JAK.DOM.addClass(TimeDebug.logRowActive = TimeDebug.logRows[id - 1], 'nd-active');
 	if (TimeDebug.logRowActive.varChanges) TimeDebug.showVarChanges(TimeDebug.logRowActive.varChanges);
+
+	TimeDebug.logRowActive.parentNode.insertBefore(TimeDebug.logAnchor, TimeDebug.logRowActive);
 
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 

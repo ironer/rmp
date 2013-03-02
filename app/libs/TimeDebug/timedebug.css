@@ -372,6 +372,11 @@ span.nd-var-change {
 	font-weight: bold;
 	background: #f90;
 }
+#logAnchor {
+	height: 4px;
+	width: 1px;
+	font-size: 4px;
+}
 hr + hr {
 	display: none;
 }

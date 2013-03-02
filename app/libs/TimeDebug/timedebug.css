@@ -50,6 +50,7 @@ pre.nd {
 	overflow-x: hidden;
 	overflow-y: auto;
 	outline: 0;
+	min-width: 70px;
 }
 .nd-array .nd-title {
 	background: #fed;

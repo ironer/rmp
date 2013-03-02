@@ -5,7 +5,6 @@
  */
 
 // TODO: naformatovat cestu v objektu
-// TODO: opravit sirku po pridelani scroll baru kvuli scrolloveani v ose y u titulku
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
@@ -734,15 +733,14 @@ TimeDebug.titleAutosize = function(el) {
 	} else {
 		el.style.width = el.tdWidth = 'auto';
 		tdCheckWidthDif = true;
-
 	}
 
 	if (el.resized) {
 		el.style.height = (TimeDebug.spaceY < el.userHeight ? el.tdHeight = TimeDebug.spaceY : el.tdHeight = el.userHeight) + 'px';
 	} else if (TimeDebug.spaceY < el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
 		el.style.height = (el.tdHeight = TimeDebug.spaceY) + 'px';
-		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.offsetWidth, 0))) {
-			el.style.width = (el.tdWidth = el.oriWidth + tdWidthDif) + 'px';
+		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0))) {
+			el.style.width = (el.tdWidth = Math.min(el.oriWidth + tdWidthDif, TimeDebug.spaceX)) + 'px';
 		}
 	} else {
 		el.style.height = el.tdHeight = 'auto';

@@ -5,6 +5,8 @@
  */
 
 // TODO: naformatovat cestu v objektu
+// TODO: nastavit korektni vysku menu obsahujiciho zmeny
+// TODO: udelat mazani zadanych zmen z menu
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
@@ -188,9 +190,18 @@ TimeDebug.changeAction = function(e) {
 
 TimeDebug.printPath = function(path) {
 	path = (path || '').split(',');
+	var i, j = path.length, k, retVal = '';
 
-	alert(path);
+	if (path[0] == 'log') {
+		retVal = '[log:' + path[1] + '(' + path[i = 2] + ')]';
+	} else if (path[0] == 'dump') {
+		retVal = '[dump:' + path[i = 1] + ']';
+	}
 
+	while (++i < j && (k = parseInt(path[i][0])) < 2) {
+
+	}
+	return retVal;
 };
 
 TimeDebug.updateChangeList = function(el) {
@@ -848,12 +859,20 @@ TimeDebug.readKeyDown = function(e) {
 			tdNext = TimeDebug.selected() ? TimeDebug.getPrevious() : TimeDebug.logRowActiveId - 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
 			TimeDebug.showDump(tdNext);
+			if (!TimeDebug.tdFullWidth) {
+				window.location.hash = 'loganchor';
+				window.location.hash = null;
+			}
 			return false;
 		} else if (e.keyCode == 40 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId < TimeDebug.indexes.length) {
 			TimeDebug.logView.blur();
 			tdNext = TimeDebug.selected() ? TimeDebug.getNext() : TimeDebug.logRowActiveId + 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
 			TimeDebug.showDump(tdNext);
+			if (!TimeDebug.tdFullWidth) {
+				window.location.hash = 'loganchor';
+				window.location.hash = null;
+			}
 			return false;
 		} else if (e.keyCode == 37 && TimeDebug.titleActive) {
 				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);

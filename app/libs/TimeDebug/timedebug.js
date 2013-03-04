@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: nastavit korektni vysku menu obsahujiciho zmeny
 // TODO: udelat mazani zadanych zmen z menu
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -189,14 +188,12 @@ TimeDebug.changeAction = function(e) {
 				TimeDebug.tdContainer.scrollTop -= 50;
 				window.location.hash = 'loganchor';
 			}
-
-			TimeDebug.tdInnerWrapper.style.height = 'auto';
+			TimeDebug.tdInnerWrapper.removeAttribute('style');
 		} else {
 			TimeDebug.logWrapper.style.height = (2 * TimeDebug.logWrapper.clientHeight) + 'px';
 			window.location.hash = 'tdfindme';
-
 			TimeDebug.logContainer.scrollTop -= 50;
-			TimeDebug.logWrapper.style.height = 'auto';
+			TimeDebug.logWrapper.removeAttribute('style');
 		}
 		window.location.hash = null;
 	} else return true;
@@ -250,6 +247,15 @@ TimeDebug.updateChangeList = function(el) {
 		else change.title = change.data.value;
 		TimeDebug.tdChangeList.appendChild(change);
 	}
+
+	el = TimeDebug.tdChangeList.parentNode;
+
+	if (typeof(el.menuWidth) == 'undefined') el.menuWidth = el.oriWidth;
+	if (typeof(el.menuHeight) == 'undefined') el.menuHeight = el.oriHeight;
+
+	el.oriWidth = Math.max(el.menuWidth, TimeDebug.tdChangeList.clientWidth);
+	el.oriHeight = el.menuHeight + TimeDebug.tdChangeList.clientHeight;
+	TimeDebug.titleAutosize(el);
 };
 
 TimeDebug.saveVarChange = function() {

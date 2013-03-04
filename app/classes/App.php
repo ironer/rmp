@@ -4,6 +4,8 @@
  * @author: Stefan Fiedler 2013
  */
 
+// TODO: pri kliknuti na ocicko u hesla zmenit input na text
+
 class App {
 
 	public $id;

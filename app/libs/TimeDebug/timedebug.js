@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: oznacit posledni editovanou change konzoli jen pri zmene value
+// TODO: oznacit posledni editovanou zmenu konzoli jen pri zmene value
 // TODO: opravit naskrolovani anchoroveho elementu 'tdfindme' normalne a ve fullscreenu (preskrolovat o 4 px resp. 50px nahoru)
 // TODO: nastavit korektni vysku menu obsahujiciho zmeny
 // TODO: udelat mazani zadanych zmen z menu
@@ -260,17 +260,17 @@ TimeDebug.saveVarChange = function() {
 		}
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
 			revPath.push(el.id, 'dump');
-			runTime = el.getAttribute('data-runtime');
+			runTime = (el.attrRuntime || (el.attrRuntime = el.getAttribute('data-runtime')));
 		} else {
 			revPath.push((elIndex = parseInt(el.getAttribute('data-tdindex'))), TimeDebug.logRowActive.id, 'log');
-			runTime = TimeDebug.logRowActive.getAttribute('data-runtime');
+			runTime = (TimeDebug.logRowActive.attrRuntime || (TimeDebug.logRowActive.attrRuntime = TimeDebug.logRowActive.getAttribute('data-runtime')));
 			logClone = el.parentNode;
 		}
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('3' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
 		revPath.push(el.id, 'dump');
-		runTime = el.getAttribute('data-runtime');
+		runTime = (el.attrRuntime || (el.attrRuntime = el.getAttribute('data-runtime')));
 	} else return false;
 
 	if (change = varEl.varListRow) {
@@ -488,6 +488,11 @@ TimeDebug.showDump = function(id) {
 	if (TimeDebug.logRowActive.varChanges) TimeDebug.showVarChanges(TimeDebug.logRowActive.varChanges);
 
 	TimeDebug.logRowActive.parentNode.insertBefore(TimeDebug.logAnchor, TimeDebug.logRowActive);
+
+	document.title = '['
+			+ (TimeDebug.logRowActive.attrRuntime || (TimeDebug.logRowActive.attrRuntime = TimeDebug.logRowActive.getAttribute('data-runtime')))
+			+ ' ms] TimeDebug::'
+			+ (TimeDebug.logRowActive.attrTitle || (TimeDebug.logRowActive.attrTitle = TimeDebug.logRowActive.getAttribute('data-title')));
 
 	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
 

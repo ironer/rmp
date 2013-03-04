@@ -112,6 +112,8 @@ class TimeDebug {
 			self::$lastMemory = self::$startMem;
 		}
 
+		$textOut = $text = htmlspecialchars($text);
+
 		if ($object) {
 			$objects = array($object);
 			$path =  isset($object->id) ? array($object->id) : array();
@@ -121,10 +123,8 @@ class TimeDebug {
 				if (isset($object->id)) $path[] = $object->id;
 			}
 
-			$text = ($path ? '<span class="nd-path">' . htmlspecialchars(implode('/', array_reverse($path))) . '</span> ' : '')
-					. htmlspecialchars($text);
-		} else {
-			$text = htmlspecialchars($text);
+			$textOut = ($path ? '<span class="nd-path">' . ($path = htmlspecialchars(implode('/', array_reverse($path)))) . '</span> ' : '')
+					. $text;
 		}
 
 		if (self::$advancedLog && isset($objects)) {
@@ -143,9 +143,10 @@ class TimeDebug {
 			$tdParams = ' id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
 		} else $tdParams = ' class="nd-row"';
 
-		echo "<pre data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')  . "\"$tdParams>["
+		echo "<pre data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
+				. "\" data-title=\"" . (empty($path) ? '' : "$path> ") . "$text\"$tdParams>["
 				. str_pad(self::runtime(self::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
-				. str_pad(self::memory(self::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $text [<small>";
+				. str_pad(self::memory(self::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $textOut [<small>";
 
 		if (self::$local) {
 			echo '<a href="editor://open/?file=' . rawurlencode($file) . "&line=$line"

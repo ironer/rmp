@@ -4,7 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat mazani zadanych zmen z menu
+
+// TODO: napsat vlastni metodu pro nalezeni poradi varu pozadovanych zmen
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
@@ -55,7 +56,8 @@ TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
 TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X'});
-
+JAK.Events.addListener(TimeDebug.deleteChange, 'mouseover', TimeDebug.deleteChange, function() { this.style.textDecoration = 'underline'; } );
+JAK.Events.addListener(TimeDebug.deleteChange, 'mouseout', TimeDebug.deleteChange, function() { this.removeAttribute('style'); } );
 
 TimeDebug.actionData = { element: null, listeners: [] };
 
@@ -178,6 +180,19 @@ TimeDebug.changeAction = function(e) {
 
 	if (e.button === JAK.Browser.mouse.right) {
 		if (this.logRow) TimeDebug.showLog(e, this.logRow);
+
+		var el = JAK.Events.getTarget(e);
+
+		if (el.id === 'tdDeleteChange') {
+			this.deleteMe = true;
+
+			TimeDebug.updateChangeList();
+
+			TimeDebug.tdChangeList.removeChild(this);
+			console.debug('odebran change z DOMu');
+			return false;
+		}
+
 		TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
 		if (this.logRow) {
@@ -233,22 +248,47 @@ TimeDebug.printPath = function(path) {
 
 TimeDebug.updateChangeList = function(el) {
 	var change;
-	var j = TimeDebug.changes.length;
+	var i = TimeDebug.changes.length, j;
 	if (el) el.lastChange = true;
 
-	TimeDebug.changes.sort(function(a,b) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.varEl.changeIndex > b.data.varEl.changeIndex); });
-	for (var i = 0; i < j; i++) {
+	TimeDebug.changes.sort(function(b,a) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.varEl.changeIndex > b.data.varEl.changeIndex); });
+//	TimeDebug.changes.reverse();
+	while (i-- > 0) {
 		change = TimeDebug.changes[i];
-		change.innerHTML = '[' + change.data.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + change.data.value;
+		if (change.deleteMe === true) {
+			change.style.display = 'none';
+			if (change.logRow && change.logRow.varChanges && (j = change.logRow.varChanges.indexOf(change.data.varEl)) != -1) {
+				change.logRow.varChanges.splice(j, 1);
+				console.debug('vymazana zmena logrow');
+			}
+			if (change.listeners.length) {
+				JAK.Events.removeListeners(change.listeners);
+				console.debug('vymazane listenery z change');
+			}
+			TimeDebug.unhoverVar(true, change.data.varEl);
+			console.debug('odhoverovana var z change.data.varEl');
+			if (change.data.varEl.hideEl) {
+				change.data.varEl.hideEl.removeAttribute('style');
+				console.debug('obnoven puvodni change.data.varEl.hideEl');
+			}
+			change.data.varEl.parentNode.removeChild(change.data.varEl);
+			console.debug('odebran change.data.varEl z DOMu');
 
-		if (change.lastChange) {
+			TimeDebug.changes.splice(i, 1);
+			console.debug('odebran change z TimeDebug.changes (' + TimeDebug.changes.length + ')');
+
+			continue;
+		}
+
+		change.innerHTML = '[' + change.data.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + change.data.value;
+		 if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
-		} else change.removeAttribute('id');
-		if (change.data.value.indexOf("\n") === -1) change.removeAttribute('title');
-		else change.title = change.data.value;
+		} else if (el) change.removeAttribute('id');
+		change.title = change.data.value;
 		TimeDebug.tdChangeList.appendChild(change);
 	}
+	TimeDebug.changes.reverse();
 
 	el = TimeDebug.tdChangeList.parentNode;
 
@@ -302,17 +342,19 @@ TimeDebug.saveVarChange = function() {
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
 
+		var newEl = varEl.cloneNode(true);
+		newEl.hideEl = varEl;
+		varEl.parentNode.insertBefore(newEl, varEl);
+		varEl.style.display = 'none';
+		varEl = newEl;
+
 		if (logClone) {
-			var newEl = varEl.cloneNode(true);
-			newEl.hideEl = varEl;
-			varEl.parentNode.insertBefore(newEl, varEl);
-			varEl.style.display = 'none';
-			if (typeof(TimeDebug.logRowActive.varChanges) == 'undefined') TimeDebug.logRowActive.varChanges = [newEl];
-			else TimeDebug.logRowActive.varChanges.push(newEl);
+			if (typeof(TimeDebug.logRowActive.varChanges) == 'undefined') TimeDebug.logRowActive.varChanges = [varEl];
+			else TimeDebug.logRowActive.varChanges.push(varEl);
 			change.logRow = TimeDebug.logRowActive;
 			mouseOver = JAK.Events.addListener(change, 'mouseover', change.logRow, TimeDebug.showLog);
-			JAK.DOM.addClass(newEl, 'nd-var-change');
-			varEl = newEl;
+
+			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', logClone);
 			for (i = 0, j = changeEls.length, k = 0; i < j; i++) {
 				if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
@@ -349,7 +391,7 @@ TimeDebug.saveVarChange = function() {
 
 TimeDebug.moveChangeDel = function() {
 	this.appendChild(TimeDebug.deleteChange);
-}
+};
 
 TimeDebug.hoverVar = function() {
 	if (TimeDebug.tdAnchor !== null) {
@@ -365,13 +407,15 @@ TimeDebug.hoverVar = function() {
 	JAK.DOM.addClass(this, 'nd-hovered');
 };
 
-TimeDebug.unhoverVar = function() {
-	if (this.search) {
-		this.search.parentNode.removeChild(this.search);
-		this.search = null;
-		if (this === TimeDebug.tdAnchor) TimeDebug.tdAnchor = null;
+TimeDebug.unhoverVar = function(e, el) {
+	el = e === true ? el : this;
+
+	if (el.search) {
+		el.search.parentNode.removeChild(el.search);
+		el.search = null;
+		if (el === TimeDebug.tdAnchor) TimeDebug.tdAnchor = null;
 	}
-	JAK.DOM.removeClass(this, 'nd-hovered');
+	JAK.DOM.removeClass(el, 'nd-hovered');
 };
 
 TimeDebug.hoverChange = function() {

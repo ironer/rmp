@@ -254,7 +254,7 @@ TimeDebug.updateChangeList = function(el) {
 	if (typeof(el.menuHeight) == 'undefined') el.menuHeight = el.oriHeight;
 
 	el.oriWidth = Math.max(el.menuWidth, TimeDebug.tdChangeList.clientWidth);
-	el.oriHeight = el.menuHeight + TimeDebug.tdChangeList.clientHeight;
+	el.oriHeight = el.menuHeight + (el.changesHeight = TimeDebug.tdChangeList.clientHeight);
 	TimeDebug.titleAutosize(el);
 };
 
@@ -790,7 +790,7 @@ TimeDebug.titleAutosize = function(el) {
 
 	if (el.resized) {
 		el.style.height = (TimeDebug.spaceY < el.userHeight ? el.tdHeight = TimeDebug.spaceY : el.tdHeight = el.userHeight) + 'px';
-	} else if (TimeDebug.spaceY < el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
+	} else if (TimeDebug.spaceY < (el.changesHeight || 0) + el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
 		el.style.height = (el.tdHeight = TimeDebug.spaceY) + 'px';
 		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0))) {
 			el.style.width = (el.tdWidth = Math.min(el.oriWidth + tdWidthDif, TimeDebug.spaceX)) + 'px';

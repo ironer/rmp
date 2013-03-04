@@ -54,6 +54,8 @@ TimeDebug.tdConsole = null;
 TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
+TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X'});
+
 
 TimeDebug.actionData = { element: null, listeners: [] };
 
@@ -333,6 +335,7 @@ TimeDebug.saveVarChange = function() {
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
 			JAK.Events.addListener(change, 'mouseover', varEl, TimeDebug.hoverVar),
 			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverVar),
+			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.moveChangeDel),
 			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
 		];
 		if (mouseOver) change.listeners.push(mouseOver);
@@ -343,6 +346,10 @@ TimeDebug.saveVarChange = function() {
 	TimeDebug.updateChangeList(change);
 	return true;
 };
+
+TimeDebug.moveChangeDel = function() {
+	this.appendChild(TimeDebug.deleteChange);
+}
 
 TimeDebug.hoverVar = function() {
 	if (TimeDebug.tdAnchor !== null) {

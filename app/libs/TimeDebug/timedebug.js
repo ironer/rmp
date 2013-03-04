@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: oznacit posledni editovanou zmenu konzoli jen pri zmene value
 // TODO: opravit naskrolovani anchoroveho elementu 'tdfindme' normalne a ve fullscreenu (preskrolovat o 4 px resp. 50px nahoru)
 // TODO: nastavit korektni vysku menu obsahujiciho zmeny
 // TODO: udelat mazani zadanych zmen z menu
@@ -274,6 +273,7 @@ TimeDebug.saveVarChange = function() {
 	} else return false;
 
 	if (change = varEl.varListRow) {
+		if (change.data.value === input) return true;
 		change.data.value = input;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});

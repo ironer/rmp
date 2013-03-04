@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: opravit naskrolovani anchoroveho elementu 'tdfindme' normalne a ve fullscreenu (preskrolovat o 4 px resp. 50px nahoru)
 // TODO: nastavit korektni vysku menu obsahujiciho zmeny
 // TODO: udelat mazani zadanych zmen z menu
 
@@ -180,8 +179,25 @@ TimeDebug.changeAction = function(e) {
 		if (this.logRow) TimeDebug.showLog(e, this.logRow);
 		TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
-		window.location.hash = 'tdfindme';
-		if (this.logRow && !TimeDebug.tdFullWidth) window.location.hash = 'loganchor';
+		if (this.logRow) {
+			TimeDebug.tdInnerWrapper.style.height = (2 * TimeDebug.tdInnerWrapper.clientHeight) + 'px';
+			window.location.hash = 'tdfindme';
+
+			if (TimeDebug.tdFullWidth) {
+				TimeDebug.tdContainer.scrollTop -= 150;
+			} else {
+				TimeDebug.tdContainer.scrollTop -= 50;
+				window.location.hash = 'loganchor';
+			}
+
+			TimeDebug.tdInnerWrapper.style.height = 'auto';
+		} else {
+			TimeDebug.logWrapper.style.height = (2 * TimeDebug.logWrapper.clientHeight) + 'px';
+			window.location.hash = 'tdfindme';
+
+			TimeDebug.logContainer.scrollTop -= 50;
+			TimeDebug.logWrapper.style.height = 'auto';
+		}
 		window.location.hash = null;
 	} else return true;
 

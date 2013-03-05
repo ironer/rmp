@@ -298,12 +298,23 @@ span.nd-var-change {
 .nd-td #logContainer {
 	overflow: scroll;
 }
-.nd-local #tdView .nd-key:hover, .nd-local .nd-top:hover, .nd-local .nd-dump .nd-key:hover,
-.nd-local #tdView .nd-key.nd-hovered, .nd-local .nd-top.nd-hovered, .nd-local .nd-dump .nd-key.nd-hovered
+.nd-local #tdView .nd-key:hover, .nd-local .nd-top:hover, .nd-local .nd-dump .nd-key:hover
 {
 	color: #000;
 	background: #fc8;
 }
+.nd-local .nd-key.nd-hovered, .nd-local .nd-top.nd-hovered {
+	color: #000;
+	background: #fc8;
+}
+.nd-local .nd-key.nd-hovered:before, .nd-local .nd-top.nd-hovered:before {
+	display: inline;
+	content: '$>';
+	color: #000;
+	font-weight: bold;
+	background: #f90;
+}
+
 .nd-fullscreen #tdContainer #tdView {
 	padding-top: 50px;
 }
@@ -394,10 +405,6 @@ span.nd-var-change {
 }
 #tdConsoleArea::-moz-selection { color: #dff;  background: #147; }
 #tdConsoleArea::selection { color: #dff;  background: #147; }
-.nd-findme {
-	font-weight: bold;
-	background: #f90;
-}
 #logAnchor {
 	height: 4px;
 	width: 1px;

@@ -4,6 +4,9 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: poprve vykleslit help kvuli sirce beze zmen
+// TODO: skryt $> pri zmene logu se stejnym dumpem
+
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
@@ -48,18 +51,17 @@ TimeDebug.spaceX = 0;
 TimeDebug.spaceY = 0;
 TimeDebug.zIndexMax = 100;
 
+TimeDebug.actionData = { element: null, listeners: [] };
+
 TimeDebug.tdConsole = null;
 TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
-TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X'});
-JAK.Events.addListener(TimeDebug.deleteChange, 'mouseover', TimeDebug.deleteChange, function() { this.style.textDecoration = 'underline'; } );
-JAK.Events.addListener(TimeDebug.deleteChange, 'mouseout', TimeDebug.deleteChange, function() { this.removeAttribute('style'); } );
-
-TimeDebug.actionData = { element: null, listeners: [] };
-
+TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X', 'showLogRow':true});
+TimeDebug.hoveredChange = null;
 TimeDebug.tdAnchor = null;
 TimeDebug.logAnchor = JAK.mel('a', {'name':'loganchor', 'id':'logAnchor'});
+
 
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
@@ -175,11 +177,9 @@ TimeDebug.changeAction = function(e) {
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
 
+	var el = JAK.Events.getTarget(e);
+
 	if (e.button === JAK.Browser.mouse.right) {
-		if (this.logRow) TimeDebug.showLog(e, this.logRow);
-
-		var el = JAK.Events.getTarget(e);
-
 		if (el.id === 'tdDeleteChange') {
 			this.deleteMe = true;
 
@@ -190,9 +190,21 @@ TimeDebug.changeAction = function(e) {
 			return false;
 		}
 
+		if (this.logRow) {
+			TimeDebug.showLog(true, this.logRow);
+			console.debug('pravy klik -> zobrazen showlog');
+		}
 		TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
+		if (el.id === 'tdDeleteChange') {
+			el.showLogRow = !el.showLogRow;
+			TimeDebug.checkDeleteChange();
+			return false;
+		}
 		if (this.logRow) {
+			TimeDebug.showLog(true, this.logRow);
+			console.debug('levy klik -> zobrazen showlog');
+
 			TimeDebug.tdInnerWrapper.style.height = (2 * TimeDebug.tdInnerWrapper.clientHeight) + 'px';
 			window.location.hash = 'tdfindme';
 
@@ -375,7 +387,7 @@ TimeDebug.saveVarChange = function() {
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
 			JAK.Events.addListener(change, 'mouseover', varEl, TimeDebug.hoverVar),
 			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverVar),
-			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.moveChangeDel),
+			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
 			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
 		];
 		if (mouseOver) change.listeners.push(mouseOver);
@@ -387,9 +399,19 @@ TimeDebug.saveVarChange = function() {
 	return true;
 };
 
-TimeDebug.moveChangeDel = function() {
-	this.appendChild(TimeDebug.deleteChange);
+TimeDebug.activateChange = function() {
+	TimeDebug.hoveredChange = this;
+	// TODO: zmenit na make hovered self a pri zmene aktivniho logu zobrazit varEl hoverovaneho change
+	// pokud je jeho logrow (nebo id) stejne jako nove logrow (nebo id)
+	// TODO: left klik na X odebere hoverovane provazani s poskakovanim
+	this.appendChild(TimeDebug.checkDeleteChange());
 };
+
+TimeDebug.checkDeleteChange = function() {
+	if (TimeDebug.deleteChange.showLogRow === true) TimeDebug.deleteChange.style.textDecoration = 'underline';
+	else TimeDebug.deleteChange.removeAttribute('style');
+	return TimeDebug.deleteChange;
+}
 
 TimeDebug.hoverVar = function() {
 	if (TimeDebug.tdAnchor !== null) {
@@ -541,6 +563,7 @@ TimeDebug.showVarChanges = function(changes) {
 };
 
 TimeDebug.hideVarChanges = function(changes) {
+	if (TimeDebug.tdAnchor !== null) TimeDebug.unhoverVar(true, TimeDebug.tdAnchor);
 	for (var i = changes.length; i-- > 0;) {
 		changes[i].style.display = 'none';
 		changes[i].hideEl.style.display = 'inline';
@@ -911,7 +934,13 @@ TimeDebug.pinTitle = function(e) {
 };
 
 TimeDebug.showLog = function(e, el) {
-	TimeDebug.showDump(el.logId || this.logId);
+	if (e === true) {
+		console.debug('showdump click: e = "' + e + '" el.logId = "' + el.logId + '"');
+		TimeDebug.showDump(el.logId);
+	} else if (TimeDebug.deleteChange.showLogRow === true) {
+		console.debug('showdump hover: e = "' + e + '" this.logId = "' + this.logId + '"');
+		TimeDebug.showDump(this.logId);
+	}
 };
 
 TimeDebug.logClick = function(e) {

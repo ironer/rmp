@@ -4,9 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-
-// TODO: napsat vlastni metodu pro nalezeni poradi varu pozadovanych zmen
-
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
@@ -251,8 +248,8 @@ TimeDebug.updateChangeList = function(el) {
 	var i = TimeDebug.changes.length, j;
 	if (el) el.lastChange = true;
 
-	TimeDebug.changes.sort(function(b,a) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.varEl.changeIndex > b.data.varEl.changeIndex); });
-//	TimeDebug.changes.reverse();
+	TimeDebug.changes.sort(function(b,a) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.varEl.parentId > b.data.varEl.parentId) || (a.data.varEl.changeIndex > b.data.varEl.changeIndex); });
+
 	while (i-- > 0) {
 		change = TimeDebug.changes[i];
 		if (change.deleteMe === true) {
@@ -309,7 +306,6 @@ TimeDebug.saveVarChange = function() {
 	var runTime;
 	var change;
 	var logClone = false;
-	var elIndex = 0;
 	var changeEls;
 	var i, j, k;
 	var mouseOver = false;
@@ -325,7 +321,7 @@ TimeDebug.saveVarChange = function() {
 			revPath.push(el.id, 'dump');
 			runTime = (el.attrRuntime || (el.attrRuntime = el.getAttribute('data-runtime')));
 		} else {
-			revPath.push((elIndex = parseInt(el.getAttribute('data-tdindex'))), TimeDebug.logRowActive.id, 'log');
+			revPath.push(parseInt(el.getAttribute('data-tdindex')), TimeDebug.logRowActive.id, 'log');
 			runTime = (TimeDebug.logRowActive.attrRuntime || (TimeDebug.logRowActive.attrRuntime = TimeDebug.logRowActive.getAttribute('data-runtime')));
 			logClone = el.parentNode;
 		}
@@ -358,14 +354,16 @@ TimeDebug.saveVarChange = function() {
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', logClone);
 			for (i = 0, j = changeEls.length, k = 0; i < j; i++) {
 				if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
-					changeEls[i].changeIndex = change.logRow.id + elIndex + k++;
+					changeEls[i].parentId = change.logRow.id;
+					changeEls[i].changeIndex = k++;
 				}
 			}
 		} else {
 			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', el);
 			for (i = 0, j = changeEls.length; i < j; i++) {
-				changeEls[i].changeIndex = el.id + i;
+				changeEls[i].parentId = el.id;
+				changeEls[i].changeIndex = i;
 			}
 		}
 

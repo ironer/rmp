@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: poprve vykleslit help kvuli sirce beze zmen
 // TODO: skryt $> pri zmene logu se stejnym dumpem
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -301,12 +300,20 @@ TimeDebug.updateChangeList = function(el) {
 
 	el = TimeDebug.tdChangeList.parentNode;
 
-	if (typeof(el.menuWidth) == 'undefined') el.menuWidth = el.oriWidth;
-	if (typeof(el.menuHeight) == 'undefined') el.menuHeight = el.oriHeight;
+	if (typeof(el.menuWidth) == 'undefined' && el.oriWidth) {
+		el.menuWidth = el.oriWidth;
+		el.menuHeight = el.oriHeight;
+		console.debug('updateChangeList: nastavuji menuWidth a menuHeight a diplay:block na #menuTitle');
+	}
+	if (el.oriWidth && el.style.display != 'none') {
+		el.style.width = 'auto';
+		el.oriWidth = Math.max(el.menuWidth, TimeDebug.tdChangeList.clientWidth);
+		el.oriHeight = el.menuHeight + (el.changesHeight = TimeDebug.tdChangeList.clientHeight);
+		console.debug('updateChangeList: nastavuji nove oriWidth a oriHeight na #menuTitle');
+		TimeDebug.titleAutosize(el);
+		console.debug('updateChangeList: TimeDebug.titleAutosize na #menuTitle');
+	}
 
-	el.oriWidth = Math.max(el.menuWidth, TimeDebug.tdChangeList.clientWidth);
-	el.oriHeight = el.menuHeight + (el.changesHeight = TimeDebug.tdChangeList.clientHeight);
-	TimeDebug.titleAutosize(el);
 };
 
 TimeDebug.saveVarChange = function() {
@@ -387,6 +394,7 @@ TimeDebug.saveVarChange = function() {
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
 			JAK.Events.addListener(change, 'mouseover', varEl, TimeDebug.hoverVar),
 			JAK.Events.addListener(change, 'mouseout', varEl, TimeDebug.unhoverVar),
+
 			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
 			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
 		];
@@ -411,7 +419,7 @@ TimeDebug.checkDeleteChange = function() {
 	if (TimeDebug.deleteChange.showLogRow === true) TimeDebug.deleteChange.style.textDecoration = 'underline';
 	else TimeDebug.deleteChange.removeAttribute('style');
 	return TimeDebug.deleteChange;
-}
+};
 
 TimeDebug.hoverVar = function() {
 	if (TimeDebug.tdAnchor !== null) {
@@ -656,6 +664,7 @@ TimeDebug.showTitle = function(e) {
 	}
 
 	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block') {
+		console.debug('(TimeDebug.titleActive === null && this.tdTitle.style.display != "block")');
 		this.tdTitle.style.display = 'block';
 		this.tdTitle.style.zIndex = ++TimeDebug.zIndexMax;
 
@@ -670,6 +679,18 @@ TimeDebug.showTitle = function(e) {
 					tdTitleRows[i].className = "nd-even";
 				}
 			}
+			if (this.tdTitle.id === 'menuTitle') {
+				this.tdTitle.menuWidth = this.tdTitle.oriWidth;
+				this.tdTitle.menuHeight = this.tdTitle.oriHeight;
+				console.debug('showTitle: nastavuji menuWidth a menuHeight a diplay:block na #menuTitle');
+				TimeDebug.tdChangeList.style.display = 'block';
+			}
+		}
+		if (this.tdTitle.id === 'menuTitle') {
+			this.tdTitle.style.width = 'auto';
+			this.tdTitle.oriWidth = Math.max(this.tdTitle.menuWidth, TimeDebug.tdChangeList.clientWidth);
+			this.tdTitle.oriHeight = this.tdTitle.menuHeight + (this.tdTitle.changesHeight = TimeDebug.tdChangeList.clientHeight);
+			console.debug('showTitle: nastavuji nove oriWidth a oriHeight na #menuTitle');
 		}
 		if (tdParents = tdParents || this.tdTitle.parents) {
 

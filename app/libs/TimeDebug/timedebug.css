@@ -169,6 +169,7 @@ pre.nd {
 	cursor: default;
 }
 #tdChangeList {
+	display: none;
 	color: #000;
 	line-height: 16px;
 	font-size: 13px;

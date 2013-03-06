@@ -77,7 +77,7 @@ class TimeDebug {
 				'Ctrl/Cmd + LC' => 'zmenit velikost titulku',
 				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost titulku',
 				'Shift + Alt + LC' => 'zavrit titulek (s podtitulky)',
-				'klavesa Esc' => 'zavrit vse a zakladni nastaveni'
+				'klavesa Esc' => 'zavrit a resetovat vsechny titulky'
 			),
 			'OVLADANI HVEZDICKY' => array(
 				'Alt + LC' => 'zmena velikosti oken',
@@ -88,6 +88,12 @@ class TimeDebug {
 				'Esc / (RC na masku)' => 'zavrit otevrenou konzoli',
 				'klavesa Enter' => 'ulozit zmeny a zavrit konzoli',
 				'Shift + Enter' => 'v konzoli dalsi radek'
+			),
+			'UPRAVA ZADANYCH ZMEN (pouze local)' => array(
+				'Left Click' => 'naskrolovat na vybranou zmenu',
+				'Right Click' => 'otevrit modal konzoli pro upravu',
+				'LC na krizek' => 'vypnout automaticke zvyraznovani logu',
+				'RC na krizek' => 'smazat vybranou zmenu'
 			)
 		);
 

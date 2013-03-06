@@ -107,7 +107,7 @@ TimeDebug.init = function(logId) {
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>nahrat</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="document.location.reload()">obnovit</span>'
-			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span>odeslat</span>' : '')
+			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.sendChanges()">odeslat</span>' : '')
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
@@ -195,7 +195,7 @@ TimeDebug.changeAction = function(e) {
 			TimeDebug.showLog(true, this.logRow);
 			TimeDebug.fire('pravy klik -> zobrazen showlog');
 		}
-		TimeDebug.consoleOpen(this.data.varEl, TimeDebug.saveVarChange);
+		TimeDebug.consoleOpen(this.varEl, TimeDebug.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
 		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
@@ -276,13 +276,13 @@ TimeDebug.updateChangeList = function(el) {
 	var i = TimeDebug.changes.length, j;
 	if (el) el.lastChange = true;
 
-	TimeDebug.changes.sort(function(b,a) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.data.varEl.parentId > b.data.varEl.parentId) || (a.data.varEl.changeIndex > b.data.varEl.changeIndex); });
+	TimeDebug.changes.sort(function(b,a) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.varEl.parentId > b.varEl.parentId) || (a.varEl.changeIndex > b.varEl.changeIndex); });
 
 	while (i-- > 0) {
 		change = TimeDebug.changes[i];
 		if (change.deleteMe === true) {
 			change.style.display = 'none';
-			if (change.logRow && change.logRow.varChanges && (j = change.logRow.varChanges.indexOf(change.data.varEl)) != -1) {
+			if (change.logRow && change.logRow.varChanges && (j = change.logRow.varChanges.indexOf(change.varEl)) != -1) {
 				change.logRow.varChanges.splice(j, 1);
 				TimeDebug.fire('vymazana zmena logrow');
 			}
@@ -290,14 +290,14 @@ TimeDebug.updateChangeList = function(el) {
 				JAK.Events.removeListeners(change.listeners);
 				TimeDebug.fire('vymazane listenery z change');
 			}
-			TimeDebug.deactivateChange(true, change.data.varEl);
-			TimeDebug.fire('odhoverovana var z change.data.varEl');
-			if (change.data.varEl.hideEl) {
-				change.data.varEl.hideEl.removeAttribute('style');
-				TimeDebug.fire('obnoven puvodni change.data.varEl.hideEl');
+			TimeDebug.deactivateChange(true, change.varEl);
+			TimeDebug.fire('odhoverovana var z change.varEl');
+			if (change.varEl.hideEl) {
+				change.varEl.hideEl.removeAttribute('style');
+				TimeDebug.fire('obnoven puvodni change.varEl.hideEl');
 			}
-			change.data.varEl.parentNode.removeChild(change.data.varEl);
-			TimeDebug.fire('odebran change.data.varEl z DOMu');
+			change.varEl.parentNode.removeChild(change.varEl);
+			TimeDebug.fire('odebran change.varEl z DOMu');
 
 			TimeDebug.changes.splice(i, 1);
 			TimeDebug.fire('odebran change z TimeDebug.changes (' + TimeDebug.changes.length + ')');
@@ -403,8 +403,9 @@ TimeDebug.saveVarChange = function() {
 			}
 		}
 
-		change.data = {'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input, 'varEl':varEl};
+		change.data = {'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input};
 		TimeDebug.changes.push(change);
+		change.varEl = varEl;
 		varEl.varListRow = change;
 		change.listeners = [
 			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
@@ -438,7 +439,7 @@ TimeDebug.activateChange = function(e, el) {
 		TimeDebug.tdHashEl.anchor.parentNode.removeChild(TimeDebug.tdHashEl.anchor);
 		TimeDebug.tdHashEl.anchor = null;
 	}
-	TimeDebug.tdHashEl = TimeDebug.hoveredChange.data.varEl;
+	TimeDebug.tdHashEl = TimeDebug.hoveredChange.varEl;
 
 	var searchEl = JAK.mel('a', {'name':'tdfindme'});
 	TimeDebug.tdHashEl.parentNode.insertBefore(searchEl, TimeDebug.tdHashEl);
@@ -449,7 +450,7 @@ TimeDebug.activateChange = function(e, el) {
 };
 
 TimeDebug.deactivateChange = function(e, el) {
-	el = e === true ? el : this.data.varEl;
+	el = e === true ? el : this.varEl;
 
 	if (el.anchor) {
 		el.anchor.parentNode.removeChild(el.anchor);
@@ -1112,4 +1113,11 @@ TimeDebug.fire = function(text) {
 		console.clear();
 	}
 	console.debug(text);
+};
+
+TimeDebug.sendChanges = function() {
+	var retVal = [];
+	for (var i = 0, j = TimeDebug.changes.length; i < j; ++i) retVal.push(TimeDebug.changes[i].data);
+	TimeDebug.fire(JSON.stringify(retVal));
+	return false;
 };

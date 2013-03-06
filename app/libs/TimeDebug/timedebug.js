@@ -60,7 +60,8 @@ TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X',
 TimeDebug.hoveredChange = null;
 TimeDebug.tdHashEl = null;
 TimeDebug.logAnchor = JAK.mel('a', {'name':'loganchor', 'id':'logAnchor'});
-
+TimeDebug.setLocHashTimeout = null;
+TimeDebug.locationHashes = [];
 
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
@@ -220,10 +221,6 @@ TimeDebug.changeAction = function(e) {
 
 	return false;
 };
-
-TimeDebug.setLocHashTimeout = null;
-
-TimeDebug.locationHashes = [];
 
 TimeDebug.setLocationHashes = function(e, hashes) {
 	var i;
@@ -443,7 +440,7 @@ TimeDebug.activateChange = function(e, el) {
 	}
 	TimeDebug.tdHashEl = TimeDebug.hoveredChange.data.varEl;
 
-	var searchEl = JAK.mel('a', {'name':'tdfindme', 'innerHTML': ''});
+	var searchEl = JAK.mel('a', {'name':'tdfindme'});
 	TimeDebug.tdHashEl.parentNode.insertBefore(searchEl, TimeDebug.tdHashEl);
 	TimeDebug.tdHashEl.anchor = searchEl;
 	JAK.DOM.addClass(TimeDebug.tdHashEl, 'nd-hovered');

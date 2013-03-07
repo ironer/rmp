@@ -4,8 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: opravit razeni podle prefixu
-// TODO: optimalizovat datove struktury pro tdAnchor
 // TODO: vypnout logovani
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -60,7 +58,9 @@ TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
 TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X', 'showLogRow':true});
 TimeDebug.hoveredChange = null;
+
 TimeDebug.tdHashEl = null;
+TimeDebug.tdAnchor = JAK.mel('a', {'name':'tdanchor'});
 TimeDebug.logAnchor = JAK.mel('a', {'name':'loganchor', 'id':'logAnchor'});
 TimeDebug.setLocHashTimeout = null;
 TimeDebug.locationHashes = [];
@@ -209,13 +209,13 @@ TimeDebug.changeAction = function(e) {
 			TimeDebug.fire('levy klik -> zobrazen showlog');
 
 			if (TimeDebug.tdFullWidth) {
-				hashes.push([TimeDebug.tdInnerWrapper, 'tdfindme', TimeDebug.tdContainer, 150]);
+				hashes.push([TimeDebug.tdInnerWrapper, 'tdanchor', TimeDebug.tdContainer, 150]);
 			} else {
-				hashes.push([TimeDebug.tdInnerWrapper, 'tdfindme', TimeDebug.tdContainer, 50]);
+				hashes.push([TimeDebug.tdInnerWrapper, 'tdanchor', TimeDebug.tdContainer, 50]);
 				hashes.push([TimeDebug.logWrapper, 'loganchor', TimeDebug.logContainer, 50]);
 			}
 		} else {
-			hashes.push([TimeDebug.logWrapper, 'tdfindme', TimeDebug.logContainer, 50]);
+			hashes.push([TimeDebug.logWrapper, 'tdanchor', TimeDebug.logContainer, 50]);
 		}
 
 		TimeDebug.setLocationHashes(true, hashes);
@@ -278,7 +278,13 @@ TimeDebug.updateChangeList = function(el) {
 	var i = TimeDebug.changes.length, j;
 	if (el) el.lastChange = true;
 
-	TimeDebug.changes.sort(function(b,a) { return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) || (a.varEl.parentId > b.varEl.parentId) || (a.varEl.changeIndex > b.varEl.changeIndex); });
+	TimeDebug.changes.sort(function(b,a) {
+		return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) ||
+				(a.varEl.parentPrefix !== b.varEl.parentPrefix ? a.varEl.parentPrefix > b.varEl.parentPrefix :
+						(a.varEl.parentIndex !== b.varEl.parentIndex ? a.varEl.parentIndex > b.varEl.parentIndex :
+								a.varEl.changeIndex > b.varEl.changeIndex)
+				);
+	});
 
 	while (i-- > 0) {
 		change = TimeDebug.changes[i];
@@ -392,7 +398,8 @@ TimeDebug.saveVarChange = function() {
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', logClone);
 			for (i = 0, j = changeEls.length, k = 0; i < j; i++) {
 				if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
-					changeEls[i].parentId = change.logRow.id;
+					changeEls[i].parentPrefix = (key = change.logRow.id.split('_'))[0];
+					changeEls[i].parentIndex = key[1];
 					changeEls[i].changeIndex = k++;
 				}
 			}
@@ -400,7 +407,8 @@ TimeDebug.saveVarChange = function() {
 			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', el);
 			for (i = 0, j = changeEls.length; i < j; i++) {
-				changeEls[i].parentId = el.id;
+				changeEls[i].parentPrefix = (key = el.id.split('_'))[0];
+				changeEls[i].parentIndex = key[1];
 				changeEls[i].changeIndex = i;
 			}
 		}
@@ -412,11 +420,8 @@ TimeDebug.saveVarChange = function() {
 		change.listeners = [
 			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
-
 			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
-
 			JAK.Events.addListener(change, 'mouseout', change, TimeDebug.deactivateChange),
-
 			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
 		];
 		if (mouseOver) change.listeners.push(mouseOver);
@@ -436,16 +441,8 @@ TimeDebug.checkDeleteChange = function() {
 
 TimeDebug.activateChange = function(e, el) {
 	TimeDebug.hoveredChange = e === true ? el : this;
-
-	if (TimeDebug.tdHashEl !== null && TimeDebug.tdHashEl.anchor) {
-		TimeDebug.tdHashEl.anchor.parentNode.removeChild(TimeDebug.tdHashEl.anchor);
-		TimeDebug.tdHashEl.anchor = null;
-	}
 	TimeDebug.tdHashEl = TimeDebug.hoveredChange.varEl;
-
-	var searchEl = JAK.mel('a', {'name':'tdfindme'});
-	TimeDebug.tdHashEl.parentNode.insertBefore(searchEl, TimeDebug.tdHashEl);
-	TimeDebug.tdHashEl.anchor = searchEl;
+	TimeDebug.tdHashEl.parentNode.insertBefore(TimeDebug.tdAnchor, TimeDebug.tdHashEl);
 	JAK.DOM.addClass(TimeDebug.tdHashEl, 'nd-hovered');
 
 	TimeDebug.hoveredChange.appendChild(TimeDebug.checkDeleteChange());
@@ -454,11 +451,7 @@ TimeDebug.activateChange = function(e, el) {
 TimeDebug.deactivateChange = function(e, el) {
 	el = e === true ? el : this.varEl;
 
-	if (el.anchor) {
-		el.anchor.parentNode.removeChild(el.anchor);
-		el.anchor = null;
-		if (el === TimeDebug.tdHashEl) TimeDebug.tdHashEl = null;
-	}
+	if (el === TimeDebug.tdHashEl) TimeDebug.tdHashEl = null;
 	JAK.DOM.removeClass(el, 'nd-hovered');
 
 	if (this === TimeDebug.hoveredChange) {

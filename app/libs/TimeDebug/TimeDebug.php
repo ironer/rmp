@@ -146,7 +146,7 @@ class TimeDebug {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = $cnt = count(self::$timeDebugMD5);
 				echo '<pre id="tdView_' . ++$cnt . '" class="nd-view-dump">' . $dump . '</pre>';
 			}
-			$tdParams = ' id="' . self::$idPrefix . 'L_' . self::incCounter('logs') . '" class="nd-row nd-log"';
+			$tdParams = ' id="l' . self::$idPrefix . '_' . self::incCounter('logs') . '" class="nd-row nd-log"';
 		} else $tdParams = ' class="nd-row"';
 
 		echo "<pre data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
@@ -175,7 +175,7 @@ class TimeDebug {
 		echo '<hr>';
 		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
 			//if (is_array($var)) $var[0][0] = 'jana';
-			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => self::$idPrefix . 'D_' . self::incCounter('dumps')));
+			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => 'd' . self::$idPrefix . '_' . self::incCounter('dumps')));
 			echo '<hr>';
 		} unset($var);
 	}
@@ -255,7 +255,7 @@ class TimeDebug {
 						if (!empty($backtrace[$id]['args'])) {
 							foreach($backtrace[$id]['args'] as $arg) {
 								if(self::$advancedLog && is_array($arg) && $titleId = self::incCounter() && $cnt = count($arg)) {
-									$args[] = '<span class="nd-array nd-titled"><span id="' . self::$idPrefix . 'T_' . $titleId
+									$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . $titleId
 											. '" class="nd-title"><strong class="nd-inner"><pre class="nd">'
 											.self::dumpVar($arg, array(
 												self::APP_RECURSION => FALSE,
@@ -335,7 +335,7 @@ class TimeDebug {
 		if ($options[self::TRUNCATE] && ($varLen = strlen($var)) > $options[self::TRUNCATE]) {
 			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 512)), TRUE)
 					. '&hellip;"</span> (' . $varLen . ')';
-			$retTitle = self::$advancedLog ? '<span id="' . self::$idPrefix . 'T_' . $titleId
+			$retTitle = self::$advancedLog ? '<span id="t' . self::$idPrefix . '_' . $titleId
 					. '" class="nd-title nd-color"><strong class="nd-inner"><i>'
 					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 1024)), TRUE))

@@ -4,16 +4,18 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: opravit razeni podle prefixu
+// TODO: optimalizovat datove struktury pro tdAnchor
 // TODO: vypnout logovani
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
 // TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
-
-// TODO: vytvorit unit testy
 // TODO: zkontrolovat dumpovani resources
+
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
+// TODO: vytvorit unit testy
 
 var TimeDebug = {};
 

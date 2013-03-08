@@ -36,6 +36,7 @@ class TimeDebug {
 
 	private static $timeDebug = array();
 	private static $timeDebugMD5 = array();
+	public static $request = array();
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
 
@@ -43,6 +44,10 @@ class TimeDebug {
 	public static function init($advancedLog = FALSE, $local = FALSE, $root = '', $startTime = 0, $startMem = 0) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
 
+		if (isset($_GET['tdrequest'])) {
+			self::$request = json_decode($_GET['tdrequest'], TRUE);
+			unset($_GET['tdrequest']);
+		}
 		header('Content-type: text/html; charset=utf-8');
 		header("Cache-control: private");
 		echo "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>TimeDebug</title>\n<style>\n";
@@ -354,8 +359,7 @@ class TimeDebug {
 	}
 
 
-	private static function dumpArray(&$var, $options, $level)
-	{
+	private static function dumpArray(&$var, $options, $level) {
 		$parentKey = isset($options[self::PARENT_KEY]) ? '1' . $options[self::PARENT_KEY] : FALSE;
 
 		static $marker;
@@ -393,8 +397,7 @@ class TimeDebug {
 	}
 
 
-	private static function dumpObject(&$var, $options, $level)
-	{
+	private static function dumpObject(&$var, $options, $level) {
 		$parentKey = isset($options[self::PARENT_KEY]) ? '0' . $options[self::PARENT_KEY] : FALSE;
 
 		$fields = (array) $var;
@@ -435,8 +438,7 @@ class TimeDebug {
 	}
 
 
-	private static function dumpResource(&$var, $options, $level)
-	{
+	private static function dumpResource(&$var, $options, $level) {
 		$type = get_resource_type($var);
 		$out = '<span class="nd-resource">' . htmlSpecialChars($type) . ' resource</span>';
 		if (isset(self::$resources[$type])) {
@@ -451,8 +453,7 @@ class TimeDebug {
 	}
 
 
-	private static function encodeString($s, $truncated = FALSE)
-	{
+	private static function encodeString($s, $truncated = FALSE) {
 		static $utf, $binary;
 		if ($utf === NULL) {
 			foreach (range("\x00", "\xFF") as $ch) {

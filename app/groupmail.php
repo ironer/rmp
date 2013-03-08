@@ -18,6 +18,7 @@ define('TEMP', '/temp');
 if (DEBUG) {
 	require_once(LIBS . '/TimeDebug/TimeDebug.php');
 	TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0);
+	TimeDebug::dump(TimeDebug::$request);
 }
 
 require_once(CLASSES . '/App.php');
@@ -32,7 +33,7 @@ if (!empty($_GET['mail'])) {
 }  else {
 	$app->route();
 	$test = 'zluva';
-	App::dump($app, $test);
+	App::dump($test);
 	return $app->getModel()->process();
 }
 

@@ -5,7 +5,7 @@
  */
 
 
-// TODO: odebrat runtime z odesilanych dat GETem
+// TODO: ulozit serii automatickych otevreni TimeDebugu
 // TODO: vypnout logovani
 
 // TODO: on-line podstrceni hodnoty pri dumpovani

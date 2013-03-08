@@ -22,7 +22,7 @@ try {
 $a = array(array('12'));
 App::dump($a);
 App::dump($a[0][0]);
-$test = "\na\na\na\na\na \na\na\na\na\na \na\na\na\na\na \na\na\na\na\na \na\na\na\na\na \na\na\na\na\na \na\na\na\na\na \na\na\na\na\na ";
+$test = "\na\na\na\na\na";
 App::dump($test);
 
 if (DEBUG) {

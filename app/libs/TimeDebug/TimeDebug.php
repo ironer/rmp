@@ -92,7 +92,7 @@ class TimeDebug {
 			'UPRAVA ZADANYCH ZMEN (pouze local)' => array(
 				'Left Click' => 'naskrolovat na vybranou zmenu',
 				'Right Click' => 'otevrit modal konzoli pro upravu',
-				'LC na krizek' => 'vypnout automaticke zvyraznovani logu',
+				'LC na krizek' => 'vypnout automaticke prepinani logu',
 				'RC na krizek' => 'smazat vybranou zmenu'
 			)
 		);

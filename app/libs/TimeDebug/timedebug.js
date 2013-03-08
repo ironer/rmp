@@ -109,7 +109,7 @@ TimeDebug.init = function(logId) {
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>nahrat</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="document.location.reload()">obnovit</span>'
-			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.sendChanges()">odeslat</span>' : '')
+			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.sendChanges()"><b>odeslat</b></span>' : '')
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
@@ -1101,18 +1101,18 @@ TimeDebug.getNext = function() {
 	return TimeDebug.logRowActiveId;
 };
 
-TimeDebug.fire = function(text) {
+TimeDebug.fire = function() {//text
 	if (this.counter) --this.counter;
 	else {
 		this.counter = 10;
-		console.clear();
+//		console.clear();
 	}
-	console.debug(text);
+	//console.debug(text);
 };
 
 TimeDebug.sendChanges = function() {
 	var retVal = [];
 	for (var i = 0, j = TimeDebug.changes.length; i < j; ++i) retVal.push(TimeDebug.changes[i].data);
-	TimeDebug.fire(JSON.stringify(retVal));
+	console.debug(JSON.stringify(retVal));
 	return false;
 };

@@ -65,6 +65,8 @@ TimeDebug.logAnchor = JAK.mel('a', {'name':'loganchor', 'id':'logAnchor'});
 TimeDebug.setLocHashTimeout = null;
 TimeDebug.locationHashes = [];
 
+TimeDebug.encodeChars = {'&':'&amp;', '<':'&lt;', '>':'&gt;'};
+
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
 	document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
@@ -313,8 +315,9 @@ TimeDebug.updateChangeList = function(el) {
 			continue;
 		}
 
-		change.innerHTML = '[' + change.data.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + change.data.value;
-		 if (change.lastChange) {
+		change.innerHTML = '[' + change.data.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + TimeDebug.htmlEncode(change.data.value);
+
+		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
 		} else if (el) change.removeAttribute('id');
@@ -1101,6 +1104,11 @@ TimeDebug.getNext = function() {
 	return TimeDebug.logRowActiveId;
 };
 
+TimeDebug.htmlEncode = function(text) {
+	for (var retVal = '', i = 0, j = text.length; i < j; ++i) retVal += TimeDebug.encodeChars[text[i]] || text[i];
+	return retVal;
+};
+
 TimeDebug.fire = function() {//text
 	if (this.counter) --this.counter;
 	else {
@@ -1113,6 +1121,13 @@ TimeDebug.fire = function() {//text
 TimeDebug.sendChanges = function() {
 	var retVal = [];
 	for (var i = 0, j = TimeDebug.changes.length; i < j; ++i) retVal.push(TimeDebug.changes[i].data);
-	console.debug(JSON.stringify(retVal));
-	return false;
+
+	if (!retVal.length) return false;
+
+	var req = JAK.mel('form', {'action': location.protocol + '//' + location.host + location.pathname, method:'get'}, {'display': 'none'});
+	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(retVal)}));
+	TimeDebug.logView.appendChild(req);
+	req.submit();
+
+	return true;
 };

@@ -129,6 +129,8 @@ pre.nd {
 	padding-top: 2px;
 	padding-bottom: 2px;
 	text-indent: -15em;
+}
+.nd-row, .nd-menu {
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
 	-khtml-user-select: none;

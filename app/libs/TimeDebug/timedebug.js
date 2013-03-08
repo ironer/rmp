@@ -4,6 +4,8 @@
  * @author: Stefan Fiedler
  */
 
+
+// TODO: odebrat runtime z odesilanych dat GETem
 // TODO: vypnout logovani
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -19,7 +21,7 @@ var TimeDebug = {};
 
 TimeDebug.local = false;
 
-TimeDebug.logView = document.getElementById('logView');
+TimeDebug.logView = JAK.gel('logView');
 TimeDebug.logWrapper = TimeDebug.logView.parentNode;
 TimeDebug.logContainer = TimeDebug.logWrapper.parentNode;
 TimeDebug.logRows = [];
@@ -111,14 +113,15 @@ TimeDebug.init = function(logId) {
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>nahrat</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="document.location.reload()">obnovit</span>'
-			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.sendChanges()"><b>odeslat</b></span>' : '')
+			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span id="tdMenuSend"><b>odeslat</b></span>' : '')
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
 	TimeDebug.help.onmousedown = TimeDebug.logAction;
 	TimeDebug.setTitles(TimeDebug.help);
 	TimeDebug.helpSpaceX = TimeDebug.help.clientWidth + JAK.DOM.scrollbarWidth();
-	document.getElementById('menuTitle').appendChild(TimeDebug.tdChangeList);
+	JAK.gel('menuTitle').appendChild(TimeDebug.tdChangeList);
+	if (TimeDebug.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', TimeDebug, 'sendChanges');
 
 	TimeDebug.showDump(logId);
 	window.onresize = TimeDebug.windowResize;
@@ -281,7 +284,7 @@ TimeDebug.updateChangeList = function(el) {
 	if (el) el.lastChange = true;
 
 	TimeDebug.changes.sort(function(b,a) {
-		return (parseFloat(a.data.runtime) - parseFloat(b.data.runtime)) ||
+		return (parseFloat(a.runtime) - parseFloat(b.runtime)) ||
 				(a.varEl.parentPrefix !== b.varEl.parentPrefix ? a.varEl.parentPrefix > b.varEl.parentPrefix :
 						(a.varEl.parentIndex !== b.varEl.parentIndex ? a.varEl.parentIndex > b.varEl.parentIndex :
 								a.varEl.changeIndex > b.varEl.changeIndex)
@@ -315,7 +318,7 @@ TimeDebug.updateChangeList = function(el) {
 			continue;
 		}
 
-		change.innerHTML = '[' + change.data.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + TimeDebug.htmlEncode(change.data.value);
+		change.innerHTML = '[' + change.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + TimeDebug.htmlEncode(change.data.value);
 
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
@@ -416,8 +419,9 @@ TimeDebug.saveVarChange = function() {
 			}
 		}
 
-		change.data = {'runtime':runTime, 'path':revPath.reverse().join(','), 'value':input};
+		change.data = {'path':revPath.reverse().join(','), 'value':input};
 		TimeDebug.changes.push(change);
+		change.runtime = runTime;
 		change.varEl = varEl;
 		varEl.varListRow = change;
 		change.listeners = [
@@ -1118,16 +1122,21 @@ TimeDebug.fire = function() {//text
 	//console.debug(text);
 };
 
-TimeDebug.sendChanges = function() {
+TimeDebug.sendChanges = function(e) {
+	e = e || window.event;
+
 	var retVal = [];
 	for (var i = 0, j = TimeDebug.changes.length; i < j; ++i) retVal.push(TimeDebug.changes[i].data);
 
 	if (!retVal.length) return false;
 
 	var req = JAK.mel('form', {'action': location.protocol + '//' + location.host + location.pathname, method:'get'}, {'display': 'none'});
+
+	if (e.shiftKey) req.target = '_blank';
+
 	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(retVal)}));
 	TimeDebug.logView.appendChild(req);
 	req.submit();
 
-	return true;
+	return false;
 };

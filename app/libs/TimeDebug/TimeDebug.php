@@ -178,8 +178,8 @@ class TimeDebug {
 			$tdParams = ' id="l' . self::$idPrefix . '_' . self::incCounter('logs') . '" class="nd-row nd-log"';
 		} else $tdParams = ' class="nd-row"';
 
-		echo "<pre data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
-				. "\" data-title=\"" . (empty($path) ? '' : "$path> ") . "$text\"$tdParams>["
+		echo "<pre" . ($object === NULL ? '' : " data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
+				. "\" data-title=\"" . (empty($path) ? '' : "$path> ") . "$text\"") . "$tdParams>["
 				. str_pad(self::runtime(self::$lastRuntime), 8, ' ', STR_PAD_LEFT) . ' / '
 				. str_pad(self::memory(self::$lastMemory), 8, ' ', STR_PAD_LEFT) . ']' . " $textOut [<small>";
 
@@ -240,10 +240,10 @@ class TimeDebug {
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy: ' . $objClass . ' nema dostupnou property: ' . $property . '.');
 				self::applyChange($var->$property, array_slice($varPath, 1), $value);
 			} elseif ($changeType === '3')  {
-				self::lg('$changeType === "3": zmena na ' . $value . ' z typu ' . gettype($var) . ' na typ ' . gettype($value));
+				self::lg('nd-top: zmena na "' . json_encode($value) . '" z typu ' . gettype($var) . ' na typ ' . gettype($value));
 				$var = $value;
 			} elseif ($changeType === '2') {
-				self::lg('$changeType === "2": zmena na ' . $value . ' z typu ' . gettype($var) . ' na typ ' . gettype($value));
+				self::lg('nd-key: zmena na "' . json_encode($value) . '" z typu ' . gettype($var) . ' na typ ' . gettype($value));
 				$var = $value;
 			} elseif ($changeType === '1') {
 				if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ' ocekavano pole.');

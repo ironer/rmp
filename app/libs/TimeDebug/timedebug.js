@@ -260,7 +260,7 @@ TimeDebug.printPath = function(path) {
 		retVal = '<b>' + path[i = 1] + '</b> ';
 	} else return '';
 
-	while (++i < j && (k = parseInt(path[i][0])) < 2) {
+	while (++i < j && (k = parseInt(path[i][0]) % 4) < 2) {
 		key = path[i].substring(1) || 'array';
 		retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close);
 
@@ -318,13 +318,14 @@ TimeDebug.updateChangeList = function(el) {
 			continue;
 		}
 
-		change.innerHTML = '[' + change.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' ' + TimeDebug.htmlEncode(change.data.value);
+		change.innerHTML = '[' + change.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' <span class="nd-'
+				+ (change.data.json ? '' : 'in') +'valid-json">' + JSON.stringify(change.data.value) + '</span>';
 
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
 		} else if (el) change.removeAttribute('id');
-		change.title = change.data.value;
+		change.title = change.varEl.title;
 		TimeDebug.tdChangeList.appendChild(change);
 	}
 	TimeDebug.changes.reverse();
@@ -351,7 +352,9 @@ TimeDebug.saveVarChange = function() {
 	var varEl = TimeDebug.tdConsole.parentNode;
 	var el = varEl;
 	var key;
-	var input = TimeDebug.tdConsole.area.value;
+	var areaVal = TimeDebug.tdConsole.area.value;
+	var input;
+	var json = true;
 	var revPath = [];
 	var runTime;
 	var change;
@@ -359,6 +362,13 @@ TimeDebug.saveVarChange = function() {
 	var changeEls;
 	var i, j, k;
 	var mouseOver = false;
+
+	try {
+		input = JSON.parse(areaVal);
+	} catch(e) {
+		input = areaVal;
+		json = false;
+	}
 
 	TimeDebug.consoleClose();
 
@@ -385,6 +395,7 @@ TimeDebug.saveVarChange = function() {
 	if (change = varEl.varListRow) {
 		if (change.data.value === input) return true;
 		change.data.value = input;
+		change.data.json = json;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
 
@@ -419,7 +430,7 @@ TimeDebug.saveVarChange = function() {
 			}
 		}
 
-		change.data = {'path':revPath.reverse().join(','), 'value':input};
+		change.data = {'path':revPath.reverse().join(','), 'value':input, 'json':json};
 		TimeDebug.changes.push(change);
 		change.runtime = runTime;
 		change.varEl = varEl;
@@ -434,7 +445,7 @@ TimeDebug.saveVarChange = function() {
 		if (mouseOver) change.listeners.push(mouseOver);
 	}
 
-	varEl.title = input;
+	varEl.title = areaVal;
 
 	TimeDebug.updateChangeList(change);
 	return true;

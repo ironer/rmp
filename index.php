@@ -21,7 +21,8 @@ try {
 
 $a = array(array('12'));
 App::dump($a);
-App::dump($a[0][0]);
+if (isset($a[0][0])) App::dump($a[0][0]);
+else App::dump($a);
 $test = "\na\na\na\na\na";
 App::dump($test);
 

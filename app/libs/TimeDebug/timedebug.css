@@ -176,6 +176,14 @@ pre.nd {
 	line-height: 16px;
 	font-size: 13px;
 }
+#tdChangeList .nd-valid-json {
+	font-weight: bold;
+	color: #009;
+}
+#tdChangeList .nd-invalid-json {
+	font-weight: bold;
+	color: #900;
+}
 .nd-change-data {
 	position: relative;
 	margin: 0;

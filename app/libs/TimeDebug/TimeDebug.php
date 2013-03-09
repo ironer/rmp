@@ -51,23 +51,17 @@ class TimeDebug {
 			self::$request['logs'] = array();
 			for ($i = 0; $i < self::$request['count']; ++$i) {
 				$path = explode(',', self::$request[$i]['path']);
-				$change = array();
 				if ($path[0] == 'dump') {
-					$change['id'] = $path[1];
-					$change['varPath'] = array_slice($path, 2);
-					$change['change'] = $i;
-					if (isset(self::$request['dumps'][$change['id']])) self::$request['dumps'][$change['id']][] = $change;
-					else self::$request['dumps'][$change['id']] = array($change);
+					self::$request[$i]['varPath'] = array_slice($path, 2);
+					if (isset(self::$request['dumps'][$path[1]])) self::$request['dumps'][$path[1]][] = $i;
+					else self::$request['dumps'][$path[1]] = array($i);
 				} elseif ($path[0] == 'log') {
-					$change['id'] = $path[1];
-					$change['objIndex'] = $path[2];
-					$change['varPath'] = array_slice($path, 3);
-					$change['change'] = $i;
-					if (isset(self::$request['logs'][$change['id']])) {
-						if (isset(self::$request['logs'][$change['id']][$change['objIndex']])) {
-							self::$request['logs'][$change['id']][$change['objIndex']][] = $change;
-						} else self::$request['logs'][$change['id']][$change['objIndex']] = array($change);
-					} else self::$request['logs'][$change['id']] = array($change['objIndex'] => array($change));
+					self::$request[$i]['varPath'] = array_slice($path, 3);
+					if (isset(self::$request['logs'][$path[1]])) {
+						if (isset(self::$request['logs'][$path[1]][$path[2]])) {
+							self::$request['logs'][$path[1]][$path[2]][] = $i;
+						} else self::$request['logs'][$path[1]][$path[2]] = array($i);
+					} else self::$request['logs'][$path[1]] = array($path[2] => array($i));
 				}
 			}
 			unset($_GET['tdrequest']);
@@ -207,7 +201,6 @@ class TimeDebug {
 			if (isset(self::$request['dumps'][$dumpId])) {
 				self::updateVar($var, self::$request['dumps'][$dumpId]);
 			}
-			//if (is_array($var)) $var[0][0] = 'jana';
 
 			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => $dumpId));
 			echo '<hr>';
@@ -216,7 +209,12 @@ class TimeDebug {
 
 	private static function updateVar(&$var = NULL, array &$changes = NULL) {
 		for ($i = 0, $j = count($changes); $i < $j; ++$i) {
-			self::applyChange($var, $changes[$i]['varPath'], self::$request[$changes[$i]['change']]['value']);
+			try {
+				$change = &self::$request[$changes[$i]];
+				self::applyChange($var, $change['varPath'], $change['value']);
+			} catch(Exception $e) {
+				echo '<pre class="nd-row nd-error"> Vyjimka pri pokusu o modifikaci promenne: ' . $e->getMessage() . ' </pre>';
+			}
 		}
 	}
 
@@ -225,38 +223,31 @@ class TimeDebug {
 		if (isset($varPath[0][0])) {
 			$changeType = $varPath[0][0];
 
-			if ($changeType === '5') {
-				if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ' ocekavano pole.');
+			if ($changeType === '1' || $changeType === '5') {
+				if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.');
 				if (empty($varPath[1])) throw new Exception('Neni zadan index v poli.');
 				$index = substr($varPath[1], 1);
 				if (!isset($var[$index])) throw new Exception('Pole nema definovany prvek s indexem ' . $index);
 				self::applyChange($var[$index], array_slice($varPath, 1), $value);
+			} elseif ($changeType === '2' || $changeType === '3')  {
+				echo '<pre class="nd-row nd-ok">' . ($changeType === '2' ? ' klic/property "' . substr($varPath[0], 1) . '":' : '')
+						. ' Provedena zmena z ' . json_encode($var) . ' (' . gettype($var);
+				$var = $value;
+				echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
 			} elseif ($changeType === '4') {
 				$objClass = substr($varPath[0], 1);
-				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ' ocekavan objekt.');
+				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
 				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.');
 				if (empty($varPath[1])) throw new Exception('Neni zadana property objektu.');
 				$property = substr($varPath[1], 1);
-				if (!property_exists($var, $property)) throw new Exception('Objekt tridy: ' . $objClass . ' nema dostupnou property: ' . $property . '.');
+				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
 				self::applyChange($var->$property, array_slice($varPath, 1), $value);
-			} elseif ($changeType === '3')  {
-				self::lg('nd-top: zmena na "' . json_encode($value) . '" z typu ' . gettype($var) . ' na typ ' . gettype($value));
-				$var = $value;
-			} elseif ($changeType === '2') {
-				self::lg('nd-key: zmena na "' . json_encode($value) . '" z typu ' . gettype($var) . ' na typ ' . gettype($value));
-				$var = $value;
-			} elseif ($changeType === '1') {
-				if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ' ocekavano pole.');
-				if (empty($varPath[1])) throw new Exception('Neni zadan index v poli.');
-				$index = substr($varPath[1], 1);
-				if (!isset($var[$index])) throw new Exception('Pole nema definovany prvek s indexem ' . $index);
-				self::applyChange($var[$index], array_slice($varPath, 1), $value);
 			} elseif ($changeType === '0') {
 				$objClass = substr($varPath[0], 1);
-				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ' ocekavan objekt.');
+				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
 				if (empty($varPath[1])) throw new Exception('Neni zadana property objektu.');
 				$property = substr($varPath[1], 1);
-				if (!property_exists($var, $property)) throw new Exception('Objekt tridy: ' . get_class($var) . ' nema dostupnou property: ' . $property . '.');
+				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . get_class($var) . '" nema dostupnou property: ' . $property . '.');
 				self::applyChange($var->$property, array_slice($varPath, 1), $value);
 			} else throw new Exception('Byl zadan spatny typ zmeny "' . $changeType . '" ocekavano 0 az 5.');
 		} else throw new Exception('Neni nastavena property nebo index v ceste pro zmenu v promenne (nalezen typ ' . gettype($varPath[0]) . ')');

@@ -112,7 +112,7 @@ TimeDebug.init = function(logId) {
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>ulozit</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>nahrat</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
-			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="document.location.reload()">obnovit</span>'
+			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.restore()">obnovit</span>'
 			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span id="tdMenuSend"><b>odeslat</b></span>' : '')
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
@@ -319,7 +319,7 @@ TimeDebug.updateChangeList = function(el) {
 		}
 
 		change.innerHTML = '[' + change.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' <span class="nd-'
-				+ (change.data.json ? '' : 'in') +'valid-json">' + JSON.stringify(change.data.value) + '</span>';
+				+ (change.json ? 'valid' : 'invalid') +'-json">' + JSON.stringify(change.data.value) + '</span>';
 
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
@@ -395,7 +395,7 @@ TimeDebug.saveVarChange = function() {
 	if (change = varEl.varListRow) {
 		if (change.data.value === input) return true;
 		change.data.value = input;
-		change.data.json = json;
+		change.json = json;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
 
@@ -430,8 +430,9 @@ TimeDebug.saveVarChange = function() {
 			}
 		}
 
-		change.data = {'path':revPath.reverse().join(','), 'value':input, 'json':json};
+		change.data = {'path':revPath.reverse().join(','), 'value':input};
 		TimeDebug.changes.push(change);
+		change.json = json;
 		change.runtime = runTime;
 		change.varEl = varEl;
 		varEl.varListRow = change;
@@ -1131,6 +1132,10 @@ TimeDebug.fire = function() {//text
 //		console.clear();
 	}
 	//console.debug(text);
+};
+
+TimeDebug.restore = function() {
+	location.href = location.protocol + '//' + location.host + location.pathname;
 };
 
 TimeDebug.sendChanges = function(e) {

@@ -176,13 +176,25 @@ pre.nd {
 	line-height: 16px;
 	font-size: 13px;
 }
-#tdChangeList .nd-valid-json {
+.nd-td .nd-valid-json, .nd-td .nd-invalid-json, .nd-row.nd-ok, .nd-row.nd-error {
+	display: inline-block;
 	font-weight: bold;
-	color: #009;
+	color: #008;
+	line-height: 16px;
+	height: 16px;
+	width: auto;
 }
-#tdChangeList .nd-invalid-json {
-	font-weight: bold;
-	color: #900;
+.nd-td .nd-invalid-json {
+	color: #700;
+	background: #fa5;
+}
+.nd-row.nd-ok {
+	color: #060;
+	background: #bfb;
+}
+.nd-row.nd-error {
+	color: #700;
+	background: #fbb;
 }
 .nd-change-data {
 	position: relative;
@@ -270,7 +282,7 @@ pre.nd {
 }
 span.nd-var-change {
 	font-weight: bold;
-	background: #8df;
+	background: #adf;
 	color: #039;
 }
 #tdContainer #tdView {

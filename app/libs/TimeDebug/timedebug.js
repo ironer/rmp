@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-
+// TODO: na dblclick opravit json
 // TODO: ulozit serii automatickych otevreni TimeDebugu
 // TODO: vypnout logovani
 
@@ -107,13 +107,13 @@ TimeDebug.init = function(logId) {
 			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title"><strong class="nd-inner">'
 			+ TimeDebug.helpHtml
 			+ '</strong></span>napoveda</span>'
+			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.restore()">obnovit</span>'
+			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span id="tdMenuSend"><b>odeslat</b></span>' : '')
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>export</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>import</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>ulozit</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>nahrat</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
-			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.restore()">obnovit</span>'
-			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span id="tdMenuSend"><b>odeslat</b></span>' : '')
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
 	document.body.appendChild(TimeDebug.help);
@@ -251,32 +251,45 @@ TimeDebug.setLocationHashes = function(e, hashes) {
 };
 
 TimeDebug.printPath = function(path) {
-	return path;
-//	path = (path || '').split(',');
-//	var i, j = path.length, k, close = '', key, retVal = '';
-//
-//	if (path[0] == 'log') {
-//		retVal = '<b>' + path[1] + '</b>(' + path[i = 2] + ') ';
-//	} else if (path[0] == 'dump') {
-//		retVal = '<b>' + path[i = 1] + '</b> ';
-//	} else return '';
-//
-//	while (++i < j && (k = parseInt(path[i][0]) % 4) < 2) {
-//		key = path[i].substring(1) || 'array';
-//		retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close);
-//
-//		if (k) {
-//			retVal += "["; close = "]";
-//		} else {
-//			retVal += '->'; close = "";
-//		}
-//	}
-//
-//	key = path[i].substring(1);
-//	if (k == 2) retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close) + ' =';
-//	else if (k == 3) retVal += '<i>(' + key + ')</i> =';
-//
-//	return retVal;
+	path = (path || '').split(',');
+	var i, j = path.length, k, close = '', key, retKey, retVal = '';
+
+	if (path[0] == 'log') {
+		retVal = '<b>' + path[1] + '</b>(' + path[i = 2] + ') ';
+	} else if (path[0] == 'dump') {
+		retVal = '<b>' + path[i = 1] + '</b> ';
+	} else return '';
+
+	console.debug(path);
+
+	while (++i < j) {
+		if (path[i][0] === '*') {
+			k = parseInt(path[i][1]);
+			retKey = '<b class="nd-reflection">' + (key = path[i].substring(2)) + '</b>';
+		} else if (path[i][0] === '#') {
+			k = parseInt(path[i][1]);
+			retKey = '<b class="nd-array-access">' + (key = path[i].substring(2)) + '</b>';
+		} else {
+			k = parseInt(path[i][0]);
+			retKey = key = path[i].substring(1) || 'array';
+		}
+		if (k > 6) break;
+
+		retVal += (!close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close);
+
+		console.debug(retVal);
+		if (k % 2) {
+			retVal += '->'; close = "";
+		} else {
+			retVal += "["; close = "]";
+		}
+	}
+
+	key = path[i].substring(1);
+	if (k == 9) retVal += '<i>(' + key + ')</i> =';
+	else retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close) + ' =';
+
+	return retVal;
 };
 
 TimeDebug.updateChangeList = function(el) {
@@ -400,7 +413,7 @@ TimeDebug.saveVarChange = function() {
 	} else return false;
 
 	if (change = varEl.varListRow) {
-		if (change.data.value === input) return true;
+		if (change.data.value === input && change.json === json) return true;
 		change.data.value = input;
 		change.json = json;
 	} else {

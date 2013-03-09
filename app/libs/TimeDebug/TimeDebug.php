@@ -249,7 +249,7 @@ class TimeDebug {
 				$property = substr($varPath[1], 1);
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . get_class($var) . '" nema dostupnou property: ' . $property . '.');
 				self::applyChange($var->$property, array_slice($varPath, 1), $value);
-			} else throw new Exception('Byl zadan spatny typ zmeny "' . $changeType . '" ocekavano 0 az 5.');
+			} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.');
 		} else throw new Exception('Neni nastavena property nebo index v ceste pro zmenu v promenne (nalezen typ ' . gettype($varPath[0]) . ')');
 	}
 
@@ -427,7 +427,9 @@ class TimeDebug {
 
 
 	private static function dumpArray(&$var, $options, $level) {
-		$parentKey = isset($options[self::PARENT_KEY]) ? '1' . $options[self::PARENT_KEY] : FALSE;
+		if (empty($options[self::PARENT_KEY])) $parentKey = FALSE;
+		elseif ($options[self::PARENT_KEY][0] === '#') $parentKey = '4' . substr($options[self::PARENT_KEY], 1);
+		else $parentKey = '6' . $options[self::PARENT_KEY];
 
 		static $marker;
 		if ($marker === NULL) {
@@ -446,7 +448,7 @@ class TimeDebug {
 			$collapsed = $level ? count($var) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
 			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . count($var)
 					. ")</span>\n<div" . ($collapsed ? ' class="nette-collapsed"' : '')
-					. (self::$advancedLog && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"5\">" : '>'));
+					. (self::$advancedLog && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"2\">" : '>'));
 			$var[$marker] = TRUE;
 			foreach ($var as $k => &$v) {
 				if ($k !== $marker) {
@@ -465,7 +467,9 @@ class TimeDebug {
 
 
 	private static function dumpObject(&$var, $options, $level) {
-		$parentKey = isset($options[self::PARENT_KEY]) ? '0' . $options[self::PARENT_KEY] : FALSE;
+		if (empty($options[self::PARENT_KEY])) $parentKey = FALSE;
+		elseif ($options[self::PARENT_KEY][0] === '#') $parentKey = '3' . substr($options[self::PARENT_KEY], 1);
+		else $parentKey = '5' . $options[self::PARENT_KEY];
 
 		$fields = (array) $var;
 
@@ -484,7 +488,7 @@ class TimeDebug {
 			$collapsed = $level ? count($fields) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
 			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . "</span>\n<div"
 					. ($collapsed ? ' class="nette-collapsed"' : '')
-					. (self::$advancedLog && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"4$varClass\">" : '>'));
+					. (self::$advancedLog && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"1$varClass\">" : '>'));
 			$list[] = $var;
 			foreach ($fields as $k => &$v) {
 				$vis = '';
@@ -492,9 +496,9 @@ class TimeDebug {
 					$vis = ' <span class="nd-visibility">' . ($k[1] === '*' ? 'protected' : 'private') . '</span>';
 					$k = substr($k, strrpos($k, "\x00") + 1);
 				}
-				$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nd-key">'
+				$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nd-key"' . ($vis ? ' data-pk="7">' : '>')
 						. (preg_match('#^\w+\z#', $k) ? $myKey = $k : '"' . ($myKey = self::encodeString($k, TRUE)) . '"')
-						. "</span>$vis => " . self::dumpVar($v, array(self::PARENT_KEY => "$myKey") + $options, $level + 1);
+						. "</span>$vis => " . self::dumpVar($v, array(self::PARENT_KEY => $vis ? "#$myKey" : "$myKey") + $options, $level + 1);
 			}
 			array_pop($list);
 			return $out . '</div>';

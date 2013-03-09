@@ -251,31 +251,32 @@ TimeDebug.setLocationHashes = function(e, hashes) {
 };
 
 TimeDebug.printPath = function(path) {
-	path = (path || '').split(',');
-	var i, j = path.length, k, close = '', key, retVal = '';
-
-	if (path[0] == 'log') {
-		retVal = '<b>' + path[1] + '</b>(' + path[i = 2] + ') ';
-	} else if (path[0] == 'dump') {
-		retVal = '<b>' + path[i = 1] + '</b> ';
-	} else return '';
-
-	while (++i < j && (k = parseInt(path[i][0]) % 4) < 2) {
-		key = path[i].substring(1) || 'array';
-		retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close);
-
-		if (k) {
-			retVal += "["; close = "]";
-		} else {
-			retVal += '->'; close = "";
-		}
-	}
-
-	key = path[i].substring(1);
-	if (k == 2) retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close) + ' =';
-	else if (k == 3) retVal += '<i>(' + key + ')</i> =';
-
-	return retVal;
+	return path;
+//	path = (path || '').split(',');
+//	var i, j = path.length, k, close = '', key, retVal = '';
+//
+//	if (path[0] == 'log') {
+//		retVal = '<b>' + path[1] + '</b>(' + path[i = 2] + ') ';
+//	} else if (path[0] == 'dump') {
+//		retVal = '<b>' + path[i = 1] + '</b> ';
+//	} else return '';
+//
+//	while (++i < j && (k = parseInt(path[i][0]) % 4) < 2) {
+//		key = path[i].substring(1) || 'array';
+//		retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close);
+//
+//		if (k) {
+//			retVal += "["; close = "]";
+//		} else {
+//			retVal += '->'; close = "";
+//		}
+//	}
+//
+//	key = path[i].substring(1);
+//	if (k == 2) retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close) + ' =';
+//	else if (k == 3) retVal += '<i>(' + key + ')</i> =';
+//
+//	return retVal;
 };
 
 TimeDebug.updateChangeList = function(el) {
@@ -351,7 +352,7 @@ TimeDebug.updateChangeList = function(el) {
 TimeDebug.saveVarChange = function() {
 	var varEl = TimeDebug.tdConsole.parentNode;
 	var el = varEl;
-	var key;
+	var key = parseInt(el.getAttribute('data-pk')) || 8;
 	var areaVal = TimeDebug.tdConsole.area.value;
 	var input;
 	var json = true;
@@ -360,8 +361,9 @@ TimeDebug.saveVarChange = function() {
 	var change;
 	var logClone = false;
 	var changeEls;
-	var i, j, k;
+	var i = -1, j, k;
 	var mouseOver = false;
+	var privateVar = !!(key % 2);
 
 	try {
 		input = JSON.parse(areaVal);
@@ -373,9 +375,14 @@ TimeDebug.saveVarChange = function() {
 	TimeDebug.consoleClose();
 
 	if (JAK.DOM.hasClass(el, 'nd-key')) {
-		revPath.push('2' + el.innerHTML);
+		revPath.push(key + el.innerHTML);
+
 		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
-			revPath.push(key);
+			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
+				revPath.push((i ? '#' : '*') + key);
+				privateVar = false;
+			} else revPath.push(key);
+			if (key[0] === '3' || key[0] === '4') privateVar = true;
 		}
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
 			revPath.push(el.id, 'dump');
@@ -386,7 +393,7 @@ TimeDebug.saveVarChange = function() {
 			logClone = el.parentNode;
 		}
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
-		revPath.push('3' + el.className.split(' ')[0].split('-')[1]);
+		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
 		revPath.push(el.id, 'dump');
 		runTime = (el.attrRuntime || (el.attrRuntime = el.getAttribute('data-runtime')));

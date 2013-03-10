@@ -4,7 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: na dblclick opravit json
+// TODO: udelat v konzoli obuvozovkovani vybraneho textu
+// TODO: najit while nebo for, dke pozdeji kontroluju countovani prvku nez praci na nich
 // TODO: ulozit serii automatickych otevreni TimeDebugu
 // TODO: vypnout logovani
 
@@ -343,9 +344,27 @@ TimeDebug.updateChangeList = function(el) {
 	}
 };
 
-TimeDebug.checkJSON = function(text, replace) {
-	replace = replace || [];
-	for (var i = 0, j = replace.length; i < j; ++i) text = text.replace(replace[i][0], replace[i][1]);
+TimeDebug.checkJSON = function(text) {
+
+	var i = 0, j = TimeDebug.autoRepairs.length, retObj = TimeDebug.testJSON(text);
+	if (retObj.status) return retObj;
+
+	for (;i < j; ++i) {
+		if ((retObj = TimeDebug.testJSON(text, TimeDebug.autoRepairs[i])).status) return retObj;
+	}
+	return false;
+};
+
+TimeDebug.testJSON = function(text, tests) {
+	tests = tests || [];
+	var i, j, k, l, test;
+
+	for (i = 0, j = tests.length; i < j; ++i) {
+
+		for (k = 0, l = (test = TimeDebug.replaces[tests[i]]).length; k < l; ++k) {
+			text = text.replace(test[k][0], test[k][1]);
+		}
+	}
 	var retVal = {"status":false, "text":text};
 
 	try {
@@ -357,60 +376,49 @@ TimeDebug.checkJSON = function(text, replace) {
 	}
 };
 
+TimeDebug.replaces = {
+	"quotes": [[/"/g, '\\"'],[/'/g, '"']],
+	"numbers": [[/(\d+)(?!=,),(\d+)(?!,)/g, '$1.$2']],
+	"objects": [[/\[([^\]]*?:[^\]]*?)\]/g, '{$1}']],
+	"keys": [[/({\s*|,\s*)([^}"',:\s]*)(\s*:[^},]*)(?=,|})/g, '$1"$2"$3']]
+};
+
+TimeDebug.autoRepairs = [
+	["quotes"],
+	["numbers"],
+	["quotes", "numbers"],
+	["objects"],
+	["keys"],
+	["objects", "keys"],
+	["quotes", "objects", "keys"],
+	["quotes", "objects", "keys", "numbers"]
+];
+
 TimeDebug.saveVarChange = function() {
 	var varEl = TimeDebug.tdConsole.parentNode;
 	var el = varEl;
 	var key = parseInt(el.getAttribute('data-pk')) || 8;
+	var privateVar = !!(key % 2);
+
 	var areaVal = TimeDebug.tdConsole.area.value;
+	var i = -1, j, k, s = TimeDebug.checkJSON(areaVal);
 	var input;
 	var json = true;
+
 	var revPath = [];
 	var runTime;
 	var change;
 	var logClone = false;
 	var changeEls;
-	var i = -1, j, k, s;
 	var mouseOver = false;
-	var privateVar = !!(key % 2);
 
-	if ((s = TimeDebug.checkJSON(areaVal)).status) {
-		TimeDebug.fire('JSON ok!');
+	if (s.status) {
 		areaVal = s.text;
 		input = s.json;
-	} else if ((s = TimeDebug.checkJSON(areaVal, [[/"/g, '\\"'],[/'/g, '"']])).status) {
-		TimeDebug.fire('JSON opraven nahrazenim apostrofu za uvozovky!');
-		areaVal = s.text;
-		input = s.json;
+	} else {
+		input = areaVal;
+		json = false;
 	}
-	TimeDebug.fire(s);
-//	TimeDebug.checkJSON(areaVal, [[/"/g, '\\"'],[/'/g, '"']]);
-
-//	if (TimeDebug.checkJSON(areaVal)) input = JSON.parse(areaVal);
-//	else if (TimeDebug.checkJSON(j = areaVal.replace(/"/g, '\\"').replace(/'/g, '"'))) {
-//		input = JSON.parse(j);
-//		areaVal = j;
-//	}
-//	else if (TimeDebug.checkJSON(k = areaVal.replace(/(\d+),(\d+)/g, '$1.$2'))) {
-//		input = JSON.parse(k);
-//		areaVal = k;
-//	}
-//	else if (TimeDebug.checkJSON(l = areaVal.replace(/{\s(\d+),(\d+)/g, '$1.$2'))) input = JSON.parse(l);
-
-
-//	try {
-//		input = JSON.parse(areaVal);
-//	} catch(e) {
-//		try {
-//			if (input = JSON.parse(j = areaVal.replace(/"/g, '\\"').replace(/'/g, '"'))) areaVal = j;
-//		} catch(e) {
-//			try {
-//				if (input = JSON.parse(TimeDebug.checkJSON(k = areaVal.replace(/(\d+),(\d+)/g, '$1.$2')))) areaVal = k;
-//			} catch(e) {
-//				input = areaVal;
-//				json = false;
-//			}
-//		}
-//	}
 
 	TimeDebug.consoleClose();
 
@@ -1166,7 +1174,7 @@ TimeDebug.htmlEncode = function(text) {
 
 TimeDebug.fire = function(text) {
 	if (!--this.counter) {
-		this.counter = 10;
+		this.counter = 1000;
 		console.clear();
 	}
 	console.debug(text);

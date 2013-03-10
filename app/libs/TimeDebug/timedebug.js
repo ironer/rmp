@@ -4,6 +4,7 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: dodelat obarvovani objektu a properties v printPath
 // TODO: udelat v konzoli obuvozovkovani vybraneho textu
 // TODO: najit while nebo for, dke pozdeji kontroluju countovani prvku nez praci na nich
 // TODO: ulozit serii automatickych otevreni TimeDebugu
@@ -205,8 +206,8 @@ TimeDebug.changeAction = function(e) {
 			TimeDebug.checkDeleteChange();
 			return false;
 		}
-		if (e.shiftKey && !this.json) {
-			this.json = true;
+		if (e.shiftKey && !this.valid) {
+			this.valid = true;
 			this.varEl.title = this.title = JSON.stringify(this.data.value);
 			TimeDebug.updateChangeList(this);
 			return false;
@@ -319,7 +320,7 @@ TimeDebug.updateChangeList = function(el) {
 		}
 
 		change.innerHTML = '[' + change.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' <span class="nd-'
-				+ (change.json ? 'valid' : 'invalid') +'-json">' + JSON.stringify(change.data.value) + '</span>';
+				+ (change.valid ? 'valid' : 'invalid') +'-json">' + JSON.stringify(change.data.value) + '</span>';
 
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
@@ -345,14 +346,13 @@ TimeDebug.updateChangeList = function(el) {
 };
 
 TimeDebug.checkJSON = function(text) {
-
 	var i = 0, j = TimeDebug.autoRepairs.length, retObj = TimeDebug.testJSON(text);
-	if (retObj.status) return retObj;
+	if (retObj.status && (retObj.valid = true)) return retObj;
 
 	for (;i < j; ++i) {
-		if ((retObj = TimeDebug.testJSON(text, TimeDebug.autoRepairs[i])).status) return retObj;
+		if ((retObj = TimeDebug.testJSON(text, TimeDebug.autoRepairs[i])).status) return (retObj.valid = false) || retObj;
 	}
-	return false;
+	return {"status":false};
 };
 
 TimeDebug.testJSON = function(text, tests) {
@@ -365,14 +365,11 @@ TimeDebug.testJSON = function(text, tests) {
 			text = text.replace(test[k][0], test[k][1]);
 		}
 	}
-	var retVal = {"status":false, "text":text};
 
 	try {
-		retVal.json = JSON.parse(text);
-		retVal.status = true;
-		return retVal;
+		return {"status":true, "json":JSON.parse(text)};
 	} catch(e) {
-		return retVal;
+		return {"status":false};
 	}
 };
 
@@ -402,8 +399,8 @@ TimeDebug.saveVarChange = function() {
 
 	var areaVal = TimeDebug.tdConsole.area.value;
 	var i = -1, j, k, s = TimeDebug.checkJSON(areaVal);
-	var input;
-	var json = true;
+	var value;
+	var valid = true;
 
 	var revPath = [];
 	var runTime;
@@ -413,11 +410,11 @@ TimeDebug.saveVarChange = function() {
 	var mouseOver = false;
 
 	if (s.status) {
-		areaVal = s.text;
-		input = s.json;
+		value = s.json;
+		valid = s.valid;
 	} else {
-		input = areaVal;
-		json = false;
+		value = areaVal;
+		valid = false;
 	}
 
 	TimeDebug.consoleClose();
@@ -448,9 +445,9 @@ TimeDebug.saveVarChange = function() {
 	} else return false;
 
 	if (change = varEl.varListRow) {
-		if (change.data.value === input && change.json === json) return true;
-		change.data.value = input;
-		change.json = json;
+		if (change.data.value === value && change.valid === valid) return true;
+		change.data.value = value;
+		change.valid = valid;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
 
@@ -485,9 +482,9 @@ TimeDebug.saveVarChange = function() {
 			}
 		}
 
-		change.data = {'path':revPath.reverse().join(','), 'value':input};
+		change.data = {'path':revPath.reverse().join(','), 'value':value};
 		TimeDebug.changes.push(change);
-		change.json = json;
+		change.valid = valid;
 		change.runtime = runTime;
 		change.varEl = varEl;
 		varEl.varListRow = change;
@@ -1122,7 +1119,7 @@ TimeDebug.readKeyDown = function(e) {
 			TimeDebug.titleActive = null;
 			return false;
 		} else if (e.keyCode == 13 && TimeDebug.tdConsole) {
-			return TimeDebug.tdConsole.callback();
+			return TimeDebug.wrapSelection() && TimeDebug.tdConsole.callback();
 		}
 	}
 	return true;
@@ -1193,12 +1190,20 @@ TimeDebug.sendChanges = function(e) {
 	if (!retVal.length) return false;
 
 	var req = JAK.mel('form', {'action': location.protocol + '//' + location.host + location.pathname, method:'get'}, {'display': 'none'});
-
 	if (e.shiftKey) req.target = '_blank';
 
 	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(retVal)}));
 	TimeDebug.logView.appendChild(req);
 	req.submit();
 
+	return false;
+};
+
+TimeDebug.wrapSelection = function() {
+	var el = TimeDebug.tdConsole.area, s = el.selectionStart, e = el.selectionEnd;
+	if (s === e) return true;
+	el.value = el.value.slice(0, s) + '"' + el.value.slice(s, e) + '"' + el.value.slice(e);
+	el.selectionStart = s + 1;
+	el.selectionEnd = e + 1;
 	return false;
 };

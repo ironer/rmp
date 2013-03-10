@@ -221,7 +221,7 @@ pre.nd {
 	height: 16px;
 	font-weight: bold;
 	text-align: left;
-	padding-left: 6px;
+	padding-left: 5px;
 	margin: 0;
 	color: #c00;
 	background: -moz-linear-gradient(left,  rgba(255,255,238,1) 0%, rgba(255,255,238,1) 50%, rgba(255,255,238,0) 100%);

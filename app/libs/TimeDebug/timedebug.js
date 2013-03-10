@@ -179,7 +179,7 @@ TimeDebug.changeVar = function(e) {
 TimeDebug.changeAction = function(e) {
 	e = e || window.event;
 
-	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) return true;
+	if (!TimeDebug.local || e.altKey || e.ctrlKey || e.metaKey) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
@@ -192,16 +192,11 @@ TimeDebug.changeAction = function(e) {
 			this.deleteMe = true;
 
 			TimeDebug.updateChangeList();
-
 			TimeDebug.tdChangeList.removeChild(this);
-			TimeDebug.fire('odebran change z DOMu');
 			return false;
 		}
 
-		if (this.logRow) {
-			TimeDebug.showLog(true, this.logRow);
-			TimeDebug.fire('pravy klik -> zobrazen showlog');
-		}
+		if (this.logRow) TimeDebug.showLog(true, this.logRow);
 		TimeDebug.consoleOpen(this.varEl, TimeDebug.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
 		if (el.id === 'tdDeleteChange') {
@@ -209,9 +204,14 @@ TimeDebug.changeAction = function(e) {
 			TimeDebug.checkDeleteChange();
 			return false;
 		}
+		if (e.shiftKey && !this.json) {
+			this.json = true;
+			this.varEl.title = this.title = JSON.stringify(this.data.value);
+			TimeDebug.updateChangeList(this);
+			return false;
+		}
 		if (this.logRow) {
 			TimeDebug.showLog(true, this.logRow);
-			TimeDebug.fire('levy klik -> zobrazen showlog');
 
 			if (TimeDebug.tdFullWidth) {
 				hashes.push([TimeDebug.tdInnerWrapper, 'tdanchor', TimeDebug.tdContainer, 150]);
@@ -260,8 +260,6 @@ TimeDebug.printPath = function(path) {
 		retVal = '<b>' + path[i = 1] + '</b> ';
 	} else return '';
 
-	console.debug(path);
-
 	while (++i < j) {
 		if (path[i][0] === '*') {
 			k = parseInt(path[i][1]);
@@ -277,7 +275,6 @@ TimeDebug.printPath = function(path) {
 
 		retVal += (!close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close);
 
-		console.debug(retVal);
 		if (k % 2) {
 			retVal += '->'; close = "";
 		} else {
@@ -311,24 +308,12 @@ TimeDebug.updateChangeList = function(el) {
 			change.style.display = 'none';
 			if (change.logRow && change.logRow.varChanges && (j = change.logRow.varChanges.indexOf(change.varEl)) != -1) {
 				change.logRow.varChanges.splice(j, 1);
-				TimeDebug.fire('vymazana zmena logrow');
 			}
-			if (change.listeners.length) {
-				JAK.Events.removeListeners(change.listeners);
-				TimeDebug.fire('vymazane listenery z change');
-			}
+			if (change.listeners.length) JAK.Events.removeListeners(change.listeners);
 			TimeDebug.deactivateChange(true, change.varEl);
-			TimeDebug.fire('odhoverovana var z change.varEl');
-			if (change.varEl.hideEl) {
-				change.varEl.hideEl.removeAttribute('style');
-				TimeDebug.fire('obnoven puvodni change.varEl.hideEl');
-			}
+			if (change.varEl.hideEl) change.varEl.hideEl.removeAttribute('style');
 			change.varEl.parentNode.removeChild(change.varEl);
-			TimeDebug.fire('odebran change.varEl z DOMu');
-
 			TimeDebug.changes.splice(i, 1);
-			TimeDebug.fire('odebran change z TimeDebug.changes (' + TimeDebug.changes.length + ')');
-
 			continue;
 		}
 
@@ -349,17 +334,27 @@ TimeDebug.updateChangeList = function(el) {
 	if (typeof(el.menuWidth) == 'undefined' && el.oriWidth) {
 		el.menuWidth = el.oriWidth;
 		el.menuHeight = el.oriHeight;
-		TimeDebug.fire('updateChangeList: nastavuji menuWidth a menuHeight a diplay:block na #menuTitle');
 	}
 	if (el.oriWidth && el.style.display != 'none') {
 		el.style.width = 'auto';
 		el.oriWidth = Math.max(el.menuWidth, TimeDebug.tdChangeList.clientWidth);
 		el.oriHeight = el.menuHeight + (el.changesHeight = TimeDebug.tdChangeList.clientHeight);
-		TimeDebug.fire('updateChangeList: nastavuji nove oriWidth a oriHeight na #menuTitle');
 		TimeDebug.titleAutosize(el);
-		TimeDebug.fire('updateChangeList: TimeDebug.titleAutosize na #menuTitle');
 	}
+};
 
+TimeDebug.checkJSON = function(text, replace) {
+	replace = replace || [];
+	for (var i = 0, j = replace.length; i < j; ++i) text = text.replace(replace[i][0], replace[i][1]);
+	var retVal = {"status":false, "text":text};
+
+	try {
+		retVal.json = JSON.parse(text);
+		retVal.status = true;
+		return retVal;
+	} catch(e) {
+		return retVal;
+	}
 };
 
 TimeDebug.saveVarChange = function() {
@@ -374,16 +369,48 @@ TimeDebug.saveVarChange = function() {
 	var change;
 	var logClone = false;
 	var changeEls;
-	var i = -1, j, k;
+	var i = -1, j, k, s;
 	var mouseOver = false;
 	var privateVar = !!(key % 2);
 
-	try {
-		input = JSON.parse(areaVal);
-	} catch(e) {
-		input = areaVal;
-		json = false;
+	if ((s = TimeDebug.checkJSON(areaVal)).status) {
+		TimeDebug.fire('JSON ok!');
+		areaVal = s.text;
+		input = s.json;
+	} else if ((s = TimeDebug.checkJSON(areaVal, [[/"/g, '\\"'],[/'/g, '"']])).status) {
+		TimeDebug.fire('JSON opraven nahrazenim apostrofu za uvozovky!');
+		areaVal = s.text;
+		input = s.json;
 	}
+	TimeDebug.fire(s);
+//	TimeDebug.checkJSON(areaVal, [[/"/g, '\\"'],[/'/g, '"']]);
+
+//	if (TimeDebug.checkJSON(areaVal)) input = JSON.parse(areaVal);
+//	else if (TimeDebug.checkJSON(j = areaVal.replace(/"/g, '\\"').replace(/'/g, '"'))) {
+//		input = JSON.parse(j);
+//		areaVal = j;
+//	}
+//	else if (TimeDebug.checkJSON(k = areaVal.replace(/(\d+),(\d+)/g, '$1.$2'))) {
+//		input = JSON.parse(k);
+//		areaVal = k;
+//	}
+//	else if (TimeDebug.checkJSON(l = areaVal.replace(/{\s(\d+),(\d+)/g, '$1.$2'))) input = JSON.parse(l);
+
+
+//	try {
+//		input = JSON.parse(areaVal);
+//	} catch(e) {
+//		try {
+//			if (input = JSON.parse(j = areaVal.replace(/"/g, '\\"').replace(/'/g, '"'))) areaVal = j;
+//		} catch(e) {
+//			try {
+//				if (input = JSON.parse(TimeDebug.checkJSON(k = areaVal.replace(/(\d+),(\d+)/g, '$1.$2')))) areaVal = k;
+//			} catch(e) {
+//				input = areaVal;
+//				json = false;
+//			}
+//		}
+//	}
 
 	TimeDebug.consoleClose();
 
@@ -493,10 +520,7 @@ TimeDebug.deactivateChange = function(e, el) {
 	if (el === TimeDebug.tdHashEl) TimeDebug.tdHashEl = null;
 	JAK.DOM.removeClass(el, 'nd-hovered');
 
-	if (this === TimeDebug.hoveredChange) {
-		TimeDebug.fire('unhoverVar: TimeDebug.hoveredChange = null');
-		TimeDebug.hoveredChange = null;
-	}
+	if (this === TimeDebug.hoveredChange) TimeDebug.hoveredChange = null;
 };
 
 TimeDebug.hoverChange = function() {
@@ -721,7 +745,6 @@ TimeDebug.showTitle = function(e) {
 	}
 
 	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block') {
-		TimeDebug.fire('(TimeDebug.titleActive === null && this.tdTitle.style.display != "block")');
 		this.tdTitle.style.display = 'block';
 		this.tdTitle.style.zIndex = ++TimeDebug.zIndexMax;
 
@@ -739,7 +762,6 @@ TimeDebug.showTitle = function(e) {
 			if (this.tdTitle.id === 'menuTitle') {
 				this.tdTitle.menuWidth = this.tdTitle.oriWidth;
 				this.tdTitle.menuHeight = this.tdTitle.oriHeight;
-				TimeDebug.fire('showTitle: nastavuji menuWidth a menuHeight a diplay:block na #menuTitle');
 				TimeDebug.tdChangeList.style.display = 'block';
 			}
 		}
@@ -747,7 +769,6 @@ TimeDebug.showTitle = function(e) {
 			this.tdTitle.style.width = 'auto';
 			this.tdTitle.oriWidth = Math.max(this.tdTitle.menuWidth, TimeDebug.tdChangeList.clientWidth);
 			this.tdTitle.oriHeight = this.tdTitle.menuHeight + (this.tdTitle.changesHeight = TimeDebug.tdChangeList.clientHeight);
-			TimeDebug.fire('showTitle: nastavuji nove oriWidth a oriHeight na #menuTitle');
 		}
 		if (tdParents = tdParents || this.tdTitle.parents) {
 
@@ -1013,10 +1034,8 @@ TimeDebug.pinTitle = function(e) {
 
 TimeDebug.showLog = function(e, el) {
 	if (e === true) {
-		TimeDebug.fire('showdump click: e = "' + e + '" el.logId = "' + el.logId + '"');
 		TimeDebug.showDump(el.logId);
 	} else if (TimeDebug.deleteChange.showLogRow === true) {
-		TimeDebug.fire('showdump hover: e = "' + e + '" this.logId = "' + this.logId + '"');
 		TimeDebug.showDump(this.logId);
 	}
 };
@@ -1145,13 +1164,12 @@ TimeDebug.htmlEncode = function(text) {
 	return retVal;
 };
 
-TimeDebug.fire = function() {//text
-	if (this.counter) --this.counter;
-	else {
+TimeDebug.fire = function(text) {
+	if (!--this.counter) {
 		this.counter = 10;
-//		console.clear();
+		console.clear();
 	}
-	//console.debug(text);
+	console.debug(text);
 };
 
 TimeDebug.restore = function() {

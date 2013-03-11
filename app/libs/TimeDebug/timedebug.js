@@ -230,10 +230,12 @@ TimeDebug.changeAction = function(e) {
 			TimeDebug.checkDeleteChange();
 			return false;
 		}
-		if (e.shiftKey && !this.valid) {
-			this.valid = true;
-			this.varEl.title = this.title = JSON.stringify(this.data.value);
-			TimeDebug.updateChangeList(this);
+		if (e.shiftKey) {
+			if (!this.valid) {
+				this.valid = true;
+				this.varEl.title = this.title = JSON.stringify(this.data.value);
+				TimeDebug.updateChangeList(this);
+			}
 			return false;
 		}
 		if (this.logRow) {

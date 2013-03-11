@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: dodelat obarvovani objektu a properties v printPath
 // TODO: udelat v konzoli obuvozovkovani vybraneho textu
 // TODO: najit while nebo for, dke pozdeji kontroluju countovani prvku nez praci na nich
 // TODO: ulozit serii automatickych otevreni TimeDebugu
@@ -279,7 +278,7 @@ TimeDebug.setLocationHashes = function(e, hashes) {
 
 TimeDebug.printPath = function(path) {
 	path = (path || '').split(',');
-	var i, j = path.length, k, close = '', key, retKey, retVal = '';
+	var i, j = path.length, k, close = '', key, retKey, retVal = '', elStart = '', elEnd = '';
 
 	if (path[0] == 'log') {
 		retVal = '<b>' + path[1] + '</b>(' + path[i = 2] + ') ';
@@ -291,12 +290,18 @@ TimeDebug.printPath = function(path) {
 		if (path[i][0] === '*') {
 			k = parseInt(path[i][1]);
 			retKey = '<b class="nd-reflection">' + (key = path[i].substring(2)) + '</b>';
+			elStart = '<i class="nd-private">';
+			elEnd = '</i>';
 		} else if (path[i][0] === '#') {
 			k = parseInt(path[i][1]);
 			retKey = '<b class="nd-array-access">' + (key = path[i].substring(2)) + '</b>';
+			elStart = '<i class="nd-private">';
+			elEnd = '</i>';
 		} else {
 			k = parseInt(path[i][0]);
-			retKey = key = path[i].substring(1) || 'array';
+			retKey = elStart + (key = path[i].substring(1) || 'array') + elEnd;
+			elStart = '';
+			elEnd = '';
 		}
 		if (k > 6) break;
 
@@ -309,9 +314,8 @@ TimeDebug.printPath = function(path) {
 		}
 	}
 
-	key = path[i].substring(1);
-	if (k == 9) retVal += '<i>(' + key + ')</i> =';
-	else retVal += (!close || key == parseInt(key) ? key + close : "'" + key + "'" + close) + ' =';
+	if (k == 9) retVal += '<i>(' + retKey + ')</i> =';
+	else retVal += (!close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close) + ' =';
 
 	return retVal;
 };

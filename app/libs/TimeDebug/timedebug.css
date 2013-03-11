@@ -232,6 +232,15 @@ pre.nd {
 	background: linear-gradient(to right,  rgba(255,255,238,1) 0%,rgba(255,255,238,1) 50%,rgba(255,255,238,0) 100%);
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffee', endColorstr='#00ffffee',GradientType=1 );
 }
+.nd-reflection {
+	color: #c00;
+}
+.nd-array-access {
+	color: #060;
+}
+.nd-private {
+	color: #00e;
+}
 .nd-help .nd-title {
 	background: #ffe;
 	border-top: 8px solid #ffe;
@@ -409,7 +418,7 @@ span.nd-var-change {
 	display: block;
 	position: relative;
 	width: 500px;
-	height: 80px;
+	height: 160px;
 	line-height: 16px;
 	font-size: 14px;
 	letter-spacing: 1px;

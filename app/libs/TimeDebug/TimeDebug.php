@@ -112,6 +112,12 @@ class TimeDebug {
 				'klavesa Enter' => 'ulozit zmeny a zavrit konzoli',
 				'Shift + Enter' => 'v konzoli dalsi radek'
 			),
+			'OVLADANI KONZOLE (pouze local)' => array(
+				'Ctrl/Cmd + D' => 'duplikovat vyber',
+				'\'"' => 'obalit vyber/zmenit obaleni uvozovkami',
+				'()[]{}' => 'obalit vyber danym typem zavorek',
+				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost konzole'
+			),
 			'UPRAVA ZADANYCH ZMEN (pouze local)' => array(
 				'Left Click' => 'naskrolovat na vybranou zmenu',
 				'Right Click' => 'otevrit modal konzoli pro upravu',

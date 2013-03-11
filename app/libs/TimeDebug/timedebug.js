@@ -7,6 +7,7 @@
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
+// TODO: udelat pridavani prvku do pole
 // TODO: ulozit serii automatickych otevreni TimeDebugu
 // TODO: vypnout logovani
 

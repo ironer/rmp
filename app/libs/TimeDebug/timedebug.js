@@ -71,6 +71,31 @@ TimeDebug.locationHashes = [];
 
 TimeDebug.encodeChars = {'&':'&amp;', '<':'&lt;', '>':'&gt;'};
 
+TimeDebug.jsonReplaces = {
+	"quotes": [[/"/g, '\\"'],[/'/g, '"']],
+	"numbers": [[/(\d+)(?!=,),(\d+)(?!,\d)/g, '$1.$2']],
+	"objects": [[/\[([^\]]*?:[^\]]*?)\]/g, '{$1}']],
+	"keys": [[/({\s*|,\s*)([^}"',:\s]*)(\s*:[^},]*)(?=,|})/g, '$1"$2"$3']],
+	"constants": [[/(true|false|null)(?!=\w)(?!\w)/gi, function(w) { return w.toLowerCase(); }]]
+};
+
+TimeDebug.jsonRepairs = [
+	["quotes"],
+	["numbers"],
+	["quotes", "numbers"],
+	["objects"],
+	["keys"],
+	["constants"],
+	["quotes", "keys"],
+	["quotes", "keys", "constants"],
+	["objects", "keys"],
+	["objects", "keys", "constants"],
+	["quotes", "objects", "keys"],
+	["quotes", "objects", "keys", "constants"],
+	["quotes", "objects", "keys", "numbers"],
+	["quotes", "objects", "keys", "numbers", "constants"]
+];
+
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
 	document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
@@ -345,23 +370,23 @@ TimeDebug.updateChangeList = function(el) {
 	}
 };
 
-TimeDebug.checkJSON = function(text) {
-	var i = 0, j = TimeDebug.autoRepairs.length, retObj = TimeDebug.testJSON(text);
+TimeDebug.checkJson = function(text) {
+	var i = 0, j = TimeDebug.jsonRepairs.length, retObj = TimeDebug.testJson(text);
 	if (retObj.status && (retObj.valid = true)) return retObj;
 
 	for (;i < j; ++i) {
-		if ((retObj = TimeDebug.testJSON(text, TimeDebug.autoRepairs[i])).status) return (retObj.valid = false) || retObj;
+		if ((retObj = TimeDebug.testJson(text, TimeDebug.jsonRepairs[i])).status) return (retObj.valid = false) || retObj;
 	}
 	return {"status":false};
 };
 
-TimeDebug.testJSON = function(text, tests) {
+TimeDebug.testJson = function(text, tests) {
 	tests = tests || [];
 	var i, j, k, l, test;
 
 	for (i = 0, j = tests.length; i < j; ++i) {
 
-		for (k = 0, l = (test = TimeDebug.replaces[tests[i]]).length; k < l; ++k) {
+		for (k = 0, l = (test = TimeDebug.jsonReplaces[tests[i]]).length; k < l; ++k) {
 			text = text.replace(test[k][0], test[k][1]);
 		}
 	}
@@ -373,24 +398,6 @@ TimeDebug.testJSON = function(text, tests) {
 	}
 };
 
-TimeDebug.replaces = {
-	"quotes": [[/"/g, '\\"'],[/'/g, '"']],
-	"numbers": [[/(\d+)(?!=,),(\d+)(?!,)/g, '$1.$2']],
-	"objects": [[/\[([^\]]*?:[^\]]*?)\]/g, '{$1}']],
-	"keys": [[/({\s*|,\s*)([^}"',:\s]*)(\s*:[^},]*)(?=,|})/g, '$1"$2"$3']]
-};
-
-TimeDebug.autoRepairs = [
-	["quotes"],
-	["numbers"],
-	["quotes", "numbers"],
-	["objects"],
-	["keys"],
-	["objects", "keys"],
-	["quotes", "objects", "keys"],
-	["quotes", "objects", "keys", "numbers"]
-];
-
 TimeDebug.saveVarChange = function() {
 	var varEl = TimeDebug.tdConsole.parentNode;
 	var el = varEl;
@@ -398,7 +405,7 @@ TimeDebug.saveVarChange = function() {
 	var privateVar = !!(key % 2);
 
 	var areaVal = TimeDebug.tdConsole.area.value;
-	var i = -1, j, k, s = TimeDebug.checkJSON(areaVal);
+	var i = -1, j, k, s = TimeDebug.checkJson(areaVal);
 	var value;
 	var valid = true;
 

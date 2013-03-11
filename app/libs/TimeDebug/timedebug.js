@@ -4,12 +4,11 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat u konzole reset pres cmd/ctrl + alt + left click
-// TODO: ulozit serii automatickych otevreni TimeDebugu
-// TODO: vypnout logovani
-
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
+
+// TODO: ulozit serii automatickych otevreni TimeDebugu
+// TODO: vypnout logovani
 
 // TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
 // TODO: zkontrolovat dumpovani resources
@@ -189,7 +188,7 @@ TimeDebug.mouseWheel = function(e) {
 TimeDebug.changeVar = function(e) {
 	e = e || window.event;
 
-	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.right) return true;
+	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) return true;
 
 	var el = JAK.Events.getTarget(e);
 	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
@@ -556,6 +555,19 @@ TimeDebug.unhoverChange = function() {
 	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 
+TimeDebug.consoleAction = function(e) {
+	e = e || window.event;
+
+	if (e.button === JAK.Browser.mouse.left && e.altKey && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+		var cc = TimeDebug.consoleConfig;
+		if (typeof(cc.oriX) != 'undefined') {
+			cc.x = cc.oriX;
+			cc.y = cc.oriY;
+		}
+		JAK.DOM.setStyle(TimeDebug.tdConsole.area, {'width': cc.x + 'px', 'height': cc.y + 'px' });
+	}
+};
+
 TimeDebug.consoleOpen = function(el, callback) {
 	TimeDebug.tdConsole = JAK.mel('span', {'id':'tdConsole'});
 	var attribs = {id:'tdConsoleArea'};
@@ -567,10 +579,13 @@ TimeDebug.consoleOpen = function(el, callback) {
 	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.area);
 	el.appendChild(TimeDebug.tdConsole);
 
-	TimeDebug.tdConsole.keyPressListener = JAK.Events.addListener(TimeDebug.tdConsole.area, 'keypress', TimeDebug.tdConsole.area, TimeDebug.readConsoleKeyPress);
-	TimeDebug.tdConsole.callback = callback || TimeDebug.tdStop;
-	TimeDebug.tdConsole.mask.onmousedown = TimeDebug.catchMask;
+	TimeDebug.tdConsole.listeners = [
+		JAK.Events.addListener(TimeDebug.tdConsole.area, 'keypress', TimeDebug.tdConsole.area, TimeDebug.readConsoleKeyPress),
+		JAK.Events.addListener(TimeDebug.tdConsole.area, 'mousedown', TimeDebug.tdConsole.area, TimeDebug.consoleAction),
+		JAK.Events.addListener(TimeDebug.tdConsole.mask, 'mousedown', TimeDebug.tdConsole.mask, TimeDebug.catchMask)
+	];
 
+	TimeDebug.tdConsole.callback = callback || TimeDebug.tdStop;
 	TimeDebug.textareaTimeout = window.setTimeout(TimeDebug.textareaFocus, 1);
 };
 
@@ -585,7 +600,7 @@ TimeDebug.textareaFocus = function() {
 
 TimeDebug.catchMask = function(e) {
 	e = e || window.event;
-	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button != JAK.Browser.mouse.right) {
+	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) {
 		TimeDebug.tdConsole.area.focus();
 		return TimeDebug.tdStop(e);
 	}
@@ -596,12 +611,19 @@ TimeDebug.consoleClose = function() {
 	if (TimeDebug.tdConsole.parentNode.varListRow) {
 		JAK.DOM.removeClass(TimeDebug.tdConsole.parentNode.varListRow, 'nd-hovered');
 	}
-	if (TimeDebug.tdConsole.keyPressListener) {
-		JAK.Events.removeListener(TimeDebug.tdConsole.keyPressListener);
-		TimeDebug.tdConsole.keyPressListener = null;
+	if (TimeDebug.tdConsole.listeners) {
+		JAK.Events.removeListeners(TimeDebug.tdConsole.listeners);
+		TimeDebug.tdConsole.listeners = null;
 	}
-	TimeDebug.consoleConfig.x = TimeDebug.tdConsole.area.offsetWidth - 8;
-	TimeDebug.consoleConfig.y = TimeDebug.tdConsole.area.clientHeight;
+
+	var cc = TimeDebug.consoleConfig;
+	if (typeof(cc.oriX) == 'undefined') {
+		cc.oriX = cc.x;
+		cc.oriY = cc.y;
+	}
+
+	cc.x = TimeDebug.tdConsole.area.offsetWidth - 8;
+	cc.y = TimeDebug.tdConsole.area.clientHeight;
 
 	TimeDebug.tdConsole.parentNode.removeChild(TimeDebug.tdConsole);
 	TimeDebug.tdConsole = null;

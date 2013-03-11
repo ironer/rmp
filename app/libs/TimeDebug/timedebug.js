@@ -4,7 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat v konzoli obuvozovkovani vybraneho textu
+// TODO: udelat v konzoli duplikaci pres cmd/ctrl + d
+// TODO: udelat ulozeni rozmeru konzole a jeho reset pres cmd/ctrl + alt + left click
 // TODO: najit while nebo for, dke pozdeji kontroluju countovani prvku nez praci na nich
 // TODO: ulozit serii automatickych otevreni TimeDebugu
 // TODO: vypnout logovani
@@ -559,6 +560,7 @@ TimeDebug.consoleOpen = function(el, callback) {
 	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.area);
 	el.appendChild(TimeDebug.tdConsole);
 
+	TimeDebug.tdConsole.keyPressListener = JAK.Events.addListener(TimeDebug.tdConsole.area, 'keypress', TimeDebug.tdConsole.area, TimeDebug.readConsoleKeyPress);
 	TimeDebug.tdConsole.callback = callback || TimeDebug.tdStop;
 	TimeDebug.tdConsole.mask.onmousedown = TimeDebug.catchMask;
 
@@ -584,7 +586,13 @@ TimeDebug.catchMask = function(e) {
 };
 
 TimeDebug.consoleClose = function() {
-	if (TimeDebug.tdConsole.parentNode.varListRow) JAK.DOM.removeClass(TimeDebug.tdConsole.parentNode.varListRow, 'nd-hovered');
+	if (TimeDebug.tdConsole.parentNode.varListRow) {
+		JAK.DOM.removeClass(TimeDebug.tdConsole.parentNode.varListRow, 'nd-hovered');
+	}
+	if (TimeDebug.tdConsole.keyPressListener) {
+		JAK.Events.removeListener(TimeDebug.tdConsole.keyPressListener);
+		TimeDebug.tdConsole.keyPressListener = null;
+	}
 	TimeDebug.tdConsole.parentNode.removeChild(TimeDebug.tdConsole);
 	TimeDebug.tdConsole = null;
 	return false;
@@ -1063,6 +1071,7 @@ TimeDebug.logClick = function(e) {
 	var id = parseInt(this.logId);
 
 	if (e.altKey) {
+		if (TimeDebug.tdConsole && TimeDebug.keyChanges.indexOf(e.keyCode)) {}
 	} else if (e.ctrlKey || e.metaKey) {
 		TimeDebug.logRowsChosen[id - 1] = !TimeDebug.logRowsChosen[id - 1];
 		if (TimeDebug.logRowsChosen[id - 1]) JAK.DOM.addClass(TimeDebug.logRows[id - 1], 'nd-chosen');
@@ -1085,8 +1094,19 @@ TimeDebug.logClick = function(e) {
 	return false;
 };
 
+TimeDebug.readConsoleKeyPress = function(e) {
+	e = e || window.event;
+	if (!TimeDebug.tdConsole) return true;
+
+	var key = String.fromCharCode(e.which);
+	if (TimeDebug.keyChanges[key]) return TimeDebug.wrapSelection(e, this, key);
+	
+	return true;
+};
+
 TimeDebug.readKeyDown = function(e) {
 	e = e || window.event;
+
 	var tdNext;
 
 	if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
@@ -1132,7 +1152,7 @@ TimeDebug.readKeyDown = function(e) {
 			TimeDebug.titleActive = null;
 			return false;
 		} else if (e.keyCode == 13 && TimeDebug.tdConsole) {
-			return TimeDebug.wrapSelection() && TimeDebug.tdConsole.callback();
+			return TimeDebug.tdConsole.callback();
 		}
 	}
 	return true;
@@ -1212,11 +1232,35 @@ TimeDebug.sendChanges = function(e) {
 	return false;
 };
 
-TimeDebug.wrapSelection = function() {
-	var el = TimeDebug.tdConsole.area, s = el.selectionStart, e = el.selectionEnd;
-	if (s === e) return true;
-	el.value = el.value.slice(0, s) + '"' + el.value.slice(s, e) + '"' + el.value.slice(e);
-	el.selectionStart = s + 1;
-	el.selectionEnd = e + 1;
+TimeDebug.keyChanges = {
+	"'":["'", "'"], '"':['"', '"'],
+	'[':['[', ']'], ']':['[', ']'],
+	'(':['(', ')'], ')':['(', ')'],
+	'{':['{', '}'], '}':['{', '}']
+};
+
+TimeDebug.wrapSelection = function(e, el, key) {
+	var start = el.selectionStart, end = el.selectionEnd;
+
+	if (start === end) return true;
+
+	JAK.Events.cancelDef(e);
+	JAK.Events.stopEvent(e);
+
+	var swap = TimeDebug.keyChanges[key];
+	var retVal = el.value.slice(0, start) + swap[0];
+
+	if (end - start > 1 && (key == "'" || key == '"')
+			&& ((el.value[start] == '"' && el.value[end - 1] == '"')
+			|| (el.value[start] == "'" && el.value[end - 1] == "'"))) {
+		retVal += el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end);
+		el.value = retVal;
+		return false;
+	}
+
+	retVal += el.value.slice(start, end) + swap[1] + el.value.slice(end);
+	el.value = retVal ;
+	el.selectionStart = start + 1;
+	el.selectionEnd = end + 1;
 	return false;
 };

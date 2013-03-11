@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat v konzoli duplikaci pres cmd/ctrl + d
 // TODO: udelat ulozeni rozmeru konzole a jeho reset pres cmd/ctrl + alt + left click
 // TODO: najit while nebo for, dke pozdeji kontroluju countovani prvku nez praci na nich
 // TODO: ulozit serii automatickych otevreni TimeDebugu
@@ -95,6 +94,13 @@ TimeDebug.jsonRepairs = [
 	["quotes", "objects", "keys", "numbers"],
 	["quotes", "objects", "keys", "numbers", "constants"]
 ];
+
+TimeDebug.keyChanges = {
+	"'":["'", "'"], '"':['"', '"'],
+	'[':['[', ']'], ']':['[', ']'],
+	'(':['(', ')'], ')':['(', ')'],
+	'{':['{', '}'], '}':['{', '}']
+};
 
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
@@ -1099,6 +1105,8 @@ TimeDebug.readConsoleKeyPress = function(e) {
 	if (!TimeDebug.tdConsole) return true;
 
 	var key = String.fromCharCode(e.which);
+
+	if ((e.ctrlKey || e.metaKey) && key == 'd') return TimeDebug.duplicateText(e, this);
 	if (TimeDebug.keyChanges[key]) return TimeDebug.wrapSelection(e, this, key);
 	
 	return true;
@@ -1232,16 +1240,21 @@ TimeDebug.sendChanges = function(e) {
 	return false;
 };
 
-TimeDebug.keyChanges = {
-	"'":["'", "'"], '"':['"', '"'],
-	'[':['[', ']'], ']':['[', ']'],
-	'(':['(', ')'], ')':['(', ')'],
-	'{':['{', '}'], '}':['{', '}']
+TimeDebug.duplicateText = function(e, el) {
+	var start = el.selectionStart, end = el.selectionEnd;
+	if (start === end) return true;
+
+	JAK.Events.cancelDef(e);
+	JAK.Events.stopEvent(e);
+
+	el.value = el.value.slice(0, end) + el.value.slice(start);
+	el.selectionStart = start;
+	el.selectionEnd = end;
+	return false;
 };
 
 TimeDebug.wrapSelection = function(e, el, key) {
 	var start = el.selectionStart, end = el.selectionEnd;
-
 	if (start === end) return true;
 
 	JAK.Events.cancelDef(e);
@@ -1253,13 +1266,13 @@ TimeDebug.wrapSelection = function(e, el, key) {
 	if (end - start > 1 && (key == "'" || key == '"')
 			&& ((el.value[start] == '"' && el.value[end - 1] == '"')
 			|| (el.value[start] == "'" && el.value[end - 1] == "'"))) {
-		retVal += el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end);
-		el.value = retVal;
+		el.value = retVal + el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end);
+		el.selectionStart = start + 1;
+		el.selectionEnd = end - 1;
 		return false;
 	}
 
-	retVal += el.value.slice(start, end) + swap[1] + el.value.slice(end);
-	el.value = retVal ;
+	el.value = retVal + el.value.slice(start, end) + swap[1] + el.value.slice(end);
 	el.selectionStart = start + 1;
 	el.selectionEnd = end + 1;
 	return false;

@@ -4,8 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat ulozeni rozmeru konzole a jeho reset pres cmd/ctrl + alt + left click
-// TODO: najit while nebo for, dke pozdeji kontroluju countovani prvku nez praci na nich
+// TODO: udelat u konzole reset pres cmd/ctrl + alt + left click
 // TODO: ulozit serii automatickych otevreni TimeDebugu
 // TODO: vypnout logovani
 
@@ -56,6 +55,7 @@ TimeDebug.zIndexMax = 100;
 TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.tdConsole = null;
+TimeDebug.consoleConfig = {'x':600, 'y':160};
 TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
@@ -485,7 +485,7 @@ TimeDebug.saveVarChange = function() {
 
 			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', logClone);
-			for (i = 0, j = changeEls.length, k = 0; i < j; i++) {
+			for (i = 0, j = changeEls.length, k = 0; i < j; ++i) {
 				if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
 					changeEls[i].parentPrefix = (key = change.logRow.id.split('_'))[0];
 					changeEls[i].parentIndex = key[1];
@@ -495,7 +495,7 @@ TimeDebug.saveVarChange = function() {
 		} else {
 			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', el);
-			for (i = 0, j = changeEls.length; i < j; i++) {
+			for (i = 0, j = changeEls.length; i < j; ++i) {
 				changeEls[i].parentPrefix = (key = el.id.split('_'))[0];
 				changeEls[i].parentIndex = key[1];
 				changeEls[i].changeIndex = i;
@@ -557,11 +557,12 @@ TimeDebug.unhoverChange = function() {
 };
 
 TimeDebug.consoleOpen = function(el, callback) {
-	TimeDebug.tdConsole = JAK.mel('span', {id:'tdConsole'});
+	TimeDebug.tdConsole = JAK.mel('span', {'id':'tdConsole'});
 	var attribs = {id:'tdConsoleArea'};
 	if (el.title) attribs.value = el.title;
-	TimeDebug.tdConsole.mask = JAK.mel('span', {id:'tdConsoleMask'});
-	TimeDebug.tdConsole.area = JAK.mel('textarea', attribs);
+	TimeDebug.tdConsole.mask = JAK.mel('span', {'id':'tdConsoleMask'});
+	TimeDebug.tdConsole.area = JAK.mel('textarea', attribs, {'width':TimeDebug.consoleConfig.x + 'px',
+		'height':TimeDebug.consoleConfig.y + 'px'});
 	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.mask);
 	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.area);
 	el.appendChild(TimeDebug.tdConsole);
@@ -599,6 +600,9 @@ TimeDebug.consoleClose = function() {
 		JAK.Events.removeListener(TimeDebug.tdConsole.keyPressListener);
 		TimeDebug.tdConsole.keyPressListener = null;
 	}
+	TimeDebug.consoleConfig.x = TimeDebug.tdConsole.area.offsetWidth - 8;
+	TimeDebug.consoleConfig.y = TimeDebug.tdConsole.area.clientHeight;
+
 	TimeDebug.tdConsole.parentNode.removeChild(TimeDebug.tdConsole);
 	TimeDebug.tdConsole = null;
 	return false;
@@ -1085,7 +1089,7 @@ TimeDebug.logClick = function(e) {
 	} else if (e.shiftKey) {
 		var unset = false;
 		if (JAK.DOM.hasClass(this, 'nd-chosen')) unset = true;
-		for (var i = Math.min(TimeDebug.logRowActiveId, id), j = Math.max(TimeDebug.logRowActiveId, id); i <= j; i++) {
+		for (var i = Math.min(TimeDebug.logRowActiveId, id), j = Math.max(TimeDebug.logRowActiveId, id); i <= j; ++i) {
 			if (unset) {
 				TimeDebug.logRowsChosen[i - 1] = false;
 				JAK.DOM.removeClass(TimeDebug.logRows[i - 1], 'nd-chosen');
@@ -1242,10 +1246,11 @@ TimeDebug.sendChanges = function(e) {
 
 TimeDebug.duplicateText = function(e, el) {
 	var start = el.selectionStart, end = el.selectionEnd;
-	if (start === end) return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
+
+	if (start === end) return false;
 
 	el.value = el.value.slice(0, end) + el.value.slice(start);
 	el.selectionStart = start;

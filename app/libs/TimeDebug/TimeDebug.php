@@ -40,9 +40,61 @@ class TimeDebug {
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
 
-	
+
+	private static function prepareVarPath($id = NULL) {
+		if ($id === NULL) return FALSE;
+
+		if (empty(self::$request[$id]['varPath'])) {
+			self::$request[$id]['error'] = "Pozadavek nema zadanou varPath.";
+			return FALSE;
+		}
+
+		$varPath = &self::$request[$id]['varPath'];
+		if (!is_array($varPath)) {
+			self::$request[$id]['error'] = "Pozadavek nema varPath typu pole.";
+			return FALSE;
+		}
+
+		foreach ($varPath as &$key) {
+			if (empty($key)) {
+				self::$request[$id]['error'] = "Pozadavek ma prazdny klic ve varPath.";
+				return FALSE;
+			}
+
+			$retKey = array();
+			if ($key[0] === '*') {
+				$retKey['priv'] = 2;
+				$key = substr($key, 1);
+			} else if ($key[0] === '#') {
+				$retKey['priv'] = 1;
+				$key = substr($key, 1);
+			} else $retKey['priv'] = 0;
+
+			$retKey['type'] = intval($key[0]);
+			if ($retKey['type'] < 1) {
+				self::$request[$id]['error'] = "Pozadavek ma chybny typ v klici: $key[1].";
+				return FALSE;
+			}
+
+			$retKey['key'] = substr($key, 1);
+			if (empty($retKey['key'])) {
+				self::$request[$id]['error'] = "Pozadavek ma prazdny klic ve varPath.";
+				return FALSE;
+			}
+
+			$key = $retKey;
+		} unset($key);
+		return TRUE;
+	}
+
 	public static function init($advancedLog = FALSE, $local = FALSE, $root = '', $startTime = 0, $startMem = 0) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
+
+		header('Content-type: text/html; charset=utf-8');
+		header("Cache-control: private");
+		echo "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>TimeDebug</title>\n<style>\n";
+		readfile(__DIR__ . '/timedebug.css');
+		echo "\n</style></head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logWrapper\">\n<div id=\"logView\">\n";
 
 		if (isset($_GET['tdrequest'])) {
 			self::$request = json_decode($_GET['tdrequest'], TRUE);
@@ -53,10 +105,19 @@ class TimeDebug {
 				$path = explode(',', self::$request[$i]['path']);
 				if ($path[0] == 'dump') {
 					self::$request[$i]['varPath'] = array_slice($path, 2);
+					if (!self::prepareVarPath($i)) {
+						echo '<pre class="nd-row nd-error"> Chyba pri zpracovani dumpu ' . $path[1] . ': ' . self::$request[$i]['error'] . ' </pre>';
+						continue;
+					}
 					if (isset(self::$request['dumps'][$path[1]])) self::$request['dumps'][$path[1]][] = $i;
 					else self::$request['dumps'][$path[1]] = array($i);
 				} elseif ($path[0] == 'log') {
 					self::$request[$i]['varPath'] = array_slice($path, 3);
+					if (!self::prepareVarPath($i)) {
+						echo '<pre class="nd-row nd-error"> Chyba pri zpracovani logu ' . $path[1] . '(' . $path[2] . '): '
+								. self::$request[$i]['error'] . ' </pre>';
+						continue;
+					}
 					if (isset(self::$request['logs'][$path[1]])) {
 						if (isset(self::$request['logs'][$path[1]][$path[2]])) {
 							self::$request['logs'][$path[1]][$path[2]][] = $i;
@@ -66,11 +127,6 @@ class TimeDebug {
 			}
 			unset($_GET['tdrequest']);
 		}
-		header('Content-type: text/html; charset=utf-8');
-		header("Cache-control: private");
-		echo "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>TimeDebug</title>\n<style>\n";
-		readfile(__DIR__ . '/timedebug.css');
-		echo "\n</style></head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logWrapper\">\n<div id=\"logView\">\n";
 
 		self::$advancedLog = !!($advancedLog);
 		self::$local = !!($local);
@@ -150,9 +206,9 @@ class TimeDebug {
 
 		$textOut = $text = htmlspecialchars($text);
 
-		if ($object) {
+		if (is_object($object)) {
 			$objects = array($object);
-			$path =  isset($object->id) ? array($object->id) : array();
+			$path = isset($object->id) ? array($object->id) : array();
 
 			while (isset($object->container)) {
 				array_unshift($objects, $object = $object->container);
@@ -229,19 +285,28 @@ class TimeDebug {
 		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena cesta typu array (nalezen typ ' . gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var));
 		if (isset($varPath[0][0])) {
 			$changeType = $varPath[0][0];
+//			if($varPath[0][0] === '#') {
+//				$priv = 2;
+//				$varPath[0][0] =
+//			} elseif ($varPath[0][0] === '*') {
+//				$priv = $changeType;
+//				$changeType = $varPath[0][0]
+//				$objClass = substr($varPath[0], 2);
+//			}
 
-			if ($changeType === '1' || $changeType === '5') {
+
+			if ($changeType === '2' || $changeType === '6') {
 				if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.');
 				if (empty($varPath[1])) throw new Exception('Neni zadan index v poli.');
 				$index = substr($varPath[1], 1);
 				if (!isset($var[$index])) throw new Exception('Pole nema definovany prvek s indexem ' . $index);
 				self::applyChange($var[$index], array_slice($varPath, 1), $value);
-			} elseif ($changeType === '2' || $changeType === '3')  {
-				echo '<pre class="nd-row nd-ok">' . ($changeType === '2' ? ' klic/property "' . substr($varPath[0], 1) . '":' : '')
+			} elseif ($changeType === '8' || $changeType === '9')  {
+				echo '<pre class="nd-row nd-ok">' . ($changeType === '8' ? ' klic/property "' . substr($varPath[0], 1) . '":' : '')
 						. ' Provedena zmena z ' . json_encode($var) . ' (' . gettype($var);
 				$var = $value;
 				echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-			} elseif ($changeType === '4') {
+			} elseif ($changeType === '1') {
 				$objClass = substr($varPath[0], 1);
 				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
 				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.');
@@ -249,7 +314,7 @@ class TimeDebug {
 				$property = substr($varPath[1], 1);
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
 				self::applyChange($var->$property, array_slice($varPath, 1), $value);
-			} elseif ($changeType === '0') {
+			} elseif ($changeType === '5') {
 				$objClass = substr($varPath[0], 1);
 				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
 				if (empty($varPath[1])) throw new Exception('Neni zadana property objektu.');

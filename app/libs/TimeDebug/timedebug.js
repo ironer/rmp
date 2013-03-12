@@ -4,14 +4,17 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: pri prazdnem vyberu udelat pred Ctrl/Cmd + D duplikaci radku s pripadnym pridanim \n
+
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
 // TODO: udelat pridavani prvku do pole
+// TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
 // TODO: ulozit serii automatickych otevreni TimeDebugu
 // TODO: vypnout logovani
 
-// TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
+
 // TODO: zkontrolovat dumpovani resources
 
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
@@ -137,11 +140,11 @@ TimeDebug.init = function(logId) {
 
 	TimeDebug.help.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
 			+ '<hr><div class="nd-menu">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
+			+ (TimeDebug.local ? '<span id="tdMenuSend"><b>odeslat</b></span>&nbsp;&nbsp;&nbsp;&nbsp;' : '')
+			+ '<span onclick="TimeDebug.restore()">obnovit</span>&nbsp;&nbsp;&nbsp;&nbsp;'
 			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title"><strong class="nd-inner">'
 			+ TimeDebug.helpHtml
 			+ '</strong></span>napoveda</span>'
-			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span onclick="TimeDebug.restore()">obnovit</span>'
-			+ (TimeDebug.local ? '&nbsp;&nbsp;&nbsp;&nbsp;<span id="tdMenuSend"><b>odeslat</b></span>' : '')
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>export</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>import</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>ulozit</span>'

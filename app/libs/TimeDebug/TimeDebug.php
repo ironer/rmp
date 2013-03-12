@@ -57,7 +57,7 @@ class TimeDebug {
 
 		foreach ($varPath as &$key) {
 			if (empty($key)) {
-				self::$request[$id]['error'] = "Pozadavek ma prazdny klic ve varPath.";
+				self::$request[$id]['error'] = "Krok cesty nema uveden typ ani klic.";
 				return FALSE;
 			}
 
@@ -68,18 +68,20 @@ class TimeDebug {
 			} else if ($key[0] === '#') {
 				$retKey['priv'] = 1;
 				$key = substr($key, 1);
-			} else $retKey['priv'] = 0;
+			}
 
 			$retKey['type'] = intval($key[0]);
 			if ($retKey['type'] < 1) {
-				self::$request[$id]['error'] = "Pozadavek ma chybny typ v klici: $key[1].";
+				self::$request[$id]['error'] = "Krok cesty ma chybny typ klice: $key[1].";
 				return FALSE;
 			}
 
-			$retKey['key'] = substr($key, 1);
-			if (empty($retKey['key'])) {
-				self::$request[$id]['error'] = "Pozadavek ma prazdny klic ve varPath.";
-				return FALSE;
+			if ($retKey['type'] !== 2) {
+				$retKey['key'] = substr($key, 1);
+				if ($retKey['key'] === FALSE ) {
+					self::$request[$id]['error'] = "Krok cesty ma prazdny nazev property nebo klic ve varPath.";
+					return FALSE;
+				}
 			}
 
 			$key = $retKey;
@@ -106,7 +108,8 @@ class TimeDebug {
 				if ($path[0] == 'dump') {
 					self::$request[$i]['varPath'] = array_slice($path, 2);
 					if (!self::prepareVarPath($i)) {
-						echo '<pre class="nd-row nd-error"> Chyba pri zpracovani dumpu ' . $path[1] . ': ' . self::$request[$i]['error'] . ' </pre>';
+						echo '<pre class="nd-row nd-error"> Chyba pozadavku na zmenu v dumpu ' . $path[1] . ': '
+								. self::$request[$i]['error'] . ' </pre>';
 						continue;
 					}
 					if (isset(self::$request['dumps'][$path[1]])) self::$request['dumps'][$path[1]][] = $i;
@@ -114,7 +117,7 @@ class TimeDebug {
 				} elseif ($path[0] == 'log') {
 					self::$request[$i]['varPath'] = array_slice($path, 3);
 					if (!self::prepareVarPath($i)) {
-						echo '<pre class="nd-row nd-error"> Chyba pri zpracovani logu ' . $path[1] . '(' . $path[2] . '): '
+						echo '<pre class="nd-row nd-error"> Chyba pozadavku na zmenu v logu ' . $path[1] . '(' . $path[2] . '): '
 								. self::$request[$i]['error'] . ' </pre>';
 						continue;
 					}
@@ -499,7 +502,7 @@ class TimeDebug {
 
 
 	private static function dumpArray(&$var, $options, $level) {
-		if (empty($options[self::PARENT_KEY])) $parentKey = FALSE;
+		if (!isset($options[self::PARENT_KEY])) $parentKey = FALSE;
 		elseif ($options[self::PARENT_KEY][0] === '#') $parentKey = '4' . substr($options[self::PARENT_KEY], 1);
 		else $parentKey = '6' . $options[self::PARENT_KEY];
 
@@ -539,7 +542,7 @@ class TimeDebug {
 
 
 	private static function dumpObject(&$var, $options, $level) {
-		if (empty($options[self::PARENT_KEY])) $parentKey = FALSE;
+		if (!isset($options[self::PARENT_KEY])) $parentKey = FALSE;
 		elseif ($options[self::PARENT_KEY][0] === '#') $parentKey = '3' . substr($options[self::PARENT_KEY], 1);
 		else $parentKey = '5' . $options[self::PARENT_KEY];
 

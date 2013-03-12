@@ -33,7 +33,7 @@ if (!empty($_GET['mail'])) {
 	return $app->route('readrouter')->getModel()->process();
 }  else {
 	$app->route();
-	App::dump($app);
+//	App::dump($app);
 	return $app->getModel()->process();
 }
 

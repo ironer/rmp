@@ -5,6 +5,8 @@
  * Author of 'TimeDebug': 2013 Stefan Fiedler
  */
 
+// TODO: dopsat zmeny pro private
+
 class TimeDebug {
 
 	const DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 8)
@@ -108,7 +110,7 @@ class TimeDebug {
 				if ($path[0] == 'dump') {
 					self::$request[$i]['varPath'] = array_slice($path, 2);
 					if (!self::prepareVarPath($i)) {
-						echo '<pre class="nd-row nd-error"> Chyba pozadavku na zmenu v dumpu ' . $path[1] . ': '
+						echo '<pre class="nd-error"> Chyba pozadavku na zmenu v dumpu ' . $path[1] . ': '
 								. self::$request[$i]['error'] . ' </pre>';
 						continue;
 					}
@@ -117,7 +119,7 @@ class TimeDebug {
 				} elseif ($path[0] == 'log') {
 					self::$request[$i]['varPath'] = array_slice($path, 3);
 					if (!self::prepareVarPath($i)) {
-						echo '<pre class="nd-row nd-error"> Chyba pozadavku na zmenu v logu ' . $path[1] . '(' . $path[2] . '): '
+						echo '<pre class="nd-error"> Chyba pozadavku na zmenu v logu ' . $path[1] . '(' . $path[2] . '): '
 								. self::$request[$i]['error'] . ' </pre>';
 						continue;
 					}
@@ -279,15 +281,16 @@ class TimeDebug {
 				$change = &self::$request[$changes[$i]];
 				self::applyChange($var, $change['varPath'], $change['value']);
 			} catch(Exception $e) {
-				echo '<pre class="nd-row nd-error"> Vyjimka pri pokusu o modifikaci promenne: ' . $e->getMessage() . ' </pre>';
+				echo '<pre class="nd-error"> Vyjimka pri pokusu o modifikaci promenne: ' . $e->getMessage() . ' </pre>';
 			}
 		}
 	}
 
 	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL) {
-		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena cesta typu array (nalezen typ ' . gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var));
-		if (isset($varPath[0][0])) {
-			$changeType = $varPath[0][0];
+		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena neprazdna cesta typu pole (nalezen typ '
+				. gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var));
+
+		$changeType = $varPath[0]['type'];
 //			if($varPath[0][0] === '#') {
 //				$priv = 2;
 //				$varPath[0][0] =
@@ -297,35 +300,31 @@ class TimeDebug {
 //				$objClass = substr($varPath[0], 2);
 //			}
 
+		if ($changeType === 2 || $changeType === 6) {
+			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.');
+			$index = $varPath[1]['key'];
+			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index);
+			self::applyChange($var[$index], array_slice($varPath, 1), $value);
+		} elseif ($changeType === 8 || $changeType === 9)  {
+			echo '<pre class="nd-ok">' . ($changeType === 8 ? ' klic/property "' . $varPath[0]['key'] . '":' : '')
+					. ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
+			$var = $value;
+			echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+		} elseif ($changeType === 1) {
+			$objClass = $varPath[0]['key'];
+			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
+			if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.');
+			$property = $varPath[1]['key'];
+			if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
+			self::applyChange($var->$property, array_slice($varPath, 1), $value);
+		} elseif ($changeType === 5) {
+			$objClass = $varPath[0]['key'];
+			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
+			$property = $varPath[1]['key'];
+			if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . get_class($var) . '" nema dostupnou property: ' . $property . '.');
+			self::applyChange($var->$property, array_slice($varPath, 1), $value);
+		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.');
 
-			if ($changeType === '2' || $changeType === '6') {
-				if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.');
-				if (empty($varPath[1])) throw new Exception('Neni zadan index v poli.');
-				$index = substr($varPath[1], 1);
-				if (!isset($var[$index])) throw new Exception('Pole nema definovany prvek s indexem ' . $index);
-				self::applyChange($var[$index], array_slice($varPath, 1), $value);
-			} elseif ($changeType === '8' || $changeType === '9')  {
-				echo '<pre class="nd-row nd-ok">' . ($changeType === '8' ? ' klic/property "' . substr($varPath[0], 1) . '":' : '')
-						. ' Provedena zmena z ' . json_encode($var) . ' (' . gettype($var);
-				$var = $value;
-				echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-			} elseif ($changeType === '1') {
-				$objClass = substr($varPath[0], 1);
-				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
-				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.');
-				if (empty($varPath[1])) throw new Exception('Neni zadana property objektu.');
-				$property = substr($varPath[1], 1);
-				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
-				self::applyChange($var->$property, array_slice($varPath, 1), $value);
-			} elseif ($changeType === '5') {
-				$objClass = substr($varPath[0], 1);
-				if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
-				if (empty($varPath[1])) throw new Exception('Neni zadana property objektu.');
-				$property = substr($varPath[1], 1);
-				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . get_class($var) . '" nema dostupnou property: ' . $property . '.');
-				self::applyChange($var->$property, array_slice($varPath, 1), $value);
-			} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.');
-		} else throw new Exception('Neni nastavena property nebo index v ceste pro zmenu v promenne (nalezen typ ' . gettype($varPath[0]) . ')');
 	}
 
 	public static function runtime($minus = NULL) {

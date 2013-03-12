@@ -176,14 +176,17 @@ pre.nd {
 	line-height: 16px;
 	font-size: 13px;
 }
-.nd-td .nd-valid-json, .nd-td .nd-invalid-json, .nd-row.nd-ok, .nd-row.nd-error {
-	display: inline-block;
+.nd-td .nd-valid-json, .nd-td .nd-invalid-json, .nd-td .nd-ok, .nd-td .nd-error {
 	font-weight: bold;
 	color: #008;
 	line-height: 16px;
 	width: auto;
-	padding-left: 3em;
-	text-indent: -3em;
+	margin: 4px 0;
+	overflow-x: auto;
+	padding-bottom: 2px;
+	padding-top: 2px;
+	white-space: pre-wrap;
+	word-wrap: break-word;
 }
 .nd-td .nd-valid-json {
 	height: 16px;
@@ -193,11 +196,15 @@ pre.nd {
 	height: 16px;
 	background: #fa5;
 }
-.nd-row.nd-ok {
+.nd-td .nd-ok, .nd-td .nd-error {
+	padding-left: 3em;
+	text-indent: -3em;
+}
+.nd-td .nd-ok {
 	color: #060;
 	background: #bfb;
 }
-.nd-row.nd-error {
+.nd-td .nd-error {
 	color: #700;
 	background: #fbb;
 }

@@ -5,6 +5,7 @@
  * Author of 'TimeDebug': 2013 Stefan Fiedler
  */
 
+// TODO: odesilat post + get
 // TODO: dopsat zmeny pro private
 
 class TimeDebug {
@@ -281,7 +282,7 @@ class TimeDebug {
 				$change = &self::$request[$changes[$i]];
 				self::applyChange($var, $change['varPath'], $change['value']);
 			} catch(Exception $e) {
-				echo '<pre class="nd-error"> Vyjimka pri pokusu o modifikaci promenne: ' . $e->getMessage() . ' </pre>';
+				echo '<pre class="nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
 			}
 		}
 	}
@@ -306,7 +307,7 @@ class TimeDebug {
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index);
 			self::applyChange($var[$index], array_slice($varPath, 1), $value);
 		} elseif ($changeType === 8 || $changeType === 9)  {
-			echo '<pre class="nd-ok">' . ($changeType === 8 ? ' klic/property "' . $varPath[0]['key'] . '":' : '')
+			echo '<pre class="nd-ok">' . ($changeType === 8 ? ' Klic/property "' . $varPath[0]['key'] . '":' : '')
 					. ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
 			$var = $value;
 			echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';

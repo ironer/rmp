@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: pri prazdnem vyberu udelat pred Ctrl/Cmd + D duplikaci radku s pripadnym pridanim \n
+// TODO: udelat upravovani hlavni promenne, ktera je protected
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
@@ -75,26 +75,20 @@ TimeDebug.encodeChars = {'&':'&amp;', '<':'&lt;', '>':'&gt;'};
 
 TimeDebug.jsonReplaces = {
 	"quotes": [[/"/g, '\\"'],[/'/g, '"']],
-	"numbers": [[/(\d+)(?!=,),(\d+)(?!,\d)/g, '$1.$2']],
-	"objects": [[/\[([^\]]*?:[^\]]*?)\]/g, '{$1}']],
-	"keys": [[/({\s*|,\s*)([^}"',:\s]*)(\s*:[^},]*)(?=,|})/g, '$1"$2"$3']],
-	"constants": [[/(true|false|null)(?!=\w)(?!\w)/gi, function(w) { return w.toLowerCase(); }]]
+	"numbers": ['fixNumbers'],
+	"objects": ['fixObjects'],
+	"keys": [[/(\{\s*|,\s*)([^\{\}\[\]'",:\s]*)(?=\s*:)/gm, '$1"$2"']],
+	"constants": [[/\b(true|false|null)\b/gi, function(w) { return w.toLowerCase(); }]]
 };
 
 TimeDebug.jsonRepairs = [
-	["quotes"],
 	["numbers"],
 	["quotes", "numbers"],
-	["objects"],
 	["keys"],
 	["constants"],
-	["quotes", "keys"],
 	["quotes", "keys", "constants"],
-	["objects", "keys"],
 	["objects", "keys", "constants"],
-	["quotes", "objects", "keys"],
 	["quotes", "objects", "keys", "constants"],
-	["quotes", "objects", "keys", "numbers"],
 	["quotes", "objects", "keys", "numbers", "constants"]
 ];
 
@@ -393,7 +387,7 @@ TimeDebug.checkJson = function(text) {
 	for (;i < j; ++i) {
 		if ((retObj = TimeDebug.testJson(text, TimeDebug.jsonRepairs[i])).status) return (retObj.valid = false) || retObj;
 	}
-	return {"status":false};
+	return {'status': false};
 };
 
 TimeDebug.testJson = function(text, tests) {
@@ -401,17 +395,72 @@ TimeDebug.testJson = function(text, tests) {
 	var i, j, k, l, test;
 
 	for (i = 0, j = tests.length; i < j; ++i) {
-
 		for (k = 0, l = (test = TimeDebug.jsonReplaces[tests[i]]).length; k < l; ++k) {
-			text = text.replace(test[k][0], test[k][1]);
+			if (test[k] === 'fixNumbers') text = TimeDebug.jsonFixNumbers(text);
+			else if (test[k] === 'fixObjects') text = TimeDebug.jsonFixObjects(text);
+			else text = text.replace(test[k][0], test[k][1]);
 		}
+		try { return {'status': true, 'json': JSON.parse(text)}; } catch(e) {}
 	}
 
-	try {
-		return {"status":true, "json":JSON.parse(text)};
-	} catch(e) {
-		return {"status":false};
+	return {'status': false};
+};
+
+TimeDebug.jsonFixNumbers = function(text) {
+	var retVal = '', escaped = false, nested = false, replace;
+
+	for (var i = 0, j = text.length; i < j;) {
+		if (escaped) escaped = false;
+		else if (text[i] === '\\') escaped = true;
+		else if (text[i] === "'" || text[i] === '"') nested = !nested;
+		else if (/[0-9]/.test(text[i]) && !nested && (replace = text.slice(i).match(/^\d+,\d+/))) {
+			retVal += replace[0].replace(',', '.');
+			i += replace[0].length;
+			continue;
+		}
+		retVal += text[i];
+		++i;
 	}
+
+	return nested ? text : retVal;
+};
+
+TimeDebug.jsonFixObjects = function(text) {
+	var retVal = '', nested = 0, arrayLevels = [], escaped = false, ch;
+
+	var quotes = {"'": false, '"': false};
+
+	for (var i = 0, j = text.length; i < j; i++) {
+		ch = text[i];
+		if (escaped) escaped = false;
+		else if (text[i] === '\\') escaped = true;
+		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
+		else if (!quotes["'"] && !quotes['"']) {
+			if (text[i] === '[' && (arrayLevels[++nested] = TimeDebug.topLevelDoubleDot(text.slice(i + 1)))) ch = '{';
+			else if (text[i] === ']' && arrayLevels[nested--]) ch = '}';
+		}
+		retVal += ch;
+	}
+	return nested ? text : retVal;
+};
+
+TimeDebug.topLevelDoubleDot = function(text) {
+	var escaped = false;
+
+	var quotes = {"'": false, '"': false};
+	var nested = {'[': 0, '{': 0};
+	var ends = {']': '[', '}': '{'};
+
+	for (var i = 0, j = text.length; i < j; i++) {
+		if (escaped) escaped = false;
+		else if (text[i] === '\\') escaped = true;
+		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
+		else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
+		else if (ends.hasOwnProperty(text[i])) --nested[ends[text[i]]];
+		else if (!nested['['] && !nested['{'] && !quotes["'"] && !quotes['"'] && text[i] === ':') return true;
+	}
+
+	return false;
 };
 
 TimeDebug.saveVarChange = function() {
@@ -1242,7 +1291,7 @@ TimeDebug.htmlEncode = function(text) {
 
 TimeDebug.fire = function(text) {
 	if (!--this.counter) {
-		this.counter = 1000;
+		this.counter = 100;
 		console.clear();
 	}
 	console.debug(text);
@@ -1276,7 +1325,15 @@ TimeDebug.duplicateText = function(e, el) {
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	if (start === end) return false;
+	if (start === end) {
+		var lineStart = start - el.value.slice(0, start).split('\n').reverse()[0].length;
+		var lineEnd = el.value.indexOf('\n', end);
+
+		if (lineEnd === -1) el.value = el.value + '\n' + el.value.slice(lineStart);
+		else el.value = el.value.slice(0, lineEnd) + '\n' + el.value.slice(lineStart);
+		el.selectionStart = el.selectionEnd = start;
+		return false;
+	}
 
 	el.value = el.value.slice(0, end) + el.value.slice(start);
 	el.selectionStart = start;

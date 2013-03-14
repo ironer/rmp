@@ -185,8 +185,6 @@ pre.nd {
 	overflow-x: auto;
 	padding-bottom: 2px;
 	padding-top: 2px;
-	white-space: pre-wrap;
-	word-wrap: break-word;
 }
 .nd-td .nd-valid-json {
 	height: 16px;
@@ -199,6 +197,8 @@ pre.nd {
 .nd-td .nd-ok, .nd-td .nd-error {
 	padding-left: 3em;
 	text-indent: -3em;
+	white-space: pre-wrap;
+	word-wrap: break-word;
 }
 .nd-td .nd-ok {
 	color: #060;

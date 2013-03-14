@@ -4,8 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat probliknuti oteviraci zavorky
 // TODO: druhy shift-click na promenou udela nice poodsazovane formatovani jsonu
+// TODO: udelat probliknuti oteviraci zavorky
 // TODO: udelat upravovani hlavni promenne, ktera je protected
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -263,6 +263,38 @@ TimeDebug.changeAction = function(e) {
 	return false;
 };
 
+TimeDebug.formatChange = function(e) {
+	e = e || window.event;
+
+	if (!TimeDebug.local || !this.valid || this.formated || !e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return true;
+
+	JAK.Events.stopEvent(e);
+	JAK.Events.cancelDef(e);
+
+	TimeDebug.formatJson(this);
+
+	return false;
+};
+
+TimeDebug.formatJson = function(change) {
+	var text = JSON.stringify(change.data.value);
+	var escaped = false, level = 0, retVal = '';
+
+	var quotes = {"'": false, '"': false};
+	var nested = {'[': 1, ']': -1, '{': 1, '}': -1};
+
+	for (var i = 0, j = text.length; i < j; i++) {
+		if (escaped) escaped = false;
+		else if (text[i] === '\\') escaped = true;
+		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
+		else if (!quotes["'"] && !quotes['"'] && nested.hasOwnProperty(text[i])) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
 TimeDebug.setLocationHashes = function(e, hashes) {
 	var i;
 	if (TimeDebug.setLocHashTimeout) {
@@ -394,9 +426,13 @@ TimeDebug.checkJson = function(text) {
 
 TimeDebug.testJson = function(text, tests) {
 	tests = tests || [];
-	var i, j, k, l, test;
+	var i, j = tests.length, k, l, test;
 
-	for (i = 0, j = tests.length; i < j; ++i) {
+	if (!j) {
+		try { return {'status': true, 'json': JSON.parse(text)}; } catch(e) { return {'status': false} }
+	}
+
+	for (i = 0; i < j; ++i) {
 		for (k = 0, l = (test = TimeDebug.jsonReplaces[tests[i]]).length; k < l; ++k) {
 			if (test[k] === 'fixNumbers') text = TimeDebug.jsonFixNumbers(text);
 			else if (test[k] === 'fixObjects') text = TimeDebug.jsonFixObjects(text);
@@ -458,7 +494,7 @@ TimeDebug.topLevelDoubleDot = function(text) {
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
 		else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
-		else if (ends.hasOwnProperty(text[i])) --nested[ends[text[i]]];
+		else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
 		else if (!nested['['] && !nested['{'] && !quotes["'"] && !quotes['"'] && text[i] === ':') return true;
 	}
 
@@ -567,7 +603,8 @@ TimeDebug.saveVarChange = function() {
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
 			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
 			JAK.Events.addListener(change, 'mouseout', change, TimeDebug.deactivateChange),
-			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
+			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction),
+			JAK.Events.addListener(change, 'dblclick', change, TimeDebug.formatChange)
 		];
 		if (mouseOver) change.listeners.push(mouseOver);
 	}

@@ -5,6 +5,8 @@
  */
 
 // TODO: cmd/ctrl + b v konzoli = oznacit blok - cele radky upravit funkci na zjisteni dvojtecky ([znaky]/level)
+// TODO: napsat na ctrl + shift + leftclick celkovej reformat konzole
+// TODO: LC na masku = save
 // TODO: udelat probliknuti oteviraci zavorky
 // TODO: udelat upravovani hlavni promenne, ktera je protected
 
@@ -60,7 +62,7 @@ TimeDebug.zIndexMax = 100;
 TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.tdConsole = null;
-TimeDebug.consoleConfig = {'x':600, 'y':320};
+TimeDebug.consoleConfig = {'x':600, 'y':340};
 TimeDebug.textareaTimeout = null;
 TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
@@ -297,7 +299,7 @@ TimeDebug.formatJson = function(change) {
 				retVal += text[i] + '\n' + TimeDebug.padJson(nested);
 				continue;
 			} else if (text[i] === ':') {
-				retVal += text[i] + ' \t';
+				retVal += text[i] + ' ';
 				continue;
 			}
 		}
@@ -311,7 +313,7 @@ TimeDebug.formatJson = function(change) {
 TimeDebug.padJson = function(nested) {
 	var retVal = '';
 	for (var i = nested['['] + nested['{']; i-- > 0;) {
-		retVal += '   ';
+		retVal += '    ';
 	}
 	return retVal;
 };
@@ -502,7 +504,7 @@ TimeDebug.jsonFixObjects = function(text) {
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
 		else if (!quotes["'"] && !quotes['"']) {
-			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findCharsAtLevel(text.slice(i + 1), ':') !== false))) ch = '{';
+			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findCharsAtLevel(text, ':', i + 1) !== false))) ch = '{';
 			else if (text[i] === ']' && arrayLevels[nested--]) ch = '}';
 		}
 		retVal += ch;
@@ -528,9 +530,10 @@ TimeDebug.noQuotes = function(quotes) {
 	return !retVal;
 };
 
-TimeDebug.findCharsAtLevel = function(text, chars, level, quotes, nested, ends) {
+TimeDebug.findCharsAtLevel = function(text, chars, from, level, quotes, nested, ends) {
 	var escaped = false;
 
+	from = from || 0;
 	level = level || 0;
 	quotes = quotes || {"'": false, '"': false};
 	nested = nested || {'[': 0, '{': 0};
@@ -540,9 +543,11 @@ TimeDebug.findCharsAtLevel = function(text, chars, level, quotes, nested, ends) 
 		if (escaped) escaped = false;
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
-		else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
-		else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
-		else if (TimeDebug.sumNested(nested) === level && TimeDebug.noQuotes(quotes) && chars.indexOf(text[i]) !== -1) return i;
+		else if (i >= from) {
+			if (chars.indexOf(text[i]) !== -1 && TimeDebug.sumNested(nested) === level && TimeDebug.noQuotes(quotes)) return i;
+			else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
+			else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
+		}
 	}
 
 	return false;
@@ -1280,7 +1285,10 @@ TimeDebug.readConsoleKeyPress = function(e) {
 	if (e.ctrlKey || e.metaKey) {
 		if (key == 'd') return TimeDebug.duplicateText(e, this);
 		else if (key == 'y') return TimeDebug.removeRow(e, this);
-		else if (key == 'b') return TimeDebug.selectBlock(e, this);
+		else if (key == 'b') {
+			console.clear();
+			return TimeDebug.selectBlock(e, this);
+		}
 	} else if (TimeDebug.keyChanges[key]) return TimeDebug.wrapSelection(e, this, key);
 	
 	return true;
@@ -1388,7 +1396,7 @@ TimeDebug.htmlEncode = function(text) {
 
 TimeDebug.fire = function(text) {
 	if (!--this.counter) {
-		this.counter = 10;
+		this.counter = 1000;
 		console.clear();
 	}
 	console.debug(text);
@@ -1459,12 +1467,32 @@ TimeDebug.selectBlock = function(e, el) {
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	var lineStart = start - el.value.slice(0, start).split('\n').reverse()[0].length;
-	var lineEnd = el.value.indexOf('\n', end);
+	// TODO: vybrat bloky od startu i od konce a vratit vetsi z nich
+//	var sBlockStart = start -
 
-	if (lineEnd === -1) el.value = el.value.slice(0, lineStart);
-	else el.value = el.value.slice(0, lineStart) + el.value.slice(lineEnd + 1);
-	el.selectionStart = el.selectionEnd = lineStart;
+	var sBlockStart, i = TimeDebug.findCharsAtLevel(el.value.split('').reverse().join(''), '[{', el.value.length - start, 0,
+			{'"': false}, {']': 0, '}': 0}, {'[': ']', '{': '}'});
+
+	TimeDebug.fire('Zacatek pozpatku: ' + i + ' / celkova delka: ' + el.value.length);
+
+	if (i === false) {
+		sBlockStart = 0;
+	} else sBlockStart = el.value.length - 1 - i;
+
+	var sBlockEnd = TimeDebug.findCharsAtLevel(el.value, ']}', start, 0, {'"': false}) + 1;
+
+	TimeDebug.fire(sBlockStart);
+	TimeDebug.fire(sBlockEnd);
+	TimeDebug.fire(el.value.slice(sBlockStart - 1, sBlockEnd + 1));
+	el.selectionStart = sBlockStart;
+	el.selectionEnd = sBlockEnd;
+//	el.selectionStart = el.selectionEnd = sBlockEnd;
+//	var lineStart = start - el.value.slice(0, start).split('\n').reverse()[0].length;
+//	var lineEnd = el.value.indexOf('\n', end);
+//
+//	if (lineEnd === -1) el.value = el.value.slice(0, lineStart);
+//	else el.value = el.value.slice(0, lineStart) + el.value.slice(lineEnd + 1);
+//	el.selectionStart = el.selectionEnd = lineStart;
 	return false;
 };
 

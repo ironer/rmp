@@ -433,9 +433,13 @@ span.nd-var-change {
 #tdConsoleArea {
 	display: block;
 	position: relative;
-	line-height: 16px;
+	line-height: 17px;
 	font-size: 14px;
 	letter-spacing: 1px;
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	-webkit-tab-size: 4;
+	tab-size: 4;
 	margin: 50px auto 0 !important;
 	overflow: auto;
 	z-index: 10002;

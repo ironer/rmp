@@ -4,6 +4,8 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: udelat probliknuti oteviraci zavorky
+// TODO: druhy shift-click na promenou udela nice poodsazovane formatovani jsonu
 // TODO: udelat upravovani hlavni promenne, ktera je protected
 
 // TODO: on-line podstrceni hodnoty pri dumpovani

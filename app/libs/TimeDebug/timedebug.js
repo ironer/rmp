@@ -4,6 +4,7 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: vzdy musim pri kontrole textu od nekud pouzivat text od zacatku a ne od konce!!!
 // TODO: cmd/ctrl + b v konzoli = oznacit blok - cele radky upravit funkci na zjisteni dvojtecky ([znaky]/level)
 // TODO: napsat na ctrl + shift + leftclick celkovej reformat konzole
 // TODO: LC na masku = save
@@ -504,7 +505,7 @@ TimeDebug.jsonFixObjects = function(text) {
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
 		else if (!quotes["'"] && !quotes['"']) {
-			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findCharsAtLevel(text, ':', i + 1) !== false))) ch = '{';
+			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findNearestCharAtTheSameLevel(text, ':', i + 1) !== false))) ch = '{';
 			else if (text[i] === ']' && arrayLevels[nested--]) ch = '}';
 		}
 		retVal += ch;
@@ -530,23 +531,45 @@ TimeDebug.noQuotes = function(quotes) {
 	return !retVal;
 };
 
-TimeDebug.findCharsAtLevel = function(text, chars, from, level, quotes, nested, ends) {
-	var escaped = false;
-
-	from = from || 0;
-	level = level || 0;
+TimeDebug.findNearestCharAtTheSameLevel = function(text, chars, index, rev, quotes) {
+	index = index || 0;
+	rev = rev || false;
 	quotes = quotes || {"'": false, '"': false};
-	nested = nested || {'[': 0, '{': 0};
-	ends = ends || {']': '[', '}': '{'};
 
-	for (var i = 0, j = text.length; i < j; i++) {
-		if (escaped) escaped = false;
-		else if (text[i] === '\\') escaped = true;
-		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
-		else if (i >= from) {
-			if (chars.indexOf(text[i]) !== -1 && TimeDebug.sumNested(nested) === level && TimeDebug.noQuotes(quotes)) return i;
-			else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
-			else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
+	var nested = {'[': 0, '{': 0};
+	var ends = {']': '[', '}': '{'};
+	var escaped = false;
+	var found = [];
+	var i, j, k;
+
+	if (rev) {
+		for (i = 0, j = text.length; i < j; i++) {
+			if (i === index) {
+				var indexLevel = TimeDebug.sumNested(nested);
+				for (k = found.length; k-- > 0;) {
+					if (found[k].level === indexLevel) return found[k].index;
+					else if (found[k].level < indexLevel) return false;
+				}
+				return false;
+			} else if (escaped) escaped = false;
+			else if (text[i] === '\\') escaped = true;
+			else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
+			else if (i < index) {
+				if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
+				else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
+				if (chars.indexOf(text[i]) !== -1 && TimeDebug.noQuotes(quotes)) found.push({'index': i, 'level': TimeDebug.sumNested(nested)});
+			}
+		}
+	} else {
+		for (i = 0, j = text.length; i < j; i++) {
+			if (escaped) escaped = false;
+			else if (text[i] === '\\') escaped = true;
+			else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
+			else if (i >= index) {
+				if (chars.indexOf(text[i]) !== -1 && TimeDebug.noQuotes(quotes) && !TimeDebug.sumNested(nested)) return i;
+				else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
+				else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
+			}
 		}
 	}
 
@@ -1461,31 +1484,70 @@ TimeDebug.removeRow = function(e, el) {
 	return false;
 };
 
+TimeDebug.getBlock = function(el, index) {
+	var blockStart, i = TimeDebug.findNearestCharAtTheSameLevel(el.value, '[{', index, true, {'"': false});
+
+	if (i === false) {
+		blockStart = 0;
+	} else blockStart = i;
+
+	var blockEnd, j = TimeDebug.findNearestCharAtTheSameLevel(el.value, ']}', index, false, {'"': false});
+
+	if (j === false) {
+		blockEnd = el.value.length;
+	} else blockEnd = j + 1;
+
+	return [blockStart, blockEnd];
+};
+
 TimeDebug.selectBlock = function(e, el) {
-	var start = el.selectionStart, end = el.selectionEnd;
+	var start = el.selectionStart;//, end = el.selectionEnd;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	// TODO: vybrat bloky od startu i od konce a vratit vetsi z nich
-//	var sBlockStart = start -
+	var block = TimeDebug.getBlock(el, start);
+//
+//	var sLineStart = block[0] - el.value.slice(0, block[0]).split('\n').reverse()[0].length;
+//	var sLineEnd, k = el.value.indexOf('\n', block[1]);
+//
+//	if (k === -1) {
+//		sLineEnd = el.value.length;
+//	} else sLineEnd = k + 1;
+//
+	TimeDebug.fire(block[0]);
+	TimeDebug.fire(el.value[block[0]]);
+	TimeDebug.fire(block[1]);
+	TimeDebug.fire(el.value[block[1]]);
+	TimeDebug.fire(el.value.slice(block[0], block[1]));
+//
+//	var eBlockStart;
+//	i = TimeDebug.findCharsAtLevel(el.value.split('').reverse().join(''), '[{', el.value.length - end, 0,
+//			{'"': false}, {']': 0, '}': 0}, {'[': ']', '{': '}'});
+//
+//	if (i === false) {
+//		eBlockStart = 0;
+//	} else eBlockStart = el.value.length - 1 - i;
+//
+//	var eBlockEnd;
+//	j = TimeDebug.findCharsAtLevel(el.value, ']}', end, 0, {'"': false});
+//
+//	if (j === false) {
+//		eBlockEnd = el.value.length;
+//	} else eBlockEnd = j + 1;
+//
+//	TimeDebug.fire(eBlockStart);
+//	TimeDebug.fire(eBlockEnd);
+//	TimeDebug.fire(el.value.slice(eBlockStart, eBlockEnd));
+//
+//	if ((block[1] - block[0] - eBlockEnd  + eBlockStart) > 0) {
+		el.selectionStart = block[0];
+		el.selectionEnd = block[1];
+//	} else {
+//		el.selectionStart = eBlockStart;
+//		el.selectionEnd = eBlockEnd;
+//	}
 
-	var sBlockStart, i = TimeDebug.findCharsAtLevel(el.value.split('').reverse().join(''), '[{', el.value.length - start, 0,
-			{'"': false}, {']': 0, '}': 0}, {'[': ']', '{': '}'});
-
-	TimeDebug.fire('Zacatek pozpatku: ' + i + ' / celkova delka: ' + el.value.length);
-
-	if (i === false) {
-		sBlockStart = 0;
-	} else sBlockStart = el.value.length - 1 - i;
-
-	var sBlockEnd = TimeDebug.findCharsAtLevel(el.value, ']}', start, 0, {'"': false}) + 1;
-
-	TimeDebug.fire(sBlockStart);
-	TimeDebug.fire(sBlockEnd);
-	TimeDebug.fire(el.value.slice(sBlockStart - 1, sBlockEnd + 1));
-	el.selectionStart = sBlockStart;
-	el.selectionEnd = sBlockEnd;
 //	el.selectionStart = el.selectionEnd = sBlockEnd;
 //	var lineStart = start - el.value.slice(0, start).split('\n').reverse()[0].length;
 //	var lineEnd = el.value.indexOf('\n', end);

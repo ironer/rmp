@@ -4,6 +4,9 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: v nice jsonu udelat za dvojteckou mezeru
+// TODO: cmd/ctrl + y v konzoli = smzat aktualni radek
+// TODO: cmd/ctrl + b v konzoli = oznacit blok
 // TODO: pri otevreni konzole presunout titulek na masku a pri zavreni zpatky
 // TODO: udelat probliknuti oteviraci zavorky
 // TODO: udelat upravovani hlavni promenne, ktera je protected
@@ -1260,7 +1263,9 @@ TimeDebug.readKeyDown = function(e) {
 
 	var tdNext;
 
-	if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+	if (e.shiftKey) {
+		if (e.keyCode == 13 && TimeDebug.tdConsole) return TimeDebug.tdConsole.callback();
+	} else if (!e.altKey && !e.ctrlKey && !e.metaKey) {
 		if (e.keyCode == 38 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId > 1) {
 			tdNext = TimeDebug.selected() ? TimeDebug.getPrevious() : TimeDebug.logRowActiveId - 1;
 			if (tdNext === TimeDebug.logRowActiveId) return true;
@@ -1303,7 +1308,7 @@ TimeDebug.readKeyDown = function(e) {
 			TimeDebug.titleActive = null;
 			return false;
 		} else if (e.keyCode == 13 && TimeDebug.tdConsole) {
-			return TimeDebug.tdConsole.callback();
+			JAK.Events.stopEvent(e);
 		}
 	}
 	return true;

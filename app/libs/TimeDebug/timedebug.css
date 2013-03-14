@@ -187,7 +187,11 @@ pre.nd {
 	padding-top: 2px;
 }
 .nd-td .nd-valid-json {
+	font-style: italic;
 	height: 16px;
+}
+.nd-td .nd-valid-json.nd-formated {
+	font-style: normal;
 }
 .nd-td .nd-invalid-json {
 	color: #700;

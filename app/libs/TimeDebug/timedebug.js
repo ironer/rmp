@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: druhy shift-click na promenou udela nice poodsazovane formatovani jsonu
+// TODO: pri otevreni konzole presunout titulek na masku a pri zavreni zpatky
 // TODO: udelat probliknuti oteviraci zavorky
 // TODO: udelat upravovani hlavni promenne, ktera je protected
 
@@ -90,6 +90,7 @@ TimeDebug.jsonRepairs = [
 	["constants"],
 	["quotes", "keys", "constants"],
 	["objects", "keys", "constants"],
+	["objects", "keys", "numbers", "constants"],
 	["quotes", "objects", "keys", "constants"],
 	["quotes", "objects", "keys", "numbers", "constants"]
 ];
@@ -237,7 +238,15 @@ TimeDebug.changeAction = function(e) {
 			return false;
 		}
 		if (e.shiftKey) {
-			if (!this.valid) {
+			if (this.valid) {
+				if (!this.formated) {
+					var formated = TimeDebug.formatJson(this);
+					if (formated === false) return this.formated = false;
+					this.formated = true;
+					this.varEl.title = this.title = formated;
+					TimeDebug.updateChangeList(this);
+				}
+			} else {
 				this.valid = true;
 				this.varEl.title = this.title = JSON.stringify(this.data.value);
 				TimeDebug.updateChangeList(this);
@@ -263,36 +272,45 @@ TimeDebug.changeAction = function(e) {
 	return false;
 };
 
-TimeDebug.formatChange = function(e) {
-	e = e || window.event;
-
-	if (!TimeDebug.local || !this.valid || this.formated || !e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return true;
-
-	JAK.Events.stopEvent(e);
-	JAK.Events.cancelDef(e);
-
-	TimeDebug.formatJson(this);
-
-	return false;
-};
-
 TimeDebug.formatJson = function(change) {
 	var text = JSON.stringify(change.data.value);
-	var escaped = false, level = 0, retVal = '';
+	var escaped = false, retVal = '';
 
-	var quotes = {"'": false, '"': false};
-	var nested = {'[': 1, ']': -1, '{': 1, '}': -1};
+	var quotes = {'"': false};
+	var nested = {'[': 0, '{': 0};
+	var ends = {']': '[', '}': '{'};
 
 	for (var i = 0, j = text.length; i < j; i++) {
 		if (escaped) escaped = false;
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
-		else if (!quotes["'"] && !quotes['"'] && nested.hasOwnProperty(text[i])) {
-			return true;
+		else if (!quotes['"']) {
+			if (nested.hasOwnProperty(text[i])) {
+				++nested[text[i]];
+				retVal += text[i] + '\n' + TimeDebug.padJson(nested);
+				continue;
+			} else if (ends.hasOwnProperty(text[i])) {
+				if (--nested[ends[text[i]]] < 0) return false;
+				retVal += '\n' + TimeDebug.padJson(nested) + text[i];
+				continue;
+			} else if (text[i] === ',') {
+				retVal += text[i] + '\n' + TimeDebug.padJson(nested);
+				continue;
+			}
 		}
+		retVal += text[i];
 	}
 
-	return false;
+	if (nested['['] || nested['{'] || quotes['"']) return false;
+	return retVal;
+};
+
+TimeDebug.padJson = function(nested) {
+	var retVal = '';
+	for (var i = nested['['] + nested['{']; i-- > 0;) {
+		retVal += '   ';
+	}
+	return retVal;
 };
 
 TimeDebug.setLocationHashes = function(e, hashes) {
@@ -389,7 +407,8 @@ TimeDebug.updateChangeList = function(el) {
 		}
 
 		change.innerHTML = '[' + change.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' <span class="nd-'
-				+ (change.valid ? 'valid' : 'invalid') +'-json">' + JSON.stringify(change.data.value) + '</span>';
+				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
+				+ JSON.stringify(change.data.value) + '</span>';
 
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
@@ -426,10 +445,13 @@ TimeDebug.checkJson = function(text) {
 
 TimeDebug.testJson = function(text, tests) {
 	tests = tests || [];
-	var i, j = tests.length, k, l, test;
+	var i, j = tests.length, k, l, json, test;
 
 	if (!j) {
-		try { return {'status': true, 'json': JSON.parse(text)}; } catch(e) { return {'status': false} }
+		try {
+			json = JSON.parse(text);
+			return {'status': true, 'json': json};
+		} catch(e) { return {'status': false} }
 	}
 
 	for (i = 0; i < j; ++i) {
@@ -438,7 +460,10 @@ TimeDebug.testJson = function(text, tests) {
 			else if (test[k] === 'fixObjects') text = TimeDebug.jsonFixObjects(text);
 			else text = text.replace(test[k][0], test[k][1]);
 		}
-		try { return {'status': true, 'json': JSON.parse(text)}; } catch(e) {}
+		try {
+			json = JSON.parse(text);
+			return {'status': true, 'json': json};
+		} catch(e) {}
 	}
 
 	return {'status': false};
@@ -557,7 +582,8 @@ TimeDebug.saveVarChange = function() {
 	if (change = varEl.varListRow) {
 		if (change.data.value === value && change.valid === valid) return true;
 		change.data.value = value;
-		change.valid = valid;
+		if (change.valid = valid) change.formated = (areaVal === TimeDebug.formatJson(change));
+		else change.formated = false;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
 
@@ -603,8 +629,7 @@ TimeDebug.saveVarChange = function() {
 			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
 			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
 			JAK.Events.addListener(change, 'mouseout', change, TimeDebug.deactivateChange),
-			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction),
-			JAK.Events.addListener(change, 'dblclick', change, TimeDebug.formatChange)
+			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
 		];
 		if (mouseOver) change.listeners.push(mouseOver);
 	}
@@ -1330,7 +1355,7 @@ TimeDebug.htmlEncode = function(text) {
 
 TimeDebug.fire = function(text) {
 	if (!--this.counter) {
-		this.counter = 100;
+		this.counter = 10;
 		console.clear();
 	}
 	console.debug(text);

@@ -4,8 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: cmd/ctrl + b v konzoli = oznacit blok - cele radky upravit funkci na zjisteni dvojtecky ([znaky]/level/pozpatku)
-// TODO: pri otevreni konzole presunout titulek na masku a pri zavreni zpatky
+// TODO: cmd/ctrl + b v konzoli = oznacit blok - cele radky upravit funkci na zjisteni dvojtecky ([znaky]/level)
 // TODO: udelat probliknuti oteviraci zavorky
 // TODO: udelat upravovani hlavni promenne, ktera je protected
 
@@ -503,7 +502,7 @@ TimeDebug.jsonFixObjects = function(text) {
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
 		else if (!quotes["'"] && !quotes['"']) {
-			if (text[i] === '[' && (arrayLevels[++nested] = TimeDebug.topLevelDoubleDot(text.slice(i + 1)))) ch = '{';
+			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findCharsAtLevel(text.slice(i + 1), ':') !== false))) ch = '{';
 			else if (text[i] === ']' && arrayLevels[nested--]) ch = '}';
 		}
 		retVal += ch;
@@ -511,12 +510,31 @@ TimeDebug.jsonFixObjects = function(text) {
 	return nested ? text : retVal;
 };
 
-TimeDebug.topLevelDoubleDot = function(text) {
+TimeDebug.sumNested = function(nested) {
+	nested = nested || {};
+	var retVal = 0;
+	for (var i in nested) {
+		if (nested.hasOwnProperty(i)) retVal += nested[i];
+	}
+	return retVal;
+};
+
+TimeDebug.noQuotes = function(quotes) {
+	var retVal = false;
+	for (var i in quotes) {
+		if (quotes.hasOwnProperty(i)) retVal = retVal || quotes[i];
+		if (retVal) break;
+	}
+	return !retVal;
+};
+
+TimeDebug.findCharsAtLevel = function(text, chars, level, quotes, nested, ends) {
 	var escaped = false;
 
-	var quotes = {"'": false, '"': false};
-	var nested = {'[': 0, '{': 0};
-	var ends = {']': '[', '}': '{'};
+	level = level || 0;
+	quotes = quotes || {"'": false, '"': false};
+	nested = nested || {'[': 0, '{': 0};
+	ends = ends || {']': '[', '}': '{'};
 
 	for (var i = 0, j = text.length; i < j; i++) {
 		if (escaped) escaped = false;
@@ -524,7 +542,7 @@ TimeDebug.topLevelDoubleDot = function(text) {
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
 		else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
 		else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
-		else if (!nested['['] && !nested['{'] && !quotes["'"] && !quotes['"'] && text[i] === ':') return true;
+		else if (TimeDebug.sumNested(nested) === level && TimeDebug.noQuotes(quotes) && chars.indexOf(text[i]) !== -1) return i;
 	}
 
 	return false;
@@ -691,9 +709,14 @@ TimeDebug.consoleAction = function(e) {
 
 TimeDebug.consoleOpen = function(el, callback) {
 	TimeDebug.tdConsole = JAK.mel('span', {'id':'tdConsole'});
-	var attribs = {id:'tdConsoleArea'};
-	if (el.title) attribs.value = el.title;
 	TimeDebug.tdConsole.mask = JAK.mel('span', {'id':'tdConsoleMask'});
+
+	var attribs = {id:'tdConsoleArea'};
+  if (el.title) {
+	  attribs.value = TimeDebug.tdConsole.mask.title = el.title;
+	  el.title = null;
+  }
+
 	TimeDebug.tdConsole.area = JAK.mel('textarea', attribs, {'width':TimeDebug.consoleConfig.x + 'px',
 		'height':TimeDebug.consoleConfig.y + 'px'});
 	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.mask);
@@ -746,6 +769,7 @@ TimeDebug.consoleClose = function() {
 	cc.x = TimeDebug.tdConsole.area.offsetWidth - 8;
 	cc.y = TimeDebug.tdConsole.area.clientHeight;
 
+	if (TimeDebug.tdConsole.mask.title) TimeDebug.tdConsole.parentNode.title = TimeDebug.tdConsole.mask.title;
 	TimeDebug.tdConsole.parentNode.removeChild(TimeDebug.tdConsole);
 	TimeDebug.tdConsole = null;
 	return false;

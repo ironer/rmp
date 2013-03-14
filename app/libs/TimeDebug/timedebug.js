@@ -4,8 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: vzdy musim pri kontrole textu od nekud pouzivat text od zacatku a ne od konce!!!
-// TODO: cmd/ctrl + b v konzoli = oznacit blok - cele radky upravit funkci na zjisteni dvojtecky ([znaky]/level)
+// TODO: cmd/ctrl + d v konzoli = na vice radcich kopiruje cele radky
 // TODO: napsat na ctrl + shift + leftclick celkovej reformat konzole
 // TODO: LC na masku = save
 // TODO: udelat probliknuti oteviraci zavorky
@@ -1501,60 +1500,33 @@ TimeDebug.getBlock = function(el, index) {
 };
 
 TimeDebug.selectBlock = function(e, el) {
-	var start = el.selectionStart;//, end = el.selectionEnd;
+	var start = el.selectionStart, end = el.selectionEnd;
+	var i, j, s, longest = [start, end];
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	var block = TimeDebug.getBlock(el, start);
-//
-//	var sLineStart = block[0] - el.value.slice(0, block[0]).split('\n').reverse()[0].length;
-//	var sLineEnd, k = el.value.indexOf('\n', block[1]);
-//
-//	if (k === -1) {
-//		sLineEnd = el.value.length;
-//	} else sLineEnd = k + 1;
-//
-	TimeDebug.fire(block[0]);
-	TimeDebug.fire(el.value[block[0]]);
-	TimeDebug.fire(block[1]);
-	TimeDebug.fire(el.value[block[1]]);
-	TimeDebug.fire(el.value.slice(block[0], block[1]));
-//
-//	var eBlockStart;
-//	i = TimeDebug.findCharsAtLevel(el.value.split('').reverse().join(''), '[{', el.value.length - end, 0,
-//			{'"': false}, {']': 0, '}': 0}, {'[': ']', '{': '}'});
-//
-//	if (i === false) {
-//		eBlockStart = 0;
-//	} else eBlockStart = el.value.length - 1 - i;
-//
-//	var eBlockEnd;
-//	j = TimeDebug.findCharsAtLevel(el.value, ']}', end, 0, {'"': false});
-//
-//	if (j === false) {
-//		eBlockEnd = el.value.length;
-//	} else eBlockEnd = j + 1;
-//
-//	TimeDebug.fire(eBlockStart);
-//	TimeDebug.fire(eBlockEnd);
-//	TimeDebug.fire(el.value.slice(eBlockStart, eBlockEnd));
-//
-//	if ((block[1] - block[0] - eBlockEnd  + eBlockStart) > 0) {
-		el.selectionStart = block[0];
-		el.selectionEnd = block[1];
-//	} else {
-//		el.selectionStart = eBlockStart;
-//		el.selectionEnd = eBlockEnd;
-//	}
+	var rows = el.value.slice(start, end).split('\n');
+	var checkPoints = [end];
 
-//	el.selectionStart = el.selectionEnd = sBlockEnd;
-//	var lineStart = start - el.value.slice(0, start).split('\n').reverse()[0].length;
-//	var lineEnd = el.value.indexOf('\n', end);
-//
-//	if (lineEnd === -1) el.value = el.value.slice(0, lineStart);
-//	else el.value = el.value.slice(0, lineStart) + el.value.slice(lineEnd + 1);
-//	el.selectionStart = el.selectionEnd = lineStart;
+	for (i = 0, j = rows.length, s = start; i < j; ++i) {
+		checkPoints.push(s);
+		s += rows[i].length + 1;
+	}
+
+	for (i = 0, j = checkPoints.length; i < j; ++i) {
+		s = TimeDebug.getBlock(el, checkPoints[i]);
+		if (s[1] - s[0] > longest[1] - longest[0]) longest = s;
+	}
+
+//	TimeDebug.fire(longest[0]);
+//	TimeDebug.fire(el.value[longest[0]]);
+//	TimeDebug.fire(longest[1]);
+//	TimeDebug.fire(el.value[longest[1] - 1]);
+//	TimeDebug.fire(el.value.slice(longest[0], longest[1]));
+
+	el.selectionStart = longest[0];
+	el.selectionEnd = longest[1];
 	return false;
 };
 

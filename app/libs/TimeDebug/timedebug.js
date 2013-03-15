@@ -4,9 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: napsat metodu na vlozeni obsahu konzole, ktera zobrazi zvoleny vyber a zachova nascrolovani
 // TODO: napsat na ctrl + shift + leftclick celkovej reformat konzole
-// TODO: LC na masku = save
 // TODO: udelat probliknuti oteviraci zavorky
 // TODO: udelat upravovani hlavni promenne, ktera je protected
 
@@ -1306,7 +1304,7 @@ TimeDebug.readConsoleKeyPress = function(e) {
 
 	if (e.ctrlKey || e.metaKey) {
 		if (key == 'd') return TimeDebug.duplicateText(e, this);
-		else if (key == 'y') return TimeDebug.removeRow(e, this);
+		else if (key == 'y') return TimeDebug.removeRows(e, this);
 		else if (key == 'b') return TimeDebug.selectBlock(e, this);
 	} else if (TimeDebug.keyChanges[key]) return TimeDebug.wrapSelection(e, this, key);
 	
@@ -1456,40 +1454,29 @@ TimeDebug.duplicateText = function(e, el) {
 
 	if (start === end || el.value.slice(start, end).indexOf('\n') !== -1) {
 		var rows = TimeDebug.getRows(el, start, end);
-		el.value = el.value.slice(0, rows[1]) + '\n' + el.value.slice(rows[0]);
-	} else {
-		el.value = el.value.slice(0, end) + el.value.slice(start);
-	}
+		TimeDebug.areaWrite(el, el.value.slice(0, rows[1]) + '\n' + el.value.slice(rows[0]), start, end);
+	} else TimeDebug.areaWrite(el, el.value.slice(0, end) + el.value.slice(start), start, end);
 
-	el.selectionStart = start;
-	el.selectionEnd = end;
 	return false;
 };
 
-TimeDebug.removeRow = function(e, el) {
+TimeDebug.removeRows = function(e, el) {
 	var rows = TimeDebug.getRows(el, el.selectionStart, el.selectionEnd);
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	el.value = el.value.slice(0, rows[0]) + el.value.slice(rows[1] + 1);
-	el.selectionStart = el.selectionEnd = rows[0];
+	TimeDebug.areaWrite(el, el.value.slice(0, rows[0]) + el.value.slice(rows[1] + 1), rows[0]);
 
 	return false;
 };
 
 TimeDebug.getBlock = function(el, index) {
 	var blockStart, i = TimeDebug.findNearestCharAtTheSameLevel(el.value, '[{', index, true, {'"': false});
-
-	if (i === false) {
-		blockStart = 0;
-	} else blockStart = i;
+	blockStart = i === false ? 0 : i;
 
 	var blockEnd, j = TimeDebug.findNearestCharAtTheSameLevel(el.value, ']}', index, false, {'"': false});
-
-	if (j === false) {
-		blockEnd = el.value.length;
-	} else blockEnd = j + 1;
+	blockEnd = j === false ? el.value.length : j + 1;
 
 	return [blockStart, blockEnd];
 };
@@ -1529,17 +1516,20 @@ TimeDebug.wrapSelection = function(e, el, key) {
 	var swap = TimeDebug.keyChanges[key];
 	var retVal = el.value.slice(0, start) + swap[0];
 
-	if (end - start > 1 && (key == "'" || key == '"')
-			&& ((el.value[start] == '"' && el.value[end - 1] == '"')
-			|| (el.value[start] == "'" && el.value[end - 1] == "'"))) {
-		el.value = retVal + el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end);
-		el.selectionStart = start + 1;
-		el.selectionEnd = end - 1;
-		return false;
-	}
+	if (end - start > 1 && (key == "'" || key == '"') && ((el.value[start] == '"' && el.value[end - 1] == '"') || (el.value[start] == "'" && el.value[end - 1] == "'"))) {
+		TimeDebug.areaWrite(el, retVal + el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end), start + 1, end - 1);
+	} else TimeDebug.areaWrite(el, retVal + el.value.slice(start, end) + swap[1] + el.value.slice(end), start + 1, end + 1);
 
-	el.value = retVal + el.value.slice(start, end) + swap[1] + el.value.slice(end);
-	el.selectionStart = start + 1;
-	el.selectionEnd = end + 1;
 	return false;
+};
+
+TimeDebug.areaWrite = function(el, text, start, end) {
+	start = start || 0;
+	end = end || start;
+	var top = el.scrollTop;
+
+	el.value = text;
+	el.selectionStart = start;
+	el.selectionEnd = end;
+	el.scrollTop = top;
 };

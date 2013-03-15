@@ -5,8 +5,10 @@
  * Author of 'TimeDebug': 2013 Stefan Fiedler
  */
 
-// TODO: odesilat post + get
 // TODO: dopsat zmeny pro private
+// TODO: opravit editor:// linky na macbooku
+// TODO: odesilat slozite zmeny postem asynchronne + getem uid
+
 
 class TimeDebug {
 

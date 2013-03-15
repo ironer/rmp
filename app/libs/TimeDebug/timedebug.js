@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: cmd/ctrl + d v konzoli = na vice radcich kopiruje cele radky
+// TODO: napsat metodu na vlozeni obsahu konzole, ktera zobrazi zvoleny vyber a zachova nascrolovani
 // TODO: napsat na ctrl + shift + leftclick celkovej reformat konzole
 // TODO: LC na masku = save
 // TODO: udelat probliknuti oteviraci zavorky
@@ -1307,10 +1307,7 @@ TimeDebug.readConsoleKeyPress = function(e) {
 	if (e.ctrlKey || e.metaKey) {
 		if (key == 'd') return TimeDebug.duplicateText(e, this);
 		else if (key == 'y') return TimeDebug.removeRow(e, this);
-		else if (key == 'b') {
-			console.clear();
-			return TimeDebug.selectBlock(e, this);
-		}
+		else if (key == 'b') return TimeDebug.selectBlock(e, this);
 	} else if (TimeDebug.keyChanges[key]) return TimeDebug.wrapSelection(e, this, key);
 	
 	return true;
@@ -1446,40 +1443,38 @@ TimeDebug.sendChanges = function(e) {
 	return false;
 };
 
+TimeDebug.getRows = function(el, start, end) {
+	var i = el.value.indexOf('\n', end || start);
+	return [start - el.value.slice(0, start).split('\n').reverse()[0].length, i === -1 ? el.value.length : i];
+};
+
 TimeDebug.duplicateText = function(e, el) {
 	var start = el.selectionStart, end = el.selectionEnd;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	if (start === end) {
-		var lineStart = start - el.value.slice(0, start).split('\n').reverse()[0].length;
-		var lineEnd = el.value.indexOf('\n', end);
-
-		if (lineEnd === -1) el.value = el.value + '\n' + el.value.slice(lineStart);
-		else el.value = el.value.slice(0, lineEnd) + '\n' + el.value.slice(lineStart);
-		el.selectionStart = el.selectionEnd = start;
-		return false;
+	if (start === end || el.value.slice(start, end).indexOf('\n') !== -1) {
+		var rows = TimeDebug.getRows(el, start, end);
+		el.value = el.value.slice(0, rows[1]) + '\n' + el.value.slice(rows[0]);
+	} else {
+		el.value = el.value.slice(0, end) + el.value.slice(start);
 	}
 
-	el.value = el.value.slice(0, end) + el.value.slice(start);
 	el.selectionStart = start;
 	el.selectionEnd = end;
 	return false;
 };
 
 TimeDebug.removeRow = function(e, el) {
-	var start = el.selectionStart, end = el.selectionEnd;
+	var rows = TimeDebug.getRows(el, el.selectionStart, el.selectionEnd);
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	var lineStart = start - el.value.slice(0, start).split('\n').reverse()[0].length;
-	var lineEnd = el.value.indexOf('\n', end);
+	el.value = el.value.slice(0, rows[0]) + el.value.slice(rows[1] + 1);
+	el.selectionStart = el.selectionEnd = rows[0];
 
-	if (lineEnd === -1) el.value = el.value.slice(0, lineStart);
-	else el.value = el.value.slice(0, lineStart) + el.value.slice(lineEnd + 1);
-	el.selectionStart = el.selectionEnd = lineStart;
 	return false;
 };
 
@@ -1518,12 +1513,6 @@ TimeDebug.selectBlock = function(e, el) {
 		s = TimeDebug.getBlock(el, checkPoints[i]);
 		if (s[1] - s[0] > longest[1] - longest[0]) longest = s;
 	}
-
-//	TimeDebug.fire(longest[0]);
-//	TimeDebug.fire(el.value[longest[0]]);
-//	TimeDebug.fire(longest[1]);
-//	TimeDebug.fire(el.value[longest[1] - 1]);
-//	TimeDebug.fire(el.value.slice(longest[0], longest[1]));
 
 	el.selectionStart = longest[0];
 	el.selectionEnd = longest[1];

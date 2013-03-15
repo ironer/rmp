@@ -4,9 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: napsat na ctrl + shift + leftclick celkovej reformat konzole
-// TODO: udelat probliknuti oteviraci zavorky
-// TODO: udelat upravovani hlavni promenne, ktera je protected
+// TODO: udelat barevne problinkuti po zmene nebo nepovedeni reformatu
+// TODO: udelat selectnuti oteviraci zavorky az do zmacknuti nasledujiciho znaku
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
@@ -240,7 +239,7 @@ TimeDebug.changeAction = function(e) {
 		if (e.shiftKey) {
 			if (this.valid) {
 				if (!this.formated) {
-					var formated = TimeDebug.formatJson(this);
+					var formated = TimeDebug.formatJson(this.data.value);
 					if (formated === false) return this.formated = false;
 					this.formated = true;
 					this.varEl.title = this.title = formated;
@@ -272,8 +271,8 @@ TimeDebug.changeAction = function(e) {
 	return false;
 };
 
-TimeDebug.formatJson = function(change) {
-	var text = JSON.stringify(change.data.value);
+TimeDebug.formatJson = function(json) {
+	var text = JSON.stringify(json);
 	var escaped = false, retVal = '';
 
 	var quotes = {'"': false};
@@ -551,10 +550,10 @@ TimeDebug.findNearestCharAtTheSameLevel = function(text, chars, index, rev, quot
 			} else if (escaped) escaped = false;
 			else if (text[i] === '\\') escaped = true;
 			else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
-			else if (i < index) {
+			else if (i < index && TimeDebug.noQuotes(quotes)) {
 				if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
 				else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
-				if (chars.indexOf(text[i]) !== -1 && TimeDebug.noQuotes(quotes)) found.push({'index': i, 'level': TimeDebug.sumNested(nested)});
+				if (chars.indexOf(text[i]) !== -1) found.push({'index': i, 'level': TimeDebug.sumNested(nested)});
 			}
 		}
 	} else {
@@ -562,8 +561,8 @@ TimeDebug.findNearestCharAtTheSameLevel = function(text, chars, index, rev, quot
 			if (escaped) escaped = false;
 			else if (text[i] === '\\') escaped = true;
 			else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
-			else if (i >= index) {
-				if (chars.indexOf(text[i]) !== -1 && TimeDebug.noQuotes(quotes) && !TimeDebug.sumNested(nested)) return i;
+			else if (i >= index && TimeDebug.noQuotes(quotes)) {
+				if (chars.indexOf(text[i]) !== -1 && !TimeDebug.sumNested(nested)) return i;
 				else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
 				else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
 			}
@@ -629,7 +628,7 @@ TimeDebug.saveVarChange = function() {
 	if (change = varEl.varListRow) {
 		if (change.data.value === value && change.valid === valid) return true;
 		change.data.value = value;
-		if (change.valid = valid) change.formated = (areaVal === TimeDebug.formatJson(change));
+		if (change.valid = valid) change.formated = (areaVal === TimeDebug.formatJson(value));
 		else change.formated = false;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
@@ -722,14 +721,26 @@ TimeDebug.unhoverChange = function() {
 TimeDebug.consoleAction = function(e) {
 	e = e || window.event;
 
-	if (e.button === JAK.Browser.mouse.left && e.altKey && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
-		var cc = TimeDebug.consoleConfig;
-		if (typeof(cc.oriX) != 'undefined') {
-			cc.x = cc.oriX;
-			cc.y = cc.oriY;
+	if (e.button === JAK.Browser.mouse.left && (e.ctrlKey || e.metaKey)) {
+		JAK.Events.cancelDef(e);
+		JAK.Events.stopEvent(e);
+
+		if (e.shiftKey && !e.altKey) {
+			var check = TimeDebug.checkJson(this.value);
+			if (check.status) {
+				TimeDebug.areaWrite(this, TimeDebug.formatJson(check.json), this.selectionStart);
+			} else console.debug('hurraaaaa');
+		} else if (!e.shiftKey && e.altKey) {
+			var cc = TimeDebug.consoleConfig;
+			if (typeof(cc.oriX) != 'undefined') {
+				cc.x = cc.oriX;
+				cc.y = cc.oriY;
+			}
+			JAK.DOM.setStyle(this, {'width': cc.x + 'px', 'height': cc.y + 'px' });
 		}
-		JAK.DOM.setStyle(TimeDebug.tdConsole.area, {'width': cc.x + 'px', 'height': cc.y + 'px' });
+		return false;
 	}
+	return true;
 };
 
 TimeDebug.consoleOpen = function(el, callback) {

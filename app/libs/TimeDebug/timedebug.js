@@ -492,7 +492,6 @@ TimeDebug.jsonFixNumbers = function(text) {
 
 TimeDebug.jsonFixObjects = function(text) {
 	var retVal = '', nested = 0, arrayLevels = [], escaped = false, ch;
-
 	var quotes = {"'": false, '"': false};
 
 	for (var i = 0, j = text.length; i < j; i++) {
@@ -506,6 +505,7 @@ TimeDebug.jsonFixObjects = function(text) {
 		}
 		retVal += ch;
 	}
+
 	return nested ? text : retVal;
 };
 
@@ -718,6 +718,23 @@ TimeDebug.unhoverChange = function() {
 	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 
+TimeDebug.consoleErrorTimeout = null;
+
+TimeDebug.consoleError = function(wait) {
+	if (TimeDebug.consoleErrorTimeout) {
+		window.clearTimeout(TimeDebug.consoleErrorTimeout);
+		TimeDebug.consoleErrorTimeout = null;
+	}
+
+	TimeDebug.fire('Chyba automatickeho formatovani!!!');
+	TimeDebug.fire(wait);
+
+	if (wait === true) {
+		JAK.DOM.addClass(TimeDebug.tdConsole.area, 'nd-area-error');
+		TimeDebug.consoleErrorTimeout = window.setTimeout(TimeDebug.consoleError, 1000);
+	} else JAK.DOM.removeClass(TimeDebug.tdConsole.area, 'nd-area-error');
+};
+
 TimeDebug.consoleAction = function(e) {
 	e = e || window.event;
 
@@ -728,8 +745,10 @@ TimeDebug.consoleAction = function(e) {
 		if (e.shiftKey && !e.altKey) {
 			var check = TimeDebug.checkJson(this.value);
 			if (check.status) {
-				TimeDebug.areaWrite(this, TimeDebug.formatJson(check.json), this.selectionStart);
-			} else console.debug('hurraaaaa');
+				var formated = TimeDebug.formatJson(check.json);
+				if (formated === this.value) return false;
+				TimeDebug.areaWrite(this, TimeDebug.formatJson(check.json));
+			} else TimeDebug.consoleError(true);
 		} else if (!e.shiftKey && e.altKey) {
 			var cc = TimeDebug.consoleConfig;
 			if (typeof(cc.oriX) != 'undefined') {

@@ -3,7 +3,9 @@
  * Object for TimeDebug GUI
  * @author: Stefan Fiedler
  */
-
+		
+// TODO: udelat zelene probliknuti po oprave
+// TODO: kdyz area neopravuju, tak pri reformatovani zachovat pozici kurzoru
 // TODO: udelat selectnuti oteviraci zavorky az do zmacknuti nasledujiciho znaku
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -435,7 +437,7 @@ TimeDebug.updateChangeList = function(el) {
 	}
 };
 
-TimeDebug.checkJson = function(text) {
+TimeDebug.parseJson = function(text) {
 	var i = 0, j = TimeDebug.jsonRepairs.length, retObj = TimeDebug.testJson(text);
 	if (retObj.status && (retObj.valid = true)) return retObj;
 
@@ -579,7 +581,7 @@ TimeDebug.saveVarChange = function() {
 	var privateVar = !!(key % 2);
 
 	var areaVal = TimeDebug.tdConsole.area.value;
-	var i = -1, j, k, s = TimeDebug.checkJson(areaVal);
+	var i = -1, j, k, s = TimeDebug.parseJson(areaVal);
 	var value;
 	var valid = true;
 
@@ -741,11 +743,11 @@ TimeDebug.consoleAction = function(e) {
 		JAK.Events.stopEvent(e);
 
 		if (e.shiftKey && !e.altKey) {
-			var check = TimeDebug.checkJson(this.value);
-			if (check.status) {
-				var formated = TimeDebug.formatJson(check.json);
+			var parsed = TimeDebug.parseJson(this.value);
+			if (parsed.status) {
+				var formated = TimeDebug.formatJson(parsed.json);
 				if (formated === this.value) return false;
-				TimeDebug.areaWrite(this, TimeDebug.formatJson(check.json));
+				TimeDebug.areaWrite(this, TimeDebug.formatJson(parsed.json));
 			} else TimeDebug.consoleError(true);
 		} else if (!e.shiftKey && e.altKey) {
 			var cc = TimeDebug.consoleConfig;

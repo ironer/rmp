@@ -172,16 +172,19 @@ class TimeDebug {
 			),
 			'EDITACE PROMENNYCH (pouze local)' => array(
 				'Right Click' => 'otevrit modal konzoli pro zadani',
-				'Esc / (RC na masku)' => 'zavrit otevrenou konzoli'
+				'RC na masku' => 'zavrit konzoli, pokud je beze zmen'
 			),
 			'OVLADANI KONZOLE (pouze local)' => array(
 				'klavesa Enter' => 'v konzoli dalsi radek',
 				'Shift + Enter' => 'ulozit zmeny a zavrit konzoli',
-				'Ctrl/Cmd + D' => 'duplikovat aktualni radek / vyber',
+				'klavesa Esc' => 'zavrit konzoli bez ulozeni',
+				'Ctrl/Cmd + B' => 'vybrat aktualni blok v promenne',
+				'Ctrl/Cmd + D' => 'duplikovat vyber / radek / radky',
 				'Ctrl/Cmd + Y' => 'vymazat aktualni / vybrane radky',
 				'\'"' => 'obalit vyber/zmenit obaleni uvozovkami',
 				'()[]{}' => 'obalit vyber danym typem zavorek',
-				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost konzole'
+				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost konzole',
+				'Ctrl/Cmd + Shift + LC' => 'autoformat JSONu'
 			),
 			'UPRAVA ZADANYCH ZMEN (pouze local)' => array(
 				'Left Click' => 'naskrolovat na vybranou zmenu',

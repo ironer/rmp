@@ -454,6 +454,10 @@ span.nd-var-change {
 	background: #566;
 	border: 1px solid #689;
 }
+#tdConsoleArea.nd-area-parsed {
+	background: #286;
+	border: 1px solid #499;
+}
 #logAnchor {
 	height: 4px;
 	width: 1px;

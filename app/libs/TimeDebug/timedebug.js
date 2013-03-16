@@ -4,8 +4,6 @@
  * @author: Stefan Fiedler
  */
 		
-// TODO: udelat zelene probliknuti po oprave
-// TODO: kdyz area neopravuju, tak pri reformatovani zachovat pozici kurzoru
 // TODO: udelat selectnuti oteviraci zavorky az do zmacknuti nasledujiciho znaku
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -62,7 +60,7 @@ TimeDebug.actionData = { element: null, listeners: [] };
 TimeDebug.tdConsole = null;
 TimeDebug.consoleConfig = {'x':600, 'y':340};
 TimeDebug.textareaTimeout = null;
-TimeDebug.consoleErrorTimeout = null;
+TimeDebug.consoleHoverTimeout = null;
 TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
 TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X', 'showLogRow':true});
@@ -502,7 +500,7 @@ TimeDebug.jsonFixObjects = function(text) {
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
 		else if (!quotes["'"] && !quotes['"']) {
-			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findNearestCharAtTheSameLevel(text, ':', i + 1) !== false))) ch = '{';
+			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findNearestChar(text, ':', i + 1) !== false))) ch = '{';
 			else if (text[i] === ']' && arrayLevels[nested--]) ch = '}';
 		}
 		retVal += ch;
@@ -529,7 +527,7 @@ TimeDebug.noQuotes = function(quotes) {
 	return !retVal;
 };
 
-TimeDebug.findNearestCharAtTheSameLevel = function(text, chars, index, rev, quotes) {
+TimeDebug.findNearestChar = function(text, chars, index, rev, quotes) {
 	index = index || 0;
 	rev = rev || false;
 	quotes = quotes || {"'": false, '"': false};
@@ -720,19 +718,16 @@ TimeDebug.unhoverChange = function() {
 	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 
-TimeDebug.consoleError = function(wait) {
-	if (TimeDebug.consoleErrorTimeout) {
-		window.clearTimeout(TimeDebug.consoleErrorTimeout);
-		TimeDebug.consoleErrorTimeout = null;
+TimeDebug.consoleHover = function(areaClass) {
+	if (TimeDebug.consoleHoverTimeout) {
+		window.clearTimeout(TimeDebug.consoleHoverTimeout);
+		TimeDebug.consoleHoverTimeout = null;
 	}
 
-	TimeDebug.fire('Chyba automatickeho formatovani!!!');
-	TimeDebug.fire(wait);
-
-	if (wait === true) {
-		JAK.DOM.addClass(TimeDebug.tdConsole.area, 'nd-area-error');
-		TimeDebug.consoleErrorTimeout = window.setTimeout(TimeDebug.consoleError, 1000);
-	} else JAK.DOM.removeClass(TimeDebug.tdConsole.area, 'nd-area-error');
+	if (areaClass) {
+		TimeDebug.tdConsole.area.className = areaClass;
+		TimeDebug.consoleHoverTimeout = window.setTimeout(TimeDebug.consoleHover, 400);
+	} else TimeDebug.tdConsole.area.removeAttribute('class');
 };
 
 TimeDebug.consoleAction = function(e) {
@@ -747,8 +742,9 @@ TimeDebug.consoleAction = function(e) {
 			if (parsed.status) {
 				var formated = TimeDebug.formatJson(parsed.json);
 				if (formated === this.value) return false;
-				TimeDebug.areaWrite(this, TimeDebug.formatJson(parsed.json));
-			} else TimeDebug.consoleError(true);
+				if (!parsed.valid) TimeDebug.consoleHover('nd-area-parsed');
+				TimeDebug.areaWrite(this, TimeDebug.formatJson(parsed.json), this.selectionStart);
+			} else TimeDebug.consoleHover('nd-area-error');
 		} else if (!e.shiftKey && e.altKey) {
 			var cc = TimeDebug.consoleConfig;
 			if (typeof(cc.oriX) != 'undefined') {
@@ -1502,10 +1498,10 @@ TimeDebug.removeRows = function(e, el) {
 };
 
 TimeDebug.getBlock = function(el, index) {
-	var blockStart, i = TimeDebug.findNearestCharAtTheSameLevel(el.value, '[{', index, true, {'"': false});
+	var blockStart, i = TimeDebug.findNearestChar(el.value, '[{', index, true, {'"': false});
 	blockStart = i === false ? 0 : i;
 
-	var blockEnd, j = TimeDebug.findNearestCharAtTheSameLevel(el.value, ']}', index, false, {'"': false});
+	var blockEnd, j = TimeDebug.findNearestChar(el.value, ']}', index, false, {'"': false});
 	blockEnd = j === false ? el.value.length : j + 1;
 
 	return [blockStart, blockEnd];

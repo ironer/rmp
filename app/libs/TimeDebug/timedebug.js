@@ -4,8 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: predelat fixnumbers na fixcommas
-// TODO: udelat selectnuti oteviraci zavorky az do zmacknuti nasledujiciho znaku
+// TODO: udelat selectnuti od oteviraci zavorky az do koncove 1s nebo do zmacknuti nasledujiciho znaku
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
@@ -76,23 +75,27 @@ TimeDebug.locationHashes = [];
 TimeDebug.encodeChars = {'&':'&amp;', '<':'&lt;', '>':'&gt;'};
 
 TimeDebug.jsonReplaces = {
-	"quotes": [[/"/g, '\\"'],[/'/g, '"']],
-	"numbers": ['fixNumbers'],
+	"dblquotes": [[/"/g, '\\"']],
+	"quotes": [[/'/g, '"']],
+	"commas": ['fixCommas'],
 	"objects": ['fixObjects'],
 	"keys": [[/(\{\s*|,\s*)([^\{\}\[\]'",:\s]*)(?=\s*:)/gm, '$1"$2"']],
 	"constants": [[/\b(true|false|null)\b/gi, function(w) { return w.toLowerCase(); }]]
 };
 
 TimeDebug.jsonRepairs = [
-	["numbers"],
-	["quotes", "numbers"],
+	["commas"],
+	["dblquotes", "quotes", "commas"],
 	["keys"],
 	["constants"],
+	["dblquotes", "quotes", "keys", "constants"],
 	["quotes", "keys", "constants"],
 	["objects", "keys", "constants"],
-	["objects", "keys", "numbers", "constants"],
+	["objects", "keys", "commas", "constants"],
+	["dblquotes", "quotes", "objects", "keys", "constants"],
 	["quotes", "objects", "keys", "constants"],
-	["quotes", "objects", "keys", "numbers", "constants"]
+	["dblquotes", "quotes", "objects", "keys", "commas", "constants"],
+	["quotes", "objects", "keys", "commas", "constants"]
 ];
 
 TimeDebug.keyChanges = {
@@ -457,7 +460,7 @@ TimeDebug.testJson = function(text, tests) {
 
 	for (i = 0; i < j; ++i) {
 		for (k = 0, l = (test = TimeDebug.jsonReplaces[tests[i]]).length; k < l; ++k) {
-			if (test[k] === 'fixNumbers') text = TimeDebug.jsonFixNumbers(text);
+			if (test[k] === 'fixCommas') text = TimeDebug.jsonFixCommas(text);
 			else if (test[k] === 'fixObjects') text = TimeDebug.jsonFixObjects(text);
 			else text = text.replace(test[k][0], test[k][1]);
 		}
@@ -470,17 +473,19 @@ TimeDebug.testJson = function(text, tests) {
 	return {'status': false};
 };
 
-TimeDebug.jsonFixNumbers = function(text) {
+TimeDebug.jsonFixCommas = function(text) {
 	var retVal = '', escaped = false, nested = false, replace;
 
 	for (var i = 0, j = text.length; i < j;) {
 		if (escaped) escaped = false;
 		else if (text[i] === '\\') escaped = true;
 		else if (text[i] === "'" || text[i] === '"') nested = !nested;
-		else if (/[0-9]/.test(text[i]) && !nested && (replace = text.slice(i).match(/^\d+,\d+/))) {
-			retVal += replace[0].replace(',', '.');
-			i += replace[0].length;
-			continue;
+		else if (!nested) {
+			if ('0123456789'.indexOf(text[i]) !== -1 && (replace = text.slice(i).match(/^\d+,\d+/))) {
+				retVal += replace[0].replace(',', '.');
+				i += replace[0].length;
+				continue;
+			} else if (text[i] === ',' && text.slice(i).match(/^,\s*(?:\]|\})/m) && ++i) continue;
 		}
 		retVal += text[i];
 		++i;

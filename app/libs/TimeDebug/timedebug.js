@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat barevne problinkuti po zmene nebo nepovedeni reformatu
 // TODO: udelat selectnuti oteviraci zavorky az do zmacknuti nasledujiciho znaku
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -61,6 +60,7 @@ TimeDebug.actionData = { element: null, listeners: [] };
 TimeDebug.tdConsole = null;
 TimeDebug.consoleConfig = {'x':600, 'y':340};
 TimeDebug.textareaTimeout = null;
+TimeDebug.consoleErrorTimeout = null;
 TimeDebug.changes = [];
 TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
 TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X', 'showLogRow':true});
@@ -718,8 +718,6 @@ TimeDebug.unhoverChange = function() {
 	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 
-TimeDebug.consoleErrorTimeout = null;
-
 TimeDebug.consoleError = function(wait) {
 	if (TimeDebug.consoleErrorTimeout) {
 		window.clearTimeout(TimeDebug.consoleErrorTimeout);
@@ -755,7 +753,7 @@ TimeDebug.consoleAction = function(e) {
 				cc.x = cc.oriX;
 				cc.y = cc.oriY;
 			}
-			JAK.DOM.setStyle(this, {'width': cc.x + 'px', 'height': cc.y + 'px' });
+			JAK.DOM.setStyle(this, {'width': cc.x + 'px', 'height': cc.y + 'px'});
 		}
 		return false;
 	}

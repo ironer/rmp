@@ -447,8 +447,8 @@ span.nd-var-change {
 #tdConsoleArea::-moz-selection { color: #dff;  background: #147; }
 #tdConsoleArea::selection { color: #dff;  background: #147; }
 #tdConsoleArea.nd-area-error {
-	background: #900;
-	border: 1px solid #38b;
+	background: #566;
+	border: 1px solid #689;
 }
 #logAnchor {
 	height: 4px;

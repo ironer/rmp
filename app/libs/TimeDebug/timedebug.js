@@ -3,7 +3,8 @@
  * Object for TimeDebug GUI
  * @author: Stefan Fiedler
  */
-		
+
+// TODO: predelat fixnumbers na fixcommas
 // TODO: udelat selectnuti oteviraci zavorky az do zmacknuti nasledujiciho znaku
 
 // TODO: on-line podstrceni hodnoty pri dumpovani
@@ -196,9 +197,7 @@ TimeDebug.changeVar = function(e) {
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
 
-	if (el.id == 'tdConsoleMask') {
-		TimeDebug.consoleClose();
-	} else if (JAK.DOM.hasClass(el, 'nd-key')) {
+	if (JAK.DOM.hasClass(el, 'nd-key')) {
 		TimeDebug.consoleOpen(el, TimeDebug.saveVarChange);
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
 		TimeDebug.hideTitle(TimeDebug.titleActive);
@@ -795,11 +794,14 @@ TimeDebug.textareaFocus = function() {
 
 TimeDebug.catchMask = function(e) {
 	e = e || window.event;
-	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) {
-		TimeDebug.tdConsole.area.focus();
-		return TimeDebug.tdStop(e);
-	}
-	return true;
+
+	JAK.Events.cancelDef(e);
+	JAK.Events.stopEvent(e);
+
+	if (e.button === JAK.Browser.mouse.right && this.title == TimeDebug.tdConsole.area.value) TimeDebug.consoleClose();
+	else TimeDebug.tdConsole.area.focus();
+
+	return false;
 };
 
 TimeDebug.consoleClose = function() {

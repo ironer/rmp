@@ -4,6 +4,8 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: pri prvnim ukladani zmeny naformatovaneho jsonu je treba korektne nastavit formated
+
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
@@ -76,24 +78,25 @@ TimeDebug.jsonReplaces = {
 	"dblquotes": [[/"/g, '\\"']],
 	"quotes": [[/'/g, '"']],
 	"commas": ['fixCommas'],
+	"numbers": ['fixNumbers'],
 	"objects": ['fixObjects'],
 	"keys": [[/(\{\s*|,\s*)([^\{\}\[\]'",:\s]*)(?=\s*:)/gm, '$1"$2"']],
 	"constants": [[/\b(true|false|null)\b/gi, function(w) { return w.toLowerCase(); }]]
 };
 
 TimeDebug.jsonRepairs = [
-	["commas"],
-	["dblquotes", "quotes", "commas"],
+	["commas", "numbers"],
+	["dblquotes", "quotes", "commas", "numbers"],
 	["keys"],
 	["constants"],
 	["dblquotes", "quotes", "keys", "constants"],
 	["quotes", "keys", "constants"],
 	["objects", "keys", "constants"],
-	["objects", "keys", "commas", "constants"],
+	["objects", "keys", "commas", "numbers", "constants"],
 	["dblquotes", "quotes", "objects", "keys", "constants"],
 	["quotes", "objects", "keys", "constants"],
-	["dblquotes", "quotes", "objects", "keys", "commas", "constants"],
-	["quotes", "objects", "keys", "commas", "constants"]
+	["dblquotes", "quotes", "objects", "keys", "commas", "constants", "numbers"],
+	["quotes", "objects", "keys", "commas", "constants", "numbers"]
 ];
 
 TimeDebug.keyChanges = {
@@ -461,6 +464,7 @@ TimeDebug.testJson = function(text, tests) {
 	for (i = 0; i < j; ++i) {
 		for (k = 0, l = (test = TimeDebug.jsonReplaces[tests[i]]).length; k < l; ++k) {
 			if (test[k] === 'fixCommas') text = TimeDebug.jsonFixCommas(text);
+			else if (test[k] === 'fixNumbers') text = TimeDebug.jsonFixNumbers(text);
 			else if (test[k] === 'fixObjects') text = TimeDebug.jsonFixObjects(text);
 			else text = text.replace(test[k][0], test[k][1]);
 		}
@@ -474,18 +478,30 @@ TimeDebug.testJson = function(text, tests) {
 };
 
 TimeDebug.jsonFixCommas = function(text) {
+	var retVal = '', escaped = false, nested = false;
+
+	for (var i = 0, j = text.length; i < j; ++i) {
+		if (escaped) escaped = false;
+		else if (text[i] === '\\') escaped = true;
+		else if (text[i] === "'" || text[i] === '"') nested = !nested;
+		else if (!nested && text[i] === ',' && text.slice(i).match(/^,\s*(?:\]|\})/m)) continue;
+		retVal += text[i];
+	}
+
+	return nested ? text : retVal;
+};
+
+TimeDebug.jsonFixNumbers = function(text) {
 	var retVal = '', escaped = false, nested = false, replace;
 
 	for (var i = 0, j = text.length; i < j;) {
 		if (escaped) escaped = false;
 		else if (text[i] === '\\') escaped = true;
 		else if (text[i] === "'" || text[i] === '"') nested = !nested;
-		else if (!nested) {
-			if ('0123456789'.indexOf(text[i]) !== -1 && (replace = text.slice(i).match(/^\d+,\d+/))) {
-				retVal += replace[0].replace(',', '.');
-				i += replace[0].length;
-				continue;
-			} else if (text[i] === ',' && text.slice(i).match(/^,\s*(?:\]|\})/m) && ++i) continue;
+		else if (!nested && '0123456789'.indexOf(text[i]) !== -1 && (replace = text.slice(i).match(/^\d+,\d+/))) {
+			retVal += replace[0].replace(',', '.');
+			i += replace[0].length;
+			continue;
 		}
 		retVal += text[i];
 		++i;

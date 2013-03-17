@@ -244,13 +244,14 @@ TimeDebug.changeAction = function(e) {
 				if (!this.formated) {
 					var formated = TimeDebug.formatJson(this.data.value);
 					if (formated === false) return this.formated = false;
-					this.formated = true;
 					this.varEl.title = this.title = formated;
+					this.formated = true;
 					TimeDebug.updateChangeList(this);
 				}
 			} else {
-				this.valid = true;
 				this.varEl.title = this.title = JSON.stringify(this.data.value);
+				this.valid = true;
+				this.formated = (this.title === TimeDebug.formatJson(this.data.value));
 				TimeDebug.updateChangeList(this);
 			}
 			return false;

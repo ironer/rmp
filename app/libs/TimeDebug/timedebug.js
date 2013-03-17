@@ -4,8 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: pri prvnim ukladani zmeny naformatovaneho jsonu je treba korektne nastavit formated
-
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
@@ -600,8 +598,7 @@ TimeDebug.saveVarChange = function() {
 
 	var areaVal = TimeDebug.tdConsole.area.value;
 	var i = -1, j, k, s = TimeDebug.parseJson(areaVal);
-	var value;
-	var valid = true;
+	var value, valid, formated;
 
 	var revPath = [];
 	var runTime;
@@ -613,9 +610,10 @@ TimeDebug.saveVarChange = function() {
 	if (s.status) {
 		value = s.json;
 		valid = s.valid;
+		formated = valid && (areaVal === TimeDebug.formatJson(value));
 	} else {
 		value = areaVal;
-		valid = false;
+		formated = valid = false;
 	}
 
 	TimeDebug.consoleClose();
@@ -646,10 +644,8 @@ TimeDebug.saveVarChange = function() {
 	} else return false;
 
 	if (change = varEl.varListRow) {
-		if (change.data.value === value && change.valid === valid) return true;
+		if (change.data.value === value && change.valid === valid && change.formated === formated) return true;
 		change.data.value = value;
-		if (change.valid = valid) change.formated = (areaVal === TimeDebug.formatJson(value));
-		else change.formated = false;
 	} else {
 		change = JAK.mel('pre', {className:'nd-change-data'});
 
@@ -684,9 +680,9 @@ TimeDebug.saveVarChange = function() {
 			}
 		}
 
-		change.data = {'path':revPath.reverse().join(','), 'value':value};
+		change.data = {'path': revPath.reverse().join(','), 'value': value};
 		TimeDebug.changes.push(change);
-		change.valid = valid;
+
 		change.runtime = runTime;
 		change.varEl = varEl;
 		varEl.varListRow = change;
@@ -700,6 +696,8 @@ TimeDebug.saveVarChange = function() {
 		if (mouseOver) change.listeners.push(mouseOver);
 	}
 
+	change.valid = valid;
+	change.formated = formated;
 	varEl.title = areaVal;
 
 	TimeDebug.updateChangeList(change);

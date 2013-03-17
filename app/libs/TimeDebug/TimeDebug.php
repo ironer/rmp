@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
  * Author of 'TimeDebug': 2013 Stefan Fiedler
+ * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
  */
 
 // TODO: dopsat zmeny pro private
-// TODO: opravit editor:// linky na macbooku
+// TODO: opravit editor:// linky na macbooku pro PHPStorm 6
 // TODO: odesilat slozite zmeny postem asynchronne + getem uid
 
 
@@ -184,14 +184,14 @@ class TimeDebug {
 				'\'"' => 'obalit vyber/zmenit obaleni uvozovkami',
 				'()[]{}' => 'obalit vyber danym typem zavorek',
 				'Ctrl/Cmd + Alt + LC' => 'vychozi velikost konzole',
-				'Ctrl/Cmd + Shift + LC' => 'autoformat JSONu'
+				'Ctrl/Cmd + Shift + LC' => 'oprava a format JSONu'
 			),
 			'UPRAVA ZADANYCH ZMEN (pouze local)' => array(
 				'Left Click' => 'naskrolovat na vybranou zmenu',
 				'Right Click' => 'otevrit modal konzoli pro upravu',
 				'LC na krizek' => 'vypnout automaticke prepinani logu',
 				'RC na krizek' => 'smazat vybranou zmenu',
-				'Shift + LC' => 'prijmout navrhovanou opravu JSONu'
+				'Shift + LC' => 'prijmout opravu / formatovat JSON'
 			)
 		);
 

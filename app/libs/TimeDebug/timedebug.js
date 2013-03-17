@@ -4,8 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat selectnuti od oteviraci zavorky az do koncove 1s nebo do zmacknuti nasledujiciho znaku
-
 // TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
@@ -58,21 +56,21 @@ TimeDebug.zIndexMax = 100;
 TimeDebug.actionData = { element: null, listeners: [] };
 
 TimeDebug.tdConsole = null;
-TimeDebug.consoleConfig = {'x':600, 'y':340};
+TimeDebug.consoleConfig = {'x': 600, 'y': 340};
 TimeDebug.textareaTimeout = null;
 TimeDebug.consoleHoverTimeout = null;
 TimeDebug.changes = [];
-TimeDebug.tdChangeList = JAK.mel('div', {'id':'tdChangeList'});
-TimeDebug.deleteChange = JAK.mel('div', {'id':'tdDeleteChange', 'innerHTML':'X', 'showLogRow':true});
+TimeDebug.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
+TimeDebug.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'showLogRow': true});
 TimeDebug.hoveredChange = null;
 
 TimeDebug.tdHashEl = null;
-TimeDebug.tdAnchor = JAK.mel('a', {'name':'tdanchor'});
-TimeDebug.logAnchor = JAK.mel('a', {'name':'loganchor', 'id':'logAnchor'});
+TimeDebug.tdAnchor = JAK.mel('a', {'name': 'tdanchor'});
+TimeDebug.logAnchor = JAK.mel('a', {'name': 'loganchor', 'id': 'logAnchor'});
 TimeDebug.setLocHashTimeout = null;
 TimeDebug.locationHashes = [];
 
-TimeDebug.encodeChars = {'&':'&amp;', '<':'&lt;', '>':'&gt;'};
+TimeDebug.encodeChars = {'&': '&amp;', '<': '&lt;', '>': '&gt;'};
 
 TimeDebug.jsonReplaces = {
 	"dblquotes": [[/"/g, '\\"']],
@@ -99,11 +97,13 @@ TimeDebug.jsonRepairs = [
 ];
 
 TimeDebug.keyChanges = {
-	"'":["'", "'"], '"':['"', '"'],
-	'[':['[', ']'], ']':['[', ']'],
-	'(':['(', ')'], ')':['(', ')'],
-	'{':['{', '}'], '}':['{', '}']
+	"'": ["'", "'"], '"': ['"', '"'],
+	'[': ['[', ']'], ']': ['[', ']'],
+	'(': ['(', ')'], ')': ['(', ')'],
+	'{': ['{', '}'], '}': ['{', '}']
 };
+
+TimeDebug.consoleSelects = {"]": "[", "}": "{"};
 
 TimeDebug.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
@@ -1331,16 +1331,18 @@ TimeDebug.logClick = function(e) {
 
 TimeDebug.readConsoleKeyPress = function(e) {
 	e = e || window.event;
-	if (!TimeDebug.tdConsole) return true;
-
 	var key = String.fromCharCode(e.which);
+
+	if (this.selectedText) TimeDebug.unselectConsole();
 
 	if (e.ctrlKey || e.metaKey) {
 		if (key == 'd') return TimeDebug.duplicateText(e, this);
 		else if (key == 'y') return TimeDebug.removeRows(e, this);
 		else if (key == 'b') return TimeDebug.selectBlock(e, this);
+	} else if (this.selectionStart === this.selectionEnd) {
+		if (TimeDebug.consoleSelects[key]) TimeDebug.selectConsole(e, this, key);
 	} else if (TimeDebug.keyChanges[key]) return TimeDebug.wrapSelection(e, this, key);
-	
+
 	return true;
 };
 
@@ -1539,9 +1541,38 @@ TimeDebug.selectBlock = function(e, el) {
 	return false;
 };
 
+TimeDebug.selectConsole  = function(e, el, key) {
+	var end = el.selectionEnd;
+	var text = el.value.slice(0, end) + key + el.value.slice(end);
+	var start = TimeDebug.findNearestChar(text, TimeDebug.consoleSelects[key], end, true, {'"': false});
+
+	JAK.Events.cancelDef(e);
+	JAK.Events.stopEvent(e);
+
+	if (start === false) TimeDebug.areaWrite(el, text, end + 1);
+	else {
+		TimeDebug.areaWrite(el, text, start, end + 1);
+		TimeDebug.unselectConsole(el.selectedText = true);
+	}
+
+	return false;
+};
+
+TimeDebug.unselectConsole = function(wait) {
+	if (TimeDebug.consoleSelectTimeout) {
+		window.clearTimeout(TimeDebug.consoleSelectTimeout);
+		TimeDebug.consoleSelectTimeout = null;
+	}
+
+	if (wait) TimeDebug.consoleSelectTimeout = window.setTimeout(TimeDebug.unselectConsole, 1000);
+	else {
+		TimeDebug.tdConsole.area.selectionStart = TimeDebug.tdConsole.area.selectionEnd;
+		TimeDebug.tdConsole.area.selectedText = false;
+	}
+};
+
 TimeDebug.wrapSelection = function(e, el, key) {
 	var start = el.selectionStart, end = el.selectionEnd;
-	if (start === end) return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);

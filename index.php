@@ -19,10 +19,7 @@ try {
 			. "&line=$line" . '"><i>' . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a></small>]</pre>";
 }
 
-$a = array(array('12'));
-App::dump($a);
-$test = "\na\na\na\na\na";
-App::dump($test);
+App::dump(TimeDebug::$request);
 
 if (DEBUG) {
 	App::lg('Zobrazeni debuggeru', $app);

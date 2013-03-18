@@ -286,19 +286,25 @@ class TimeDebug {
 		} unset($var);
 	}
 
+	private static $varCounter = 0;
+
 	private static function updateVar(&$var = NULL, array &$changes = NULL) {
 		for ($i = 0, $j = count($changes); $i < $j; ++$i) {
+			$change = &self::$request[$changes[$i]];
+			$change['resId'] = 'tdchres_' . ++self::$varCounter;
 			try {
-				$change = &self::$request[$changes[$i]];
-				self::applyChange($var, $change['varPath'], $change['value']);
+				self::applyChange($var, $change['varPath'], $change['value'], $change['resId']);
+				$change['res'] = 1;
 			} catch(Exception $e) {
-				echo '<pre class="nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
+				echo '<pre id="' . $change['resId'] . '" class="nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
+				$change['res'] = 2;
 			}
+			unset($change['varPath']);
 		}
 	}
 
 
-	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL) {
+	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL, $name = NULL) {
 		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena neprazdna cesta typu pole (nalezen typ '
 				. gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var));
 
@@ -315,7 +321,7 @@ class TimeDebug {
 		}
 
 		if ($changeType >= 7)  {
-			echo '<pre class="nd-ok">';
+			echo '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-ok">';
 			if ($changeType === 7) echo ' Chranena property "' . $varPath[0]['key'] . '":';
 			elseif ($changeType === 8) echo ' Klic/property "' . $varPath[0]['key'] . '":';
 			echo ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
@@ -325,7 +331,7 @@ class TimeDebug {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.');
 			$index = $varPath[1]['key'];
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index);
-			self::applyChange($var[$index], array_slice($varPath, 1), $value);
+			self::applyChange($var[$index], array_slice($varPath, 1), $value, $name);
 		} elseif ($changeType === 1 || $changeType === 3 || $changeType === 5) {
 			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
 			if ($changeType === 1) {
@@ -335,7 +341,7 @@ class TimeDebug {
 			$property = $varPath[1]['key'];
 			if ($priv) {
 				if (!isset($varArray, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
-				self::applyChange($varArray[$property], array_slice($varPath, 1), $value);
+				self::applyChange($varArray[$property], array_slice($varPath, 1), $value, $name);
 				if ($priv === 2) {
 					$refObj = new ReflectionObject($var);
 					$refProp = $refObj->getProperty($property);
@@ -344,7 +350,7 @@ class TimeDebug {
 				}
 			} else {
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
-				self::applyChange($var->$property, array_slice($varPath, 1), $value);
+				self::applyChange($var->$property, array_slice($varPath, 1), $value, $name);
 			}
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.');
 

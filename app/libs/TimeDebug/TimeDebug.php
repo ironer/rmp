@@ -1,11 +1,12 @@
 <?php
 
 /**
- * Author of 'TimeDebug': 2013 Stefan Fiedler
+ * Author of PHP class 'TimeDebug': 2013 Stefan Fiedler
  * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
  */
 
-// TODO: dopsat zmeny pro private
+// TODO: zobrazit v dumpu a logu provedene nebo neprovedene zmeny
+
 // TODO: zkontrolovat dumpovani resources
 // TODO: opravit editor:// linky na macbooku pro PHPStorm 6
 // TODO: odesilat slozite zmeny postem asynchronne + getem uid
@@ -94,6 +95,7 @@ class TimeDebug {
 		} unset($key);
 		return TRUE;
 	}
+
 
 	public static function init($advancedLog = FALSE, $local = FALSE, $root = '', $startTime = 0, $startMem = 0) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
@@ -233,8 +235,10 @@ class TimeDebug {
 		}
 
 		if (self::$advancedLog && isset($objects)) {
+			$logId = 'l' . self::$idPrefix . '_' . self::incCounter('logs');
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
+				if (isset(self::$request['logs'][$logId][$i])) self::updateVar($curObj, self::$request['logs'][$logId][$i]);
 				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
 			}
 			$dump = implode('<hr>', $dumpVars);
@@ -245,7 +249,7 @@ class TimeDebug {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = $cnt = count(self::$timeDebugMD5);
 				echo '<pre id="tdView_' . ++$cnt . '" class="nd-view-dump">' . $dump . '</pre>';
 			}
-			$tdParams = ' id="l' . self::$idPrefix . '_' . self::incCounter('logs') . '" class="nd-row nd-log"';
+			$tdParams = ' id="' . $logId . '" class="nd-row nd-log"';
 		} else $tdParams = ' class="nd-row"';
 
 		echo "<pre" . ($object === NULL ? '' : " data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
@@ -274,11 +278,10 @@ class TimeDebug {
 		echo '<hr>';
 		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
 			$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
-			if (isset(self::$request['dumps'][$dumpId])) {
-				self::updateVar($var, self::$request['dumps'][$dumpId]);
-			}
 
-			echo self::toHtml($var, array('location' => TRUE, 'loclink' => LOCAL, 'dumpid' => $dumpId));
+			if (isset(self::$request['dumps'][$dumpId])) self::updateVar($var, self::$request['dumps'][$dumpId]);
+
+			echo self::toHtml($var, array(self::LOCATION => TRUE, self::LOCATION_LINK => LOCAL, self::DUMP_ID => $dumpId));
 			echo '<hr>';
 		} unset($var);
 	}
@@ -293,6 +296,7 @@ class TimeDebug {
 			}
 		}
 	}
+
 
 	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL) {
 		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena neprazdna cesta typu pole (nalezen typ '
@@ -309,7 +313,6 @@ class TimeDebug {
 				$varArray[$k[0] === "\x00" ? substr($k, strrpos($k, "\x00") + 1) : $k] = $v;
 			}
 		}
-
 
 		if ($changeType >= 7)  {
 			echo '<pre class="nd-ok">';
@@ -346,6 +349,7 @@ class TimeDebug {
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.');
 
 	}
+
 
 	public static function runtime($minus = NULL) {
 		if ($minus === NULL) $minus = self::$startTime;

@@ -183,8 +183,8 @@ TimeDebug.mouseWheel = function(e) {
 
 	var delta = 0;
 
-	if (e.wheelDelta) delta = (e.wheelDelta / 120 > 0 ? -16 : 16);
-	else if (e.detail) delta = (e.detail / 3 < 0 ? -16 : 16);
+	if (e.wheelDelta) delta = (e.wheelDelta / 120 > 0 ? -1 : 16);
+	else if (e.detail) delta = (e.detail / 3 < 0 ? -1 : 16);
 
 	el.scrollTop = Math.max(0, 16 * parseInt((el.scrollTop + delta) / 16));
 	return false;

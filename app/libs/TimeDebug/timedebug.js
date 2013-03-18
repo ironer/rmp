@@ -4,19 +4,16 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: on-line podstrceni hodnoty pri dumpovani
 // TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
 
 // TODO: udelat pridavani prvku do pole
-// TODO: ulozit nastaveni do cookie a/nebo vyexportovat do textarea
-// TODO: ulozit serii automatickych otevreni TimeDebugu
+// TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
+
 // TODO: vypnout logovani
-
-
-// TODO: zkontrolovat dumpovani resources
 
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
 // TODO: vytvorit unit testy
+// TODO: ulozit serii automatickych otevreni TimeDebugu
 
 var TimeDebug = {};
 

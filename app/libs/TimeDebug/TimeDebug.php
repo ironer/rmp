@@ -6,6 +6,7 @@
  */
 
 // TODO: dopsat zmeny pro private
+// TODO: zkontrolovat dumpovani resources
 // TODO: opravit editor:// linky na macbooku pro PHPStorm 6
 // TODO: odesilat slozite zmeny postem asynchronne + getem uid
 
@@ -301,41 +302,43 @@ class TimeDebug {
 		$priv = isset($varPath[0]['priv']) ? $varPath[0]['priv'] : 0;
 
 		if ($priv) {
-			if ($priv === 1) {
-				$fields = (array) $var;
-				$varArray = array();
+			$fields = (array) $var;
+			$varArray = array();
 
-				foreach ($fields as $k => &$v) {
-					$varArray[$k[0] === "\x00" ? substr($k, strrpos($k, "\x00") + 1) : $k] = $v;
-				}
-
-				var_dump($varArray);
-			} else throw new Exception('Nemuzu editovat chranenou property objektu s klicem ' . $varPath[0]['key']);
+			foreach ($fields as $k => &$v) {
+				$varArray[$k[0] === "\x00" ? substr($k, strrpos($k, "\x00") + 1) : $k] = $v;
+			}
 		}
 
-		if ($changeType === 2 || $changeType === 4 || $changeType === 6) {
+
+		if ($changeType >= 7)  {
+			echo '<pre class="nd-ok">';
+			if ($changeType === 7) echo ' Chranena property "' . $varPath[0]['key'] . '":';
+			elseif ($changeType === 8) echo ' Klic/property "' . $varPath[0]['key'] . '":';
+			echo ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
+			$var = $value;
+			echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.');
 			$index = $varPath[1]['key'];
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index);
 			self::applyChange($var[$index], array_slice($varPath, 1), $value);
-		} elseif ($changeType === 8 || $changeType === 9)  {
-			echo '<pre class="nd-ok">' . ($changeType === 8 ? ' Klic/property "' . $varPath[0]['key'] . '":' : '')
-					. ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
-			$var = $value;
-			echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
 		} elseif ($changeType === 1 || $changeType === 3 || $changeType === 5) {
 			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
-
 			if ($changeType === 1) {
 				$objClass = $varPath[0]['key'];
 				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.');
 			} else $objClass = get_class($var);
-
 			$property = $varPath[1]['key'];
-
-			if ($priv === 1) {
+			if ($priv) {
 				if (!isset($varArray, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
 				self::applyChange($varArray[$property], array_slice($varPath, 1), $value);
+				if ($priv === 2) {
+					$refObj = new ReflectionObject($var);
+					$refProp = $refObj->getProperty($property);
+					$refProp->setAccessible(TRUE);
+					$refProp->setValue($var, $varArray[$property]);
+				}
 			} else {
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
 				self::applyChange($var->$property, array_slice($varPath, 1), $value);

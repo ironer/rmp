@@ -185,18 +185,22 @@ td.init = function(logId) {
 
 td.loadChanges = function(changes) {
 	for (var i = 0, j = changes.length; i < j; ++i) {
-		var path = changes[i].path.split(','), log, dump, container, varEl;
+		var path = changes[i].path.split(','), log, container, varEl, change, formated;
 		fire(path);
 
 		if (path[0] === 'log') {
 			log = JAK.gel(path[1]);
-			dump = td.dumps[td.indexes[log.logId - 1]];
-			container = dump.objects[parseInt(path[2])];
+			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];
 			fire(container);
 			varEl = td.findVarEl(container, path.slice(3));
 			fire(varEl);
 			if (varEl) {
-
+				varEl = td.duplicateNode(varEl);
+				change = td.createChange(changes[i].path, changes[i].value, container, varEl, log);
+				change.valid = true;
+				change.formated = true;
+				varEl.title = td.formatJson(changes[i].value);
+				td.updateChangeList();
 			}
 		} else {
 			container = JAK.gel(path[1]);

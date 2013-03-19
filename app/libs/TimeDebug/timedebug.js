@@ -28,6 +28,7 @@ TimeDebug.logRowActive = null;
 TimeDebug.logRowActiveId = 0;
 TimeDebug.dumps = [];
 TimeDebug.indexes = [];
+TimeDebug.message = null;
 
 TimeDebug.tdContainer = JAK.mel('div', {id:'tdContainer'});
 TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
@@ -164,6 +165,27 @@ TimeDebug.init = function(logId) {
 	TimeDebug.tdInnerWrapper.onmousedown = TimeDebug.changeVar;
 	if (window.addEventListener) window.addEventListener('DOMMouseScroll', TimeDebug.mouseWheel, false);
 	window.onmousewheel = document.onmousewheel = TimeDebug.mouseWheel;
+
+	if (TimeDebug.message) TimeDebug.readMessage();
+};
+
+TimeDebug.readMessage = function() {
+	var change;
+	for (var i = 0; i < TimeDebug.message.count; i++) {
+		change = TimeDebug.message[i];
+		TimeDebug.findVarEl(change);
+	}
+};
+
+TimeDebug.findVarEl = function(change) {
+	var path = change.path.split(',');
+	fire(path);
+	if (path[0] === 'log') {
+		var log = JAK.gel(path[1]);
+		var dump = TimeDebug.dumps[TimeDebug.indexes[log.logId - 1]];
+
+		fire(dump);
+	}
 };
 
 TimeDebug.mouseWheel = function(e) {
@@ -603,7 +625,6 @@ TimeDebug.saveVarChange = function() {
 	var change;
 	var logClone = false;
 	var changeEls;
-	var mouseOver = false;
 
 	if (s.status) {
 		value = s.json;
@@ -645,19 +666,28 @@ TimeDebug.saveVarChange = function() {
 		if (change.data.value === value && change.valid === valid && change.formated === formated) return true;
 		change.data.value = value;
 	} else {
-		change = JAK.mel('pre', {className:'nd-change-data'});
+		varEl = TimeDebug.duplicateNode(varEl);
 
-		var newEl = varEl.cloneNode(true);
-		newEl.hideEl = varEl;
-		varEl.parentNode.insertBefore(newEl, varEl);
-		varEl.style.display = 'none';
-		varEl = newEl;
+		change = JAK.mel('pre', {className:'nd-change-data'});
+		change.data = {'path': revPath.reverse().join(','), 'value': value};
+		TimeDebug.changes.push(change);
+
+		change.runtime = runTime;
+		change.varEl = varEl;
+		varEl.varListRow = change;
+		change.listeners = [
+			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
+			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
+			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
+			JAK.Events.addListener(change, 'mouseout', change, TimeDebug.deactivateChange),
+			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
+		];
 
 		if (logClone) {
 			if (typeof(TimeDebug.logRowActive.varChanges) == 'undefined') TimeDebug.logRowActive.varChanges = [varEl];
 			else TimeDebug.logRowActive.varChanges.push(varEl);
 			change.logRow = TimeDebug.logRowActive;
-			mouseOver = JAK.Events.addListener(change, 'mouseover', change.logRow, TimeDebug.showLog);
+			change.listeners.push(JAK.Events.addListener(change, 'mouseover', change.logRow, TimeDebug.showLog));
 
 			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', logClone);
@@ -677,21 +707,6 @@ TimeDebug.saveVarChange = function() {
 				changeEls[i].changeIndex = i;
 			}
 		}
-
-		change.data = {'path': revPath.reverse().join(','), 'value': value};
-		TimeDebug.changes.push(change);
-
-		change.runtime = runTime;
-		change.varEl = varEl;
-		varEl.varListRow = change;
-		change.listeners = [
-			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
-			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
-			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
-			JAK.Events.addListener(change, 'mouseout', change, TimeDebug.deactivateChange),
-			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
-		];
-		if (mouseOver) change.listeners.push(mouseOver);
 	}
 
 	change.valid = valid;
@@ -700,6 +715,14 @@ TimeDebug.saveVarChange = function() {
 
 	TimeDebug.updateChangeList(change);
 	return true;
+};
+
+TimeDebug.duplicateNode = function(varEl) {
+	var newEl = varEl.cloneNode(true);
+	newEl.hideEl = varEl;
+	varEl.parentNode.insertBefore(newEl, varEl);
+	varEl.style.display = 'none';
+	return newEl;
 };
 
 TimeDebug.checkDeleteChange = function() {
@@ -1458,14 +1481,6 @@ TimeDebug.htmlEncode = function(text) {
 	return retVal;
 };
 
-TimeDebug.fire = function(text) {
-	if (!--this.counter) {
-		this.counter = 1000;
-		console.clear();
-	}
-	console.debug(text);
-};
-
 TimeDebug.restore = function() {
 	location.href = location.protocol + '//' + location.host + location.pathname;
 };
@@ -1609,3 +1624,11 @@ TimeDebug.areaWrite = function(el, text, start, end) {
 	el.selectionEnd = end;
 	el.scrollTop = top;
 };
+
+function fire(text) {
+	if (!--this.counter) {
+		this.counter = 1000;
+		console.clear();
+	}
+	console.debug(text);
+}

@@ -19,10 +19,10 @@ try {
 			. "&line=$line" . '"><i>' . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a></small>]</pre>";
 }
 
-App::dump(TimeDebug::$request);
-
 if (DEBUG) {
 	App::lg('Zobrazeni debuggeru', $app);
+	App::dump(TimeDebug::$message);
+
 	echo '<hr>Generovani odpovedi: <b>' . TimeDebug::runtime() . '</b>'
 			. ' / Max. pamet: <b>' . TimeDebug::maxMem() . '</b> / Max. alokovana: <b>' . TimeDebug::maxMem(TRUE) . '</b>'
 			. ' / <a href="' . WEBROOT . '">homepage</a> / <a href="' . WEBROOT . '?mail=1">odeslat email</a>'

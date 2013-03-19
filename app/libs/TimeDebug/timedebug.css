@@ -459,9 +459,9 @@ span.nd-var-change {
 	border: 1px solid #499;
 }
 #logAnchor {
-	height: 4px;
+	height: 1px;
 	width: 1px;
-	font-size: 4px;
+	font-size: 1px;
 }
 hr + hr {
 	display: none;

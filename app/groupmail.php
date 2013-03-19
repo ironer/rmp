@@ -22,7 +22,7 @@ function __autoload($className) {
 
 if (DEBUG) {
 	TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0);
-	App::dump(TimeDebug::$message);
+	App::dump(TimeDebug::$request);
 }
 
 $app = new App('GM');

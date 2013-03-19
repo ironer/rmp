@@ -19,9 +19,13 @@ try {
 			. "&line=$line" . '"><i>' . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a></small>]</pre>";
 }
 
+$a = 'test';
+App::dump($a);
+
 if (DEBUG) {
 	App::lg('Zobrazeni debuggeru', $app);
-	App::dump(TimeDebug::$message);
+	$response = TimeDebug::getResponse();
+	App::dump($response);
 
 	echo '<hr>Generovani odpovedi: <b>' . TimeDebug::runtime() . '</b>'
 			. ' / Max. pamet: <b>' . TimeDebug::maxMem() . '</b> / Max. alokovana: <b>' . TimeDebug::maxMem(TRUE) . '</b>'

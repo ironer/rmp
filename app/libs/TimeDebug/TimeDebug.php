@@ -43,7 +43,7 @@ class TimeDebug {
 
 	private static $timeDebug = array();
 	private static $timeDebugMD5 = array();
-	public static $message = array();
+	public static $request = array();
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
 
@@ -51,20 +51,20 @@ class TimeDebug {
 	private static function prepareVarPath($id = NULL) {
 		if ($id === NULL) return FALSE;
 
-		if (empty(self::$message[$id]['varPath'])) {
-			self::$message[$id]['error'] = "Pozadavek nema zadanou varPath.";
+		if (empty(self::$request[$id]['varPath'])) {
+			self::$request[$id]['error'] = "Pozadavek nema zadanou varPath.";
 			return FALSE;
 		}
 
-		$varPath = &self::$message[$id]['varPath'];
+		$varPath = &self::$request[$id]['varPath'];
 		if (!is_array($varPath)) {
-			self::$message[$id]['error'] = "Pozadavek nema varPath typu pole.";
+			self::$request[$id]['error'] = "Pozadavek nema varPath typu pole.";
 			return FALSE;
 		}
 
 		foreach ($varPath as &$key) {
 			if (empty($key)) {
-				self::$message[$id]['error'] = "Krok cesty nema uveden typ ani klic.";
+				self::$request[$id]['error'] = "Krok cesty nema uveden typ ani klic.";
 				return FALSE;
 			}
 
@@ -79,14 +79,14 @@ class TimeDebug {
 
 			$retKey['type'] = intval($key[0]);
 			if ($retKey['type'] < 1) {
-				self::$message[$id]['error'] = "Krok cesty ma chybny typ klice: $key[1].";
+				self::$request[$id]['error'] = "Krok cesty ma chybny typ klice: $key[1].";
 				return FALSE;
 			}
 
 			if ($retKey['type'] !== 2) {
 				$retKey['key'] = substr($key, 1);
 				if ($retKey['key'] === FALSE ) {
-					self::$message[$id]['error'] = "Krok cesty ma prazdny nazev property nebo klic ve varPath.";
+					self::$request[$id]['error'] = "Krok cesty ma prazdny nazev property nebo klic ve varPath.";
 					return FALSE;
 				}
 			}
@@ -107,33 +107,33 @@ class TimeDebug {
 		echo "\n</style></head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logWrapper\">\n<div id=\"logView\">\n";
 
 		if (isset($_GET['tdrequest'])) {
-			self::$message = json_decode($_GET['tdrequest'], TRUE);
-			self::$message['count'] = count(self::$message);
-			self::$message['dumps'] = array();
-			self::$message['logs'] = array();
-			for ($i = 0; $i < self::$message['count']; ++$i) {
-				$path = explode(',', self::$message[$i]['path']);
+			self::$request = json_decode($_GET['tdrequest'], TRUE);
+			self::$request['count'] = count(self::$request);
+			self::$request['dumps'] = array();
+			self::$request['logs'] = array();
+			for ($i = 0; $i < self::$request['count']; ++$i) {
+				$path = explode(',', self::$request[$i]['path']);
 				if ($path[0] == 'dump') {
-					self::$message[$i]['varPath'] = array_slice($path, 2);
+					self::$request[$i]['varPath'] = array_slice($path, 2);
 					if (!self::prepareVarPath($i)) {
 						echo '<pre class="nd-error"> Chyba pozadavku na zmenu v dumpu ' . $path[1] . ': '
-								. self::$message[$i]['error'] . ' </pre>';
+								. self::$request[$i]['error'] . ' </pre>';
 						continue;
 					}
-					if (isset(self::$message['dumps'][$path[1]])) self::$message['dumps'][$path[1]][] = $i;
-					else self::$message['dumps'][$path[1]] = array($i);
+					if (isset(self::$request['dumps'][$path[1]])) self::$request['dumps'][$path[1]][] = $i;
+					else self::$request['dumps'][$path[1]] = array($i);
 				} elseif ($path[0] == 'log') {
-					self::$message[$i]['varPath'] = array_slice($path, 3);
+					self::$request[$i]['varPath'] = array_slice($path, 3);
 					if (!self::prepareVarPath($i)) {
 						echo '<pre class="nd-error"> Chyba pozadavku na zmenu v logu ' . $path[1] . '(' . $path[2] . '): '
-								. self::$message[$i]['error'] . ' </pre>';
+								. self::$request[$i]['error'] . ' </pre>';
 						continue;
 					}
-					if (isset(self::$message['logs'][$path[1]])) {
-						if (isset(self::$message['logs'][$path[1]][$path[2]])) {
-							self::$message['logs'][$path[1]][$path[2]][] = $i;
-						} else self::$message['logs'][$path[1]][$path[2]] = array($i);
-					} else self::$message['logs'][$path[1]] = array($path[2] => array($i));
+					if (isset(self::$request['logs'][$path[1]])) {
+						if (isset(self::$request['logs'][$path[1]][$path[2]])) {
+							self::$request['logs'][$path[1]][$path[2]][] = $i;
+						} else self::$request['logs'][$path[1]][$path[2]] = array($i);
+					} else self::$request['logs'][$path[1]] = array($path[2] => array($i));
 				}
 			}
 			unset($_GET['tdrequest']);
@@ -202,11 +202,11 @@ class TimeDebug {
 		readfile(__DIR__ . '/jak.packer.js');
 		echo "\n";
 		readfile(__DIR__ . '/timedebug.js');
-		echo "\nTimeDebug.local = " . (self::$local ? 'true' : 'false') . ";\n"
-				. "TimeDebug.indexes = ". json_encode(self::$timeDebug) . ";\n"
-				. "TimeDebug.message = ". json_encode(self::$message) . ";\n"
-				. "TimeDebug.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
-				. "TimeDebug.init(1);\n</script>\n";
+		echo "\ntd.local = " . (self::$local ? 'true' : 'false') . ";\n"
+				. "td.indexes = ". json_encode(self::$timeDebug) . ";\n"
+				. "td.response = ". json_encode(self::getResponse()) . ";\n"
+				. "td.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
+				. "td.init(1);\n</script>\n";
 	}
 
 
@@ -239,7 +239,7 @@ class TimeDebug {
 			$logId = 'l' . self::$idPrefix . '_' . self::incCounter('logs');
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
-				if (isset(self::$message['logs'][$logId][$i])) self::updateVar($curObj, self::$message['logs'][$logId][$i]);
+				if (isset(self::$request['logs'][$logId][$i])) self::updateVar($curObj, self::$request['logs'][$logId][$i]);
 				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
 			}
 			$dump = implode('<hr>', $dumpVars);
@@ -280,7 +280,7 @@ class TimeDebug {
 		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
 			$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
 
-			if (isset(self::$message['dumps'][$dumpId])) self::updateVar($var, self::$message['dumps'][$dumpId]);
+			if (isset(self::$request['dumps'][$dumpId])) self::updateVar($var, self::$request['dumps'][$dumpId]);
 
 			echo self::toHtml($var, array(self::LOCATION => TRUE, self::LOCATION_LINK => LOCAL, self::DUMP_ID => $dumpId));
 			echo '<hr>';
@@ -291,7 +291,7 @@ class TimeDebug {
 
 	private static function updateVar(&$var = NULL, array &$changes = NULL) {
 		for ($i = 0, $j = count($changes); $i < $j; ++$i) {
-			$change = &self::$message[$changes[$i]];
+			$change = &self::$request[$changes[$i]];
 			$change['resId'] = 'tdchres_' . ++self::$varCounter;
 			try {
 				self::applyChange($var, $change['varPath'], $change['value'], $change['resId']);
@@ -355,6 +355,18 @@ class TimeDebug {
 			}
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.');
 
+	}
+
+
+	public static function getResponse() {
+		$response = array();
+		if (empty(self::$request['count'])) return $response;
+
+		for ($i = 0; $i < self::$request['count']; ++$i) {
+			$change = self::$request[$i];
+			$response[] = isset($change['res']) ? $change : array('path' => $change['path'], 'value' => $change['value'], 'res' => 0);
+		}
+		return $response;
 	}
 
 

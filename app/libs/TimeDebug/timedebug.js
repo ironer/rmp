@@ -1,11 +1,11 @@
 /**
  * Copyright (c) 2013 Stefan Fiedler
- * Object for TimeDebug GUI
+ * Object for td GUI
  * @author: Stefan Fiedler
  */
 
-// TODO: on-line podstrceni hodnoty pri logovani (jen logovane objekty v td)
-
+// TODO: oprava jsonu co je jen \w
+// TODO: nacist response
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -14,63 +14,65 @@
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
 // TODO: vytvorit unit testy
 // TODO: ulozit serii automatickych otevreni TimeDebugu
+// TODO: pridat do JAKu nove Query z Masteru z Gitu
 
-var TimeDebug = {};
+var td = {};
 
-TimeDebug.local = false;
+td.local = false;
 
-TimeDebug.logView = JAK.gel('logView');
-TimeDebug.logWrapper = TimeDebug.logView.parentNode;
-TimeDebug.logContainer = TimeDebug.logWrapper.parentNode;
-TimeDebug.logRows = [];
-TimeDebug.logRowsChosen = [];
-TimeDebug.logRowActive = null;
-TimeDebug.logRowActiveId = 0;
-TimeDebug.dumps = [];
-TimeDebug.indexes = [];
-TimeDebug.message = null;
+td.logView = JAK.gel('logView');
+td.logWrapper = td.logView.parentNode;
+td.logContainer = td.logWrapper.parentNode;
+td.logRows = [];
+td.logRowsChosen = [];
+td.logRowActive = null;
+td.logRowActiveId = 0;
+td.dumps = [];
+td.indexes = [];
+td.response = null;
 
-TimeDebug.tdContainer = JAK.mel('div', {id:'tdContainer'});
-TimeDebug.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
-TimeDebug.tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
-TimeDebug.tdView = JAK.mel('pre', {id:'tdView'});
-TimeDebug.tdView.activeChilds = [];
-TimeDebug.tdListeners = [];
-TimeDebug.tdFullWidth = false;
-TimeDebug.tdWidth = 400;
+td.tdContainer = JAK.mel('div', {id:'tdContainer'});
+td.tdOuterWrapper = JAK.mel('div', {id:'tdOuterWrapper'});
+td.tdInnerWrapper = JAK.mel('div', {id:'tdInnerWrapper'});
+td.tdView = JAK.mel('pre', {id:'tdView'});
+td.tdView.activeChilds = [];
+td.tdListeners = [];
+td.tdFullWidth = false;
+td.tdWidth = 400;
 
-TimeDebug.help = JAK.cel('div', 'nd-help');
-TimeDebug.helpSpaceX = 0;
-TimeDebug.helpHtml = '';
+td.help = JAK.cel('div', 'nd-help');
+td.helpSpaceX = 0;
+td.helpHtml = '';
 
-TimeDebug.visibleTitles = [];
-TimeDebug.titleActive = null;
-TimeDebug.titleHideTimeout = null;
-TimeDebug.viewSize = JAK.DOM.getDocSize();
-TimeDebug.spaceX = 0;
-TimeDebug.spaceY = 0;
-TimeDebug.zIndexMax = 100;
+td.visibleTitles = [];
+td.titleActive = null;
+td.titleHideTimeout = null;
+td.viewSize = JAK.DOM.getDocSize();
+td.spaceX = 0;
+td.spaceY = 0;
+td.zIndexMax = 100;
 
-TimeDebug.actionData = { element: null, listeners: [] };
+td.actionData = { element: null, listeners: [] };
 
-TimeDebug.tdConsole = null;
-TimeDebug.consoleConfig = {'x': 600, 'y': 340};
-TimeDebug.textareaTimeout = null;
-TimeDebug.consoleHoverTimeout = null;
-TimeDebug.changes = [];
-TimeDebug.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
-TimeDebug.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'showLogRow': true});
-TimeDebug.hoveredChange = null;
+td.tdConsole = null;
+td.consoleConfig = {'x': 600, 'y': 340};
+td.textareaTimeout = null;
+td.consoleHoverTimeout = null;
+td.changes = [];
+td.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
+td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'showLogRow': true});
+td.hoveredChange = null;
 
-TimeDebug.tdHashEl = null;
-TimeDebug.tdAnchor = JAK.mel('a', {'name': 'tdanchor'});
-TimeDebug.logAnchor = JAK.mel('a', {'name': 'loganchor', 'id': 'logAnchor'});
-TimeDebug.setLocHashTimeout = null;
-TimeDebug.locationHashes = [];
+td.tdHashEl = null;
+td.tdAnchor = JAK.mel('a', {'name': 'tdanchor'});
+td.logAnchor = JAK.mel('a', {'name': 'loganchor', 'id': 'logAnchor'});
+td.setLocHashTimeout = null;
+td.locationHashes = [];
 
-TimeDebug.encodeChars = {'&': '&amp;', '<': '&lt;', '>': '&gt;'};
+td.encodeChars = {'&': '&amp;', '<': '&lt;', '>': '&gt;'};
 
-TimeDebug.jsonReplaces = {
+td.jsonReplaces = {
+	"string": [[/^(\w*)$/, '"$1"']],
 	"dblquotes": [[/"/g, '\\"']],
 	"quotes": [[/'/g, '"']],
 	"commas": ['fixCommas'],
@@ -80,7 +82,8 @@ TimeDebug.jsonReplaces = {
 	"constants": [[/\b(true|false|null)\b/gi, function(w) { return w.toLowerCase(); }]]
 };
 
-TimeDebug.jsonRepairs = [
+td.jsonRepairs = [
+	["string"],
 	["commas", "numbers"],
 	["dblquotes", "quotes", "commas", "numbers"],
 	["keys"],
@@ -95,54 +98,65 @@ TimeDebug.jsonRepairs = [
 	["quotes", "objects", "keys", "commas", "constants", "numbers"]
 ];
 
-TimeDebug.keyChanges = {
+td.keyChanges = {
 	"'": ["'", "'"], '"': ['"', '"'],
 	'[': ['[', ']'], ']': ['[', ']'],
 	'(': ['(', ')'], ')': ['(', ')'],
 	'{': ['{', '}'], '}': ['{', '}']
 };
 
-TimeDebug.consoleSelects = {"]": "[", "}": "{"};
+td.consoleSelects = {"]": "[", "}": "{"};
 
-TimeDebug.init = function(logId) {
-	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (TimeDebug.local ? ' nd-local' : ''));
-	document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
-	TimeDebug.viewSize = JAK.DOM.getDocSize();
+td.init = function(logId) {
+	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (td.local ? ' nd-local' : ''));
+	document.body.style.marginLeft = td.tdContainer.style.width = td.help.style.left = td.tdWidth + 'px';
+	td.viewSize = JAK.DOM.getDocSize();
 
-	var links;
-	var logNodes = TimeDebug.logView.childNodes;
+	var elements, tdIndex;
+	var logNodes = td.logView.childNodes;
 
 	for (var i = 0, j = logNodes.length, k; i < j; ++i) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
-				logNodes[i].onmousedown = TimeDebug.changeVar;
-				TimeDebug.setTitles(logNodes[i]);
+				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
+				logNodes[i].onmousedown = td.changeVar;
+				td.setTitles(logNodes[i]);
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-log')) {
-				TimeDebug.logRows.push(logNodes[i]);
-				logNodes[i].logId = TimeDebug.logRows.length;
-				logNodes[i].onclick = TimeDebug.logClick;
-				TimeDebug.setTitles(logNodes[i]);
-				links = logNodes[i].getElementsByTagName('a');
-				for (k = links.length; k-- > 0;) links[k].onclick = JAK.Events.stopEvent;
+				td.logRows.push(logNodes[i]);
+				logNodes[i].logId = td.logRows.length;
+				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
+				logNodes[i].onclick = td.logClick;
+				td.setTitles(logNodes[i]);
+				elements = logNodes[i].getElementsByTagName('a');
+				for (k = elements.length; k-- > 0;) elements[k].onclick = JAK.Events.stopEvent;
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-view-dump')) {
-				TimeDebug.dumps.push(logNodes[i]);
+				td.dumps.push(logNodes[i]);
+				logNodes[i].objects = [];
+				elements = logNodes[i].childNodes;
+				for (k = elements.length; k-- > 0;) {
+					if (elements[k].nodeType == 1 && (tdIndex = elements[k].getAttribute('data-tdindex')) !== false) {
+						tdIndex = parseInt(tdIndex);
+						logNodes[i].objects[tdIndex] = elements[k];
+						elements[k].tdIndex = tdIndex;
+					}
+				}
 			}
 		}
 	}
 
-	TimeDebug.logRowsChosen.length = TimeDebug.logRows.length;
+	td.logRowsChosen.length = td.logRows.length;
 
-	TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
-	TimeDebug.tdOuterWrapper.appendChild(TimeDebug.tdInnerWrapper);
-	TimeDebug.tdContainer.appendChild(TimeDebug.tdOuterWrapper);
-	document.body.insertBefore(TimeDebug.tdContainer, document.body.childNodes[0]);
+	td.tdInnerWrapper.appendChild(td.tdView);
+	td.tdOuterWrapper.appendChild(td.tdInnerWrapper);
+	td.tdContainer.appendChild(td.tdOuterWrapper);
+	document.body.insertBefore(td.tdContainer, document.body.childNodes[0]);
 
-	TimeDebug.help.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
+	td.help.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
 			+ '<hr><div class="nd-menu">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
-			+ (TimeDebug.local ? '<span id="tdMenuSend"><b>odeslat</b></span>&nbsp;&nbsp;&nbsp;&nbsp;' : '')
-			+ '<span onclick="TimeDebug.restore()">obnovit</span>&nbsp;&nbsp;&nbsp;&nbsp;'
+			+ (td.local ? '<span id="tdMenuSend"><b>odeslat</b></span>&nbsp;&nbsp;&nbsp;&nbsp;' : '')
+			+ '<span onclick="td.restore()">obnovit</span>&nbsp;&nbsp;&nbsp;&nbsp;'
 			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title"><strong class="nd-inner">'
-			+ TimeDebug.helpHtml
+			+ td.helpHtml
 			+ '</strong></span>napoveda</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>export</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>import</span>'
@@ -151,54 +165,81 @@ TimeDebug.init = function(logId) {
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
-	document.body.appendChild(TimeDebug.help);
-	TimeDebug.help.onmousedown = TimeDebug.logAction;
-	TimeDebug.setTitles(TimeDebug.help);
-	TimeDebug.helpSpaceX = TimeDebug.help.clientWidth + JAK.DOM.scrollbarWidth();
-	JAK.gel('menuTitle').appendChild(TimeDebug.tdChangeList);
-	if (TimeDebug.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', TimeDebug, 'sendChanges');
+	document.body.appendChild(td.help);
+	td.help.onmousedown = td.logAction;
+	td.setTitles(td.help);
+	td.helpSpaceX = td.help.clientWidth + JAK.DOM.scrollbarWidth();
+	JAK.gel('menuTitle').appendChild(td.tdChangeList);
+	if (td.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', td, 'sendChanges');
 
-	TimeDebug.showDump(logId);
-	window.onresize = TimeDebug.windowResize;
-	document.onkeydown = TimeDebug.readKeyDown;
-	document.body.oncontextmenu = TimeDebug.tdFalse;
-	TimeDebug.tdInnerWrapper.onmousedown = TimeDebug.changeVar;
-	if (window.addEventListener) window.addEventListener('DOMMouseScroll', TimeDebug.mouseWheel, false);
-	window.onmousewheel = document.onmousewheel = TimeDebug.mouseWheel;
+	td.showDump(logId);
+	window.onresize = td.windowResize;
+	document.onkeydown = td.readKeyDown;
+	document.body.oncontextmenu = td.tdFalse;
+	td.tdInnerWrapper.onmousedown = td.changeVar;
+	if (window.addEventListener) window.addEventListener('DOMMouseScroll', td.mouseWheel, false);
+	window.onmousewheel = document.onmousewheel = td.mouseWheel;
 
-	if (TimeDebug.message) TimeDebug.readMessage();
+	if (td.response) td.loadChanges(td.response);
 };
 
-TimeDebug.readMessage = function() {
-	var change;
-	for (var i = 0; i < TimeDebug.message.count; i++) {
-		change = TimeDebug.message[i];
-		TimeDebug.findVarEl(change);
+td.loadChanges = function(changes) {
+	for (var i = 0, j = changes.length; i < j; ++i) {
+		var path = changes[i].path.split(','), log, dump, container, varEl;
+		fire(path);
+
+		if (path[0] === 'log') {
+			log = JAK.gel(path[1]);
+			dump = td.dumps[td.indexes[log.logId - 1]];
+			container = dump.objects[parseInt(path[2])];
+			fire(container);
+			varEl = td.findVarEl(container, path.slice(3));
+			fire(varEl);
+			if (varEl) {
+
+			}
+		} else {
+			container = JAK.gel(path[1]);
+			fire(container);
+			varEl = td.findVarEl(container, path.slice(2));
+			fire(varEl);
+		}
 	}
 };
 
-TimeDebug.findVarEl = function(change) {
-	var path = change.path.split(',');
-	fire(path);
-	if (path[0] === 'log') {
-		var log = JAK.gel(path[1]);
-		var dump = TimeDebug.dumps[TimeDebug.indexes[log.logId - 1]];
+td.findVarEl = function(el, path) {
+	var i = 0, j;
+	if (path[0][0] === '#' || path[0][0] === '*') path[0] = path[0].slice(1);
+	var type = parseInt(path[0][0]);
 
-		fire(dump);
+	if (type === 9) return JAK.DOM.getElementsByClass('nd-top', el, 'span');
+	else if (type >= 7) {
+		for (j = el.childNodes.length; i < j; ++i) {
+			if (el.childNodes[i].nodeType == 1 && el.childNodes[i].className === 'nd-key' && el.childNodes[i].innerHTML === path[0].slice(1)) {
+				return el.childNodes[i];
+			}
+		}
+	} else {
+		for (j = el.childNodes.length; i < j; ++i) {
+			if (el.childNodes[i].nodeType == 1 && el.childNodes[i].getAttribute('data-pk') === path[0]) {
+				return td.findVarEl(el.childNodes[i], path.slice(1));
+			}
+		}
 	}
+	return false;
 };
 
-TimeDebug.mouseWheel = function(e) {
+td.mouseWheel = function(e) {
 	e = e || window.event;
 	var el = JAK.Events.getTarget(e);
 	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
 
-	if (TimeDebug.titleActive === null && !JAK.DOM.hasClass(el, 'nd-titled')) return true;
+	if (td.titleActive === null && !JAK.DOM.hasClass(el, 'nd-titled')) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
 
-	el = TimeDebug.titleActive || el.tdTitle;
+	el = td.titleActive || el.tdTitle;
 
 	var delta = 0;
 
@@ -209,10 +250,10 @@ TimeDebug.mouseWheel = function(e) {
 	return false;
 };
 
-TimeDebug.changeVar = function(e) {
+td.changeVar = function(e) {
 	e = e || window.event;
 
-	if (!TimeDebug.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) return true;
+	if (!td.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) return true;
 
 	var el = JAK.Events.getTarget(e);
 	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
@@ -221,19 +262,19 @@ TimeDebug.changeVar = function(e) {
 	JAK.Events.cancelDef(e);
 
 	if (JAK.DOM.hasClass(el, 'nd-key')) {
-		TimeDebug.consoleOpen(el, TimeDebug.saveVarChange);
+		td.consoleOpen(el, td.saveVarChange);
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
-		TimeDebug.hideTitle(TimeDebug.titleActive);
-		TimeDebug.consoleOpen(el, TimeDebug.saveVarChange);
+		td.hideTitle(td.titleActive);
+		td.consoleOpen(el, td.saveVarChange);
 	}
 
 	return false;
 };
 
-TimeDebug.changeAction = function(e) {
+td.changeAction = function(e) {
 	e = e || window.event;
 
-	if (!TimeDebug.local || e.altKey || e.ctrlKey || e.metaKey) return true;
+	if (!td.local || e.altKey || e.ctrlKey || e.metaKey) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
@@ -245,56 +286,56 @@ TimeDebug.changeAction = function(e) {
 		if (el.id === 'tdDeleteChange') {
 			this.deleteMe = true;
 
-			TimeDebug.updateChangeList();
-			TimeDebug.tdChangeList.removeChild(this);
+			td.updateChangeList();
+			td.tdChangeList.removeChild(this);
 			return false;
 		}
 
-		if (this.logRow) TimeDebug.showLog(true, this.logRow);
-		TimeDebug.consoleOpen(this.varEl, TimeDebug.saveVarChange);
+		if (this.logRow) td.showLog(true, this.logRow);
+		td.consoleOpen(this.varEl, td.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
 		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
-			TimeDebug.checkDeleteChange();
+			td.checkDeleteChange();
 			return false;
 		}
 		if (e.shiftKey) {
 			if (this.valid) {
 				if (!this.formated) {
-					var formated = TimeDebug.formatJson(this.data.value);
+					var formated = td.formatJson(this.data.value);
 					if (formated === false) return this.formated = false;
 					this.varEl.title = this.title = formated;
 					this.formated = true;
-					TimeDebug.updateChangeList(this);
+					td.updateChangeList(this);
 				}
 			} else {
 				this.varEl.title = this.title = JSON.stringify(this.data.value);
 				this.valid = true;
-				this.formated = (this.title === TimeDebug.formatJson(this.data.value));
-				TimeDebug.updateChangeList(this);
+				this.formated = (this.title === td.formatJson(this.data.value));
+				td.updateChangeList(this);
 			}
 			return false;
 		}
 		if (this.logRow) {
-			TimeDebug.showLog(true, this.logRow);
+			td.showLog(true, this.logRow);
 
-			if (TimeDebug.tdFullWidth) {
-				hashes.push([TimeDebug.tdInnerWrapper, 'tdanchor', TimeDebug.tdContainer, 150]);
+			if (td.tdFullWidth) {
+				hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 150]);
 			} else {
-				hashes.push([TimeDebug.tdInnerWrapper, 'tdanchor', TimeDebug.tdContainer, 50]);
-				hashes.push([TimeDebug.logWrapper, 'loganchor', TimeDebug.logContainer, 50]);
+				hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 50]);
+				hashes.push([td.logWrapper, 'loganchor', td.logContainer, 50]);
 			}
 		} else {
-			hashes.push([TimeDebug.logWrapper, 'tdanchor', TimeDebug.logContainer, 50]);
+			hashes.push([td.logWrapper, 'tdanchor', td.logContainer, 50]);
 		}
 
-		TimeDebug.setLocationHashes(true, hashes);
+		td.setLocationHashes(true, hashes);
 	} else return true;
 
 	return false;
 };
 
-TimeDebug.formatJson = function(json) {
+td.formatJson = function(json) {
 	var text = JSON.stringify(json);
 	var escaped = false, retVal = '';
 
@@ -309,14 +350,14 @@ TimeDebug.formatJson = function(json) {
 		else if (!quotes['"']) {
 			if (nested.hasOwnProperty(text[i])) {
 				++nested[text[i]];
-				retVal += text[i] + '\n' + TimeDebug.padJson(nested);
+				retVal += text[i] + '\n' + td.padJson(nested);
 				continue;
 			} else if (ends.hasOwnProperty(text[i])) {
 				if (--nested[ends[text[i]]] < 0) return false;
-				retVal += '\n' + TimeDebug.padJson(nested) + text[i];
+				retVal += '\n' + td.padJson(nested) + text[i];
 				continue;
 			} else if (text[i] === ',') {
-				retVal += text[i] + '\n' + TimeDebug.padJson(nested);
+				retVal += text[i] + '\n' + td.padJson(nested);
 				continue;
 			} else if (text[i] === ':') {
 				retVal += text[i] + ' ';
@@ -330,7 +371,7 @@ TimeDebug.formatJson = function(json) {
 	return retVal;
 };
 
-TimeDebug.padJson = function(nested) {
+td.padJson = function(nested) {
 	var retVal = '';
 	for (var i = nested['['] + nested['{']; i-- > 0;) {
 		retVal += '    ';
@@ -338,28 +379,28 @@ TimeDebug.padJson = function(nested) {
 	return retVal;
 };
 
-TimeDebug.setLocationHashes = function(e, hashes) {
+td.setLocationHashes = function(e, hashes) {
 	var i;
-	if (TimeDebug.setLocHashTimeout) {
-		window.clearTimeout(TimeDebug.setLocHashTimeout);
-		TimeDebug.setLocHashTimeout = null;
+	if (td.setLocHashTimeout) {
+		window.clearTimeout(td.setLocHashTimeout);
+		td.setLocHashTimeout = null;
 	}
 	if (e === true) {
-		TimeDebug.locationHashes = hashes;
-		TimeDebug.setLocHashTimeout = window.setTimeout(TimeDebug.setLocationHashes, 1);
-	} else if (i = (hashes = TimeDebug.locationHashes).length) {
+		td.locationHashes = hashes;
+		td.setLocHashTimeout = window.setTimeout(td.setLocationHashes, 1);
+	} else if (i = (hashes = td.locationHashes).length) {
 		while (i-- > 0) {
 			hashes[i][0].style.height = (2 * hashes[i][0].clientHeight) + 'px';
 			window.location.hash = hashes[i][1];
 			hashes[i][2].scrollTop -= hashes[i][3];
 			hashes[i][0].removeAttribute('style');
 		}
-		TimeDebug.locationHashes.length = 0;
+		td.locationHashes.length = 0;
 		window.location.hash = null;
 	}
 };
 
-TimeDebug.printPath = function(path) {
+td.printPath = function(path) {
 	path = (path || '').split(',');
 	var i, j = path.length, k, close = '', key, retKey, retVal = '', elStart = '', elEnd = '';
 
@@ -403,12 +444,12 @@ TimeDebug.printPath = function(path) {
 	return retVal;
 };
 
-TimeDebug.updateChangeList = function(el) {
+td.updateChangeList = function(el) {
 	var change;
-	var i = TimeDebug.changes.length, j;
+	var i = td.changes.length, j;
 	if (el) el.lastChange = true;
 
-	TimeDebug.changes.sort(function(b,a) {
+	td.changes.sort(function(b,a) {
 		return (parseFloat(a.runtime) - parseFloat(b.runtime)) ||
 				(a.varEl.parentPrefix !== b.varEl.parentPrefix ? a.varEl.parentPrefix > b.varEl.parentPrefix :
 						(a.varEl.parentIndex !== b.varEl.parentIndex ? a.varEl.parentIndex > b.varEl.parentIndex :
@@ -417,21 +458,21 @@ TimeDebug.updateChangeList = function(el) {
 	});
 
 	while (i-- > 0) {
-		change = TimeDebug.changes[i];
+		change = td.changes[i];
 		if (change.deleteMe === true) {
 			change.style.display = 'none';
 			if (change.logRow && change.logRow.varChanges && (j = change.logRow.varChanges.indexOf(change.varEl)) != -1) {
 				change.logRow.varChanges.splice(j, 1);
 			}
 			if (change.listeners.length) JAK.Events.removeListeners(change.listeners);
-			TimeDebug.deactivateChange(true, change.varEl);
+			td.deactivateChange(true, change.varEl);
 			if (change.varEl.hideEl) change.varEl.hideEl.removeAttribute('style');
 			change.varEl.parentNode.removeChild(change.varEl);
-			TimeDebug.changes.splice(i, 1);
+			td.changes.splice(i, 1);
 			continue;
 		}
 
-		change.innerHTML = '[' + change.runtime + '] ' + TimeDebug.printPath(change.data.path) + ' <span class="nd-'
+		change.innerHTML = '[' + change.runtime + '] ' + td.printPath(change.data.path) + ' <span class="nd-'
 				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
 				+ JSON.stringify(change.data.value) + '</span>';
 
@@ -440,11 +481,11 @@ TimeDebug.updateChangeList = function(el) {
 			change.lastChange = false;
 		} else if (el) change.removeAttribute('id');
 		change.title = change.varEl.title;
-		TimeDebug.tdChangeList.appendChild(change);
+		td.tdChangeList.appendChild(change);
 	}
-	TimeDebug.changes.reverse();
+	td.changes.reverse();
 
-	el = TimeDebug.tdChangeList.parentNode;
+	el = td.tdChangeList.parentNode;
 
 	if (typeof(el.menuWidth) == 'undefined' && el.oriWidth) {
 		el.menuWidth = el.oriWidth;
@@ -452,23 +493,23 @@ TimeDebug.updateChangeList = function(el) {
 	}
 	if (el.oriWidth && el.style.display != 'none') {
 		el.style.width = 'auto';
-		el.oriWidth = Math.max(el.menuWidth, TimeDebug.tdChangeList.clientWidth);
-		el.oriHeight = el.menuHeight + (el.changesHeight = TimeDebug.tdChangeList.clientHeight);
-		TimeDebug.titleAutosize(el);
+		el.oriWidth = Math.max(el.menuWidth, td.tdChangeList.clientWidth);
+		el.oriHeight = el.menuHeight + (el.changesHeight = td.tdChangeList.clientHeight);
+		td.titleAutosize(el);
 	}
 };
 
-TimeDebug.parseJson = function(text) {
-	var i = 0, j = TimeDebug.jsonRepairs.length, retObj = TimeDebug.testJson(text);
+td.parseJson = function(text) {
+	var i = 0, j = td.jsonRepairs.length, retObj = td.testJson(text);
 	if (retObj.status && (retObj.valid = true)) return retObj;
 
 	for (;i < j; ++i) {
-		if ((retObj = TimeDebug.testJson(text, TimeDebug.jsonRepairs[i])).status) return (retObj.valid = false) || retObj;
+		if ((retObj = td.testJson(text, td.jsonRepairs[i])).status) return (retObj.valid = false) || retObj;
 	}
 	return {'status': false};
 };
 
-TimeDebug.testJson = function(text, tests) {
+td.testJson = function(text, tests) {
 	tests = tests || [];
 	var i, j = tests.length, k, l, json, test;
 
@@ -480,10 +521,10 @@ TimeDebug.testJson = function(text, tests) {
 	}
 
 	for (i = 0; i < j; ++i) {
-		for (k = 0, l = (test = TimeDebug.jsonReplaces[tests[i]]).length; k < l; ++k) {
-			if (test[k] === 'fixCommas') text = TimeDebug.jsonFixCommas(text);
-			else if (test[k] === 'fixNumbers') text = TimeDebug.jsonFixNumbers(text);
-			else if (test[k] === 'fixObjects') text = TimeDebug.jsonFixObjects(text);
+		for (k = 0, l = (test = td.jsonReplaces[tests[i]]).length; k < l; ++k) {
+			if (test[k] === 'fixCommas') text = td.jsonFixCommas(text);
+			else if (test[k] === 'fixNumbers') text = td.jsonFixNumbers(text);
+			else if (test[k] === 'fixObjects') text = td.jsonFixObjects(text);
 			else text = text.replace(test[k][0], test[k][1]);
 		}
 		try {
@@ -495,7 +536,7 @@ TimeDebug.testJson = function(text, tests) {
 	return {'status': false};
 };
 
-TimeDebug.jsonFixCommas = function(text) {
+td.jsonFixCommas = function(text) {
 	var retVal = '', escaped = false, nested = false;
 
 	for (var i = 0, j = text.length; i < j; ++i) {
@@ -509,7 +550,7 @@ TimeDebug.jsonFixCommas = function(text) {
 	return nested ? text : retVal;
 };
 
-TimeDebug.jsonFixNumbers = function(text) {
+td.jsonFixNumbers = function(text) {
 	var retVal = '', escaped = false, nested = false, replace;
 
 	for (var i = 0, j = text.length; i < j;) {
@@ -528,7 +569,7 @@ TimeDebug.jsonFixNumbers = function(text) {
 	return nested ? text : retVal;
 };
 
-TimeDebug.jsonFixObjects = function(text) {
+td.jsonFixObjects = function(text) {
 	var retVal = '', nested = 0, arrayLevels = [], escaped = false, ch;
 	var quotes = {"'": false, '"': false};
 
@@ -538,7 +579,7 @@ TimeDebug.jsonFixObjects = function(text) {
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
 		else if (!quotes["'"] && !quotes['"']) {
-			if (text[i] === '[' && (arrayLevels[++nested] = (TimeDebug.findNearestChar(text, ':', i + 1) !== false))) ch = '{';
+			if (text[i] === '[' && (arrayLevels[++nested] = (td.findNearestChar(text, ':', i + 1) !== false))) ch = '{';
 			else if (text[i] === ']' && arrayLevels[nested--]) ch = '}';
 		}
 		retVal += ch;
@@ -547,7 +588,7 @@ TimeDebug.jsonFixObjects = function(text) {
 	return nested ? text : retVal;
 };
 
-TimeDebug.sumNested = function(nested) {
+td.sumNested = function(nested) {
 	nested = nested || {};
 	var retVal = 0;
 	for (var i in nested) {
@@ -556,7 +597,7 @@ TimeDebug.sumNested = function(nested) {
 	return retVal;
 };
 
-TimeDebug.noQuotes = function(quotes) {
+td.noQuotes = function(quotes) {
 	var retVal = false;
 	for (var i in quotes) {
 		if (quotes.hasOwnProperty(i)) retVal = retVal || quotes[i];
@@ -565,7 +606,7 @@ TimeDebug.noQuotes = function(quotes) {
 	return !retVal;
 };
 
-TimeDebug.findNearestChar = function(text, chars, index, rev, quotes) {
+td.findNearestChar = function(text, chars, index, rev, quotes) {
 	index = index || 0;
 	rev = rev || false;
 	quotes = quotes || {"'": false, '"': false};
@@ -579,7 +620,7 @@ TimeDebug.findNearestChar = function(text, chars, index, rev, quotes) {
 	if (rev) {
 		for (i = 0, j = text.length; i < j; i++) {
 			if (i === index) {
-				var indexLevel = TimeDebug.sumNested(nested);
+				var indexLevel = td.sumNested(nested);
 				for (k = found.length; k-- > 0;) {
 					if (found[k].level === indexLevel) return found[k].index;
 					else if (found[k].level < indexLevel) return false;
@@ -588,10 +629,10 @@ TimeDebug.findNearestChar = function(text, chars, index, rev, quotes) {
 			} else if (escaped) escaped = false;
 			else if (text[i] === '\\') escaped = true;
 			else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
-			else if (i < index && TimeDebug.noQuotes(quotes)) {
+			else if (i < index && td.noQuotes(quotes)) {
 				if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
 				else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
-				if (chars.indexOf(text[i]) !== -1) found.push({'index': i, 'level': TimeDebug.sumNested(nested)});
+				if (chars.indexOf(text[i]) !== -1) found.push({'index': i, 'level': td.sumNested(nested)});
 			}
 		}
 	} else {
@@ -599,8 +640,8 @@ TimeDebug.findNearestChar = function(text, chars, index, rev, quotes) {
 			if (escaped) escaped = false;
 			else if (text[i] === '\\') escaped = true;
 			else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
-			else if (i >= index && TimeDebug.noQuotes(quotes)) {
-				if (chars.indexOf(text[i]) !== -1 && !TimeDebug.sumNested(nested)) return i;
+			else if (i >= index && td.noQuotes(quotes)) {
+				if (chars.indexOf(text[i]) !== -1 && !td.sumNested(nested)) return i;
 				else if (nested.hasOwnProperty(text[i])) ++nested[text[i]];
 				else if (ends.hasOwnProperty(text[i]) && --nested[ends[text[i]]] < 0) return false;
 			}
@@ -610,32 +651,30 @@ TimeDebug.findNearestChar = function(text, chars, index, rev, quotes) {
 	return false;
 };
 
-TimeDebug.saveVarChange = function() {
-	var varEl = TimeDebug.tdConsole.parentNode;
+td.saveVarChange = function() {
+	var varEl = td.tdConsole.parentNode;
 	var el = varEl;
 	var key = parseInt(el.getAttribute('data-pk')) || 8;
 	var privateVar = !!(key % 2);
 
-	var areaVal = TimeDebug.tdConsole.area.value;
-	var i = -1, j, k, s = TimeDebug.parseJson(areaVal);
+	var areaVal = td.tdConsole.area.value;
+	var i = -1, s = td.parseJson(areaVal);
 	var value, valid, formated;
 
 	var revPath = [];
-	var runTime;
 	var change;
-	var logClone = false;
-	var changeEls;
+	var logRow = false;
 
 	if (s.status) {
 		value = s.json;
 		valid = s.valid;
-		formated = valid && (areaVal === TimeDebug.formatJson(value));
+		formated = valid && (areaVal === td.formatJson(value));
 	} else {
 		value = areaVal;
 		formated = valid = false;
 	}
 
-	TimeDebug.consoleClose();
+	td.consoleClose();
 
 	if (JAK.DOM.hasClass(el, 'nd-key')) {
 		revPath.push(key + el.innerHTML);
@@ -649,75 +688,79 @@ TimeDebug.saveVarChange = function() {
 		}
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
 			revPath.push(el.id, 'dump');
-			runTime = (el.attrRuntime || (el.attrRuntime = el.getAttribute('data-runtime')));
 		} else {
-			revPath.push(parseInt(el.getAttribute('data-tdindex')), TimeDebug.logRowActive.id, 'log');
-			runTime = (TimeDebug.logRowActive.attrRuntime || (TimeDebug.logRowActive.attrRuntime = TimeDebug.logRowActive.getAttribute('data-runtime')));
-			logClone = el.parentNode;
+			revPath.push(el.tdIndex, td.logRowActive.id, 'log');
+			logRow = td.logRowActive;
 		}
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
 		revPath.push(el.id, 'dump');
-		runTime = (el.attrRuntime || (el.attrRuntime = el.getAttribute('data-runtime')));
 	} else return false;
 
 	if (change = varEl.varListRow) {
 		if (change.data.value === value && change.valid === valid && change.formated === formated) return true;
 		change.data.value = value;
 	} else {
-		varEl = TimeDebug.duplicateNode(varEl);
-
-		change = JAK.mel('pre', {className:'nd-change-data'});
-		change.data = {'path': revPath.reverse().join(','), 'value': value};
-		TimeDebug.changes.push(change);
-
-		change.runtime = runTime;
-		change.varEl = varEl;
-		varEl.varListRow = change;
-		change.listeners = [
-			JAK.Events.addListener(varEl, 'mouseover', change, TimeDebug.hoverChange),
-			JAK.Events.addListener(varEl, 'mouseout', change, TimeDebug.unhoverChange),
-			JAK.Events.addListener(change, 'mouseover', change, TimeDebug.activateChange),
-			JAK.Events.addListener(change, 'mouseout', change, TimeDebug.deactivateChange),
-			JAK.Events.addListener(change, 'mousedown', change, TimeDebug.changeAction)
-		];
-
-		if (logClone) {
-			if (typeof(TimeDebug.logRowActive.varChanges) == 'undefined') TimeDebug.logRowActive.varChanges = [varEl];
-			else TimeDebug.logRowActive.varChanges.push(varEl);
-			change.logRow = TimeDebug.logRowActive;
-			change.listeners.push(JAK.Events.addListener(change, 'mouseover', change.logRow, TimeDebug.showLog));
-
-			JAK.DOM.addClass(varEl, 'nd-var-change');
-			changeEls = JAK.DOM.getElementsByClass('nd-var-change', logClone);
-			for (i = 0, j = changeEls.length, k = 0; i < j; ++i) {
-				if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
-					changeEls[i].parentPrefix = (key = change.logRow.id.split('_'))[0];
-					changeEls[i].parentIndex = key[1];
-					changeEls[i].changeIndex = k++;
-				}
-			}
-		} else {
-			JAK.DOM.addClass(varEl, 'nd-var-change');
-			changeEls = JAK.DOM.getElementsByClass('nd-var-change', el);
-			for (i = 0, j = changeEls.length; i < j; ++i) {
-				changeEls[i].parentPrefix = (key = el.id.split('_'))[0];
-				changeEls[i].parentIndex = key[1];
-				changeEls[i].changeIndex = i;
-			}
-		}
+		varEl = td.duplicateNode(varEl);
+		change = td.createChange(revPath.reverse().join(','), value, el, varEl, logRow);
 	}
 
 	change.valid = valid;
 	change.formated = formated;
 	varEl.title = areaVal;
 
-	TimeDebug.updateChangeList(change);
+	td.updateChangeList(change);
 	return true;
 };
 
-TimeDebug.duplicateNode = function(varEl) {
+td.createChange = function(path, value, container, varEl, logRow) {
+	logRow = logRow || false;
+
+	var change = JAK.mel('pre', {className:'nd-change-data'}), changeEls, i, j, k, key;
+	change.data = {'path': path, 'value': value};
+	td.changes.push(change);
+
+	change.runtime = logRow ? logRow.attrRuntime : container.attrRuntime;
+	change.varEl = varEl;
+	varEl.varListRow = change;
+	change.listeners = [
+		JAK.Events.addListener(varEl, 'mouseover', change, td.hoverChange),
+		JAK.Events.addListener(varEl, 'mouseout', change, td.unhoverChange),
+		JAK.Events.addListener(change, 'mouseover', change, td.activateChange),
+		JAK.Events.addListener(change, 'mouseout', change, td.deactivateChange),
+		JAK.Events.addListener(change, 'mousedown', change, td.changeAction)
+	];
+
+	if (logRow) {
+		if (typeof(logRow.varChanges) == 'undefined') logRow.varChanges = [varEl];
+		else logRow.varChanges.push(varEl);
+		change.logRow = logRow;
+		change.listeners.push(JAK.Events.addListener(change, 'mouseover', change.logRow, td.showLog));
+
+		JAK.DOM.addClass(varEl, 'nd-var-change');
+		changeEls = JAK.DOM.getElementsByClass('nd-var-change', container.parentNode);
+		for (i = 0, j = changeEls.length, k = 0; i < j; ++i) {
+			if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
+				changeEls[i].parentPrefix = (key = change.logRow.id.split('_'))[0];
+				changeEls[i].parentIndex = key[1];
+				changeEls[i].changeIndex = k++;
+			}
+		}
+	} else {
+		JAK.DOM.addClass(varEl, 'nd-var-change');
+		changeEls = JAK.DOM.getElementsByClass('nd-var-change', container);
+		for (i = 0, j = changeEls.length; i < j; ++i) {
+			changeEls[i].parentPrefix = (key = container.id.split('_'))[0];
+			changeEls[i].parentIndex = key[1];
+			changeEls[i].changeIndex = i;
+		}
+	}
+
+	return change;
+};
+
+td.duplicateNode = function(varEl) {
 	var newEl = varEl.cloneNode(true);
 	newEl.hideEl = varEl;
 	varEl.parentNode.insertBefore(newEl, varEl);
@@ -725,51 +768,51 @@ TimeDebug.duplicateNode = function(varEl) {
 	return newEl;
 };
 
-TimeDebug.checkDeleteChange = function() {
-	if (TimeDebug.deleteChange.showLogRow === true) TimeDebug.deleteChange.style.textDecoration = 'underline';
-	else TimeDebug.deleteChange.removeAttribute('style');
-	return TimeDebug.deleteChange;
+td.checkDeleteChange = function() {
+	if (td.deleteChange.showLogRow === true) td.deleteChange.style.textDecoration = 'underline';
+	else td.deleteChange.removeAttribute('style');
+	return td.deleteChange;
 };
 
-TimeDebug.activateChange = function(e, el) {
-	TimeDebug.hoveredChange = e === true ? el : this;
-	TimeDebug.tdHashEl = TimeDebug.hoveredChange.varEl;
-	TimeDebug.tdHashEl.parentNode.insertBefore(TimeDebug.tdAnchor, TimeDebug.tdHashEl);
-	JAK.DOM.addClass(TimeDebug.tdHashEl, 'nd-hovered');
+td.activateChange = function(e, el) {
+	td.hoveredChange = e === true ? el : this;
+	td.tdHashEl = td.hoveredChange.varEl;
+	td.tdHashEl.parentNode.insertBefore(td.tdAnchor, td.tdHashEl);
+	JAK.DOM.addClass(td.tdHashEl, 'nd-hovered');
 
-	TimeDebug.hoveredChange.appendChild(TimeDebug.checkDeleteChange());
+	td.hoveredChange.appendChild(td.checkDeleteChange());
 };
 
-TimeDebug.deactivateChange = function(e, el) {
+td.deactivateChange = function(e, el) {
 	el = e === true ? el : this.varEl;
 
-	if (el === TimeDebug.tdHashEl) TimeDebug.tdHashEl = null;
+	if (el === td.tdHashEl) td.tdHashEl = null;
 	JAK.DOM.removeClass(el, 'nd-hovered');
 
-	if (this === TimeDebug.hoveredChange) TimeDebug.hoveredChange = null;
+	if (this === td.hoveredChange) td.hoveredChange = null;
 };
 
-TimeDebug.hoverChange = function() {
+td.hoverChange = function() {
 	JAK.DOM.addClass(this, 'nd-hovered');
 };
 
-TimeDebug.unhoverChange = function() {
+td.unhoverChange = function() {
 	JAK.DOM.removeClass(this, 'nd-hovered');
 };
 
-TimeDebug.consoleHover = function(areaClass) {
-	if (TimeDebug.consoleHoverTimeout) {
-		window.clearTimeout(TimeDebug.consoleHoverTimeout);
-		TimeDebug.consoleHoverTimeout = null;
+td.consoleHover = function(areaClass) {
+	if (td.consoleHoverTimeout) {
+		window.clearTimeout(td.consoleHoverTimeout);
+		td.consoleHoverTimeout = null;
 	}
 
 	if (areaClass) {
-		TimeDebug.tdConsole.area.className = areaClass;
-		TimeDebug.consoleHoverTimeout = window.setTimeout(TimeDebug.consoleHover, 400);
-	} else TimeDebug.tdConsole.area.removeAttribute('class');
+		td.tdConsole.area.className = areaClass;
+		td.consoleHoverTimeout = window.setTimeout(td.consoleHover, 400);
+	} else td.tdConsole.area.removeAttribute('class');
 };
 
-TimeDebug.consoleAction = function(e) {
+td.consoleAction = function(e) {
 	e = e || window.event;
 
 	if (e.button === JAK.Browser.mouse.left && (e.ctrlKey || e.metaKey)) {
@@ -777,15 +820,15 @@ TimeDebug.consoleAction = function(e) {
 		JAK.Events.stopEvent(e);
 
 		if (e.shiftKey && !e.altKey) {
-			var parsed = TimeDebug.parseJson(this.value);
+			var parsed = td.parseJson(this.value);
 			if (parsed.status) {
-				var formated = TimeDebug.formatJson(parsed.json);
+				var formated = td.formatJson(parsed.json);
 				if (formated === this.value) return false;
-				if (!parsed.valid) TimeDebug.consoleHover('nd-area-parsed');
-				TimeDebug.areaWrite(this, TimeDebug.formatJson(parsed.json), this.selectionStart);
-			} else TimeDebug.consoleHover('nd-area-error');
+				if (!parsed.valid) td.consoleHover('nd-area-parsed');
+				td.areaWrite(this, td.formatJson(parsed.json), this.selectionStart);
+			} else td.consoleHover('nd-area-error');
 		} else if (!e.shiftKey && e.altKey) {
-			var cc = TimeDebug.consoleConfig;
+			var cc = td.consoleConfig;
 			if (typeof(cc.oriX) != 'undefined') {
 				cc.x = cc.oriX;
 				cc.y = cc.oriY;
@@ -797,210 +840,210 @@ TimeDebug.consoleAction = function(e) {
 	return true;
 };
 
-TimeDebug.consoleOpen = function(el, callback) {
-	TimeDebug.tdConsole = JAK.mel('span', {'id':'tdConsole'});
-	TimeDebug.tdConsole.mask = JAK.mel('span', {'id':'tdConsoleMask'});
+td.consoleOpen = function(el, callback) {
+	td.tdConsole = JAK.mel('span', {'id':'tdConsole'});
+	td.tdConsole.mask = JAK.mel('span', {'id':'tdConsoleMask'});
 
 	var attribs = {id:'tdConsoleArea'};
   if (el.title) {
-	  attribs.value = TimeDebug.tdConsole.mask.title = el.title;
+	  attribs.value = td.tdConsole.mask.title = el.title;
 	  el.title = null;
   }
 
-	TimeDebug.tdConsole.area = JAK.mel('textarea', attribs, {'width':TimeDebug.consoleConfig.x + 'px',
-		'height':TimeDebug.consoleConfig.y + 'px'});
-	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.mask);
-	TimeDebug.tdConsole.appendChild(TimeDebug.tdConsole.area);
-	el.appendChild(TimeDebug.tdConsole);
+	td.tdConsole.area = JAK.mel('textarea', attribs, {'width':td.consoleConfig.x + 'px',
+		'height':td.consoleConfig.y + 'px'});
+	td.tdConsole.appendChild(td.tdConsole.mask);
+	td.tdConsole.appendChild(td.tdConsole.area);
+	el.appendChild(td.tdConsole);
 
-	TimeDebug.tdConsole.listeners = [
-		JAK.Events.addListener(TimeDebug.tdConsole.area, 'keypress', TimeDebug.tdConsole.area, TimeDebug.readConsoleKeyPress),
-		JAK.Events.addListener(TimeDebug.tdConsole.area, 'mousedown', TimeDebug.tdConsole.area, TimeDebug.consoleAction),
-		JAK.Events.addListener(TimeDebug.tdConsole.mask, 'mousedown', TimeDebug.tdConsole.mask, TimeDebug.catchMask)
+	td.tdConsole.listeners = [
+		JAK.Events.addListener(td.tdConsole.area, 'keypress', td.tdConsole.area, td.readConsoleKeyPress),
+		JAK.Events.addListener(td.tdConsole.area, 'mousedown', td.tdConsole.area, td.consoleAction),
+		JAK.Events.addListener(td.tdConsole.mask, 'mousedown', td.tdConsole.mask, td.catchMask)
 	];
 
-	TimeDebug.tdConsole.callback = callback || TimeDebug.tdStop;
-	TimeDebug.textareaTimeout = window.setTimeout(TimeDebug.textareaFocus, 1);
+	td.tdConsole.callback = callback || td.tdStop;
+	td.textareaTimeout = window.setTimeout(td.textareaFocus, 1);
 };
 
-TimeDebug.textareaFocus = function() {
-	if (TimeDebug.textareaTimeout) {
-		window.clearTimeout(TimeDebug.textareaTimeout);
-		TimeDebug.textareaTimeout = null;
+td.textareaFocus = function() {
+	if (td.textareaTimeout) {
+		window.clearTimeout(td.textareaTimeout);
+		td.textareaTimeout = null;
 	}
-	TimeDebug.tdConsole.area.focus();
-	TimeDebug.tdConsole.area.select();
+	td.tdConsole.area.focus();
+	td.tdConsole.area.select();
 };
 
-TimeDebug.catchMask = function(e) {
+td.catchMask = function(e) {
 	e = e || window.event;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	if (e.button === JAK.Browser.mouse.right && this.title == TimeDebug.tdConsole.area.value) TimeDebug.consoleClose();
-	else TimeDebug.tdConsole.area.focus();
+	if (e.button === JAK.Browser.mouse.right && this.title == td.tdConsole.area.value) td.consoleClose();
+	else td.tdConsole.area.focus();
 
 	return false;
 };
 
-TimeDebug.consoleClose = function() {
-	if (TimeDebug.tdConsole.parentNode.varListRow) {
-		JAK.DOM.removeClass(TimeDebug.tdConsole.parentNode.varListRow, 'nd-hovered');
+td.consoleClose = function() {
+	if (td.tdConsole.parentNode.varListRow) {
+		JAK.DOM.removeClass(td.tdConsole.parentNode.varListRow, 'nd-hovered');
 	}
-	if (TimeDebug.tdConsole.listeners) {
-		JAK.Events.removeListeners(TimeDebug.tdConsole.listeners);
-		TimeDebug.tdConsole.listeners = null;
+	if (td.tdConsole.listeners) {
+		JAK.Events.removeListeners(td.tdConsole.listeners);
+		td.tdConsole.listeners = null;
 	}
 
-	var cc = TimeDebug.consoleConfig;
+	var cc = td.consoleConfig;
 	if (typeof(cc.oriX) == 'undefined') {
 		cc.oriX = cc.x;
 		cc.oriY = cc.y;
 	}
 
-	cc.x = TimeDebug.tdConsole.area.offsetWidth - 8;
-	cc.y = TimeDebug.tdConsole.area.clientHeight;
+	cc.x = td.tdConsole.area.offsetWidth - 8;
+	cc.y = td.tdConsole.area.clientHeight;
 
-	if (TimeDebug.tdConsole.mask.title) TimeDebug.tdConsole.parentNode.title = TimeDebug.tdConsole.mask.title;
-	TimeDebug.tdConsole.parentNode.removeChild(TimeDebug.tdConsole);
-	TimeDebug.tdConsole = null;
+	if (td.tdConsole.mask.title) td.tdConsole.parentNode.title = td.tdConsole.mask.title;
+	td.tdConsole.parentNode.removeChild(td.tdConsole);
+	td.tdConsole = null;
 	return false;
 };
 
-TimeDebug.logAction = function(e) {
+td.logAction = function(e) {
 	e = e || window.event;
 
-	if ((e.altKey ? e.shiftKey || TimeDebug.tdFullWidth : !e.shiftKey) || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left) return true;
+	if ((e.altKey ? e.shiftKey || td.tdFullWidth : !e.shiftKey) || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
-	var el = TimeDebug.help;
+	var el = td.help;
 
 	if (e.altKey) {
-		TimeDebug.actionData.startX = e.screenX;
-		TimeDebug.actionData.width = TimeDebug.tdWidth;
-		TimeDebug.actionData.element = el;
+		td.actionData.startX = e.screenX;
+		td.actionData.width = td.tdWidth;
+		td.actionData.element = el;
 
-		TimeDebug.actionData.listeners.push(
-				JAK.Events.addListener(document, 'mousemove', TimeDebug, 'logResizing'),
-				JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endLogResize'),
-				JAK.Events.addListener(el, 'selectstart', TimeDebug, 'tdStop'),
-				JAK.Events.addListener(el, 'dragstart', TimeDebug, 'tdStop')
+		td.actionData.listeners.push(
+				JAK.Events.addListener(document, 'mousemove', td, 'logResizing'),
+				JAK.Events.addListener(document, 'mouseup', td, 'endLogResize'),
+				JAK.Events.addListener(el, 'selectstart', td, 'tdStop'),
+				JAK.Events.addListener(el, 'dragstart', td, 'tdStop')
 		);
 
 		document.body.focus();
 	} else {
-		if (TimeDebug.tdFullWidth) {
-			TimeDebug.tdFullWidth = false;
+		if (td.tdFullWidth) {
+			td.tdFullWidth = false;
 			JAK.DOM.removeClass(document.body.parentNode, 'nd-fullscreen');
 
-			document.body.style.marginLeft = TimeDebug.tdContainer.style.width = TimeDebug.help.style.left = TimeDebug.tdWidth + 'px';
-			TimeDebug.logContainer.style.width = 'auto';
-			TimeDebug.logRowActive.removeAttribute('style');
+			document.body.style.marginLeft = td.tdContainer.style.width = td.help.style.left = td.tdWidth + 'px';
+			td.logContainer.style.width = 'auto';
+			td.logRowActive.removeAttribute('style');
 		} else {
-			TimeDebug.tdFullWidth = true;
+			td.tdFullWidth = true;
 			JAK.DOM.addClass(document.body.parentNode, 'nd-fullscreen');
 
-			document.body.style.marginLeft = TimeDebug.help.style.left = 0;
-			TimeDebug.tdContainer.style.width = '100%';
-			TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
-			TimeDebug.logRowActive.style.width = (TimeDebug.tdContainer.clientWidth - 48) + 'px';
+			document.body.style.marginLeft = td.help.style.left = 0;
+			td.tdContainer.style.width = '100%';
+			td.logContainer.style.width = td.tdContainer.clientWidth + 'px';
+			td.logRowActive.style.width = (td.tdContainer.clientWidth - 48) + 'px';
 		}
 
-		TimeDebug.tdResizeWrapper();
+		td.tdResizeWrapper();
 	}
 
 	return false;
 };
 
-TimeDebug.logResizing = function(e) {
+td.logResizing = function(e) {
 	e = e || window.event;
-	var el = TimeDebug.actionData.element;
+	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
-		TimeDebug.tdWidth = Math.max(0, Math.min(TimeDebug.viewSize.width - TimeDebug.helpSpaceX,
-				TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX));
+		td.tdWidth = Math.max(0, Math.min(td.viewSize.width - td.helpSpaceX,
+				td.actionData.width + e.screenX - td.actionData.startX));
 
-		document.body.style.marginLeft = TimeDebug.tdContainer.style.width = el.style.left = TimeDebug.tdWidth + 'px';
+		document.body.style.marginLeft = td.tdContainer.style.width = el.style.left = td.tdWidth + 'px';
 
-		TimeDebug.tdResizeWrapper();
+		td.tdResizeWrapper();
 	} else {
-		TimeDebug.endLogResize();
+		td.endLogResize();
 	}
 };
 
-TimeDebug.endLogResize = function() {
-	JAK.Events.removeListeners(TimeDebug.actionData.listeners);
-	TimeDebug.actionData.listeners.length = 0;
-	TimeDebug.actionData.element = null;
+td.endLogResize = function() {
+	JAK.Events.removeListeners(td.actionData.listeners);
+	td.actionData.listeners.length = 0;
+	td.actionData.element = null;
 };
 
-TimeDebug.showVarChanges = function(changes) {
+td.showVarChanges = function(changes) {
 	for (var i = changes.length; i-- > 0;) {
 		changes[i].style.display = 'inline';
 		changes[i].hideEl.style.display = 'none';
 	}
 };
 
-TimeDebug.hideVarChanges = function(changes) {
-	if (TimeDebug.tdHashEl !== null) TimeDebug.deactivateChange(true, TimeDebug.tdHashEl);
+td.hideVarChanges = function(changes) {
+	if (td.tdHashEl !== null) td.deactivateChange(true, td.tdHashEl);
 	for (var i = changes.length; i-- > 0;) {
 		changes[i].style.display = 'none';
 		changes[i].hideEl.style.display = 'inline';
 	}
 };
 
-TimeDebug.showDump = function(id) {
-	if (TimeDebug.logRowActiveId == (id = id || 0)) return false;
-	if (TimeDebug.logRowActive) {
-		JAK.DOM.removeClass(TimeDebug.logRowActive, 'nd-active');
-		TimeDebug.logRowActive.removeAttribute('style');
-		if (TimeDebug.logRowActive.varChanges) TimeDebug.hideVarChanges(TimeDebug.logRowActive.varChanges);
+td.showDump = function(id) {
+	if (td.logRowActiveId == (id = id || 0)) return false;
+	if (td.logRowActive) {
+		JAK.DOM.removeClass(td.logRowActive, 'nd-active');
+		td.logRowActive.removeAttribute('style');
+		if (td.logRowActive.varChanges) td.hideVarChanges(td.logRowActive.varChanges);
 	}
 
-	JAK.DOM.addClass(TimeDebug.logRowActive = TimeDebug.logRows[id - 1], 'nd-active');
-	if (TimeDebug.logRowActive.varChanges) TimeDebug.showVarChanges(TimeDebug.logRowActive.varChanges);
+	JAK.DOM.addClass(td.logRowActive = td.logRows[id - 1], 'nd-active');
+	if (td.logRowActive.varChanges) td.showVarChanges(td.logRowActive.varChanges);
 
-	TimeDebug.logRowActive.parentNode.insertBefore(TimeDebug.logAnchor, TimeDebug.logRowActive);
+	td.logRowActive.parentNode.insertBefore(td.logAnchor, td.logRowActive);
 
-	if (TimeDebug.hoveredChange && TimeDebug.hoveredChange.logRow === TimeDebug.logRowActive) {
-		TimeDebug.activateChange(true, TimeDebug.hoveredChange);
+	if (td.hoveredChange && td.hoveredChange.logRow === td.logRowActive) {
+		td.activateChange(true, td.hoveredChange);
 	}
 
 	document.title = '['
-			+ (TimeDebug.logRowActive.attrRuntime || (TimeDebug.logRowActive.attrRuntime = TimeDebug.logRowActive.getAttribute('data-runtime')))
-			+ ' ms] TimeDebug::'
-			+ (TimeDebug.logRowActive.attrTitle || (TimeDebug.logRowActive.attrTitle = TimeDebug.logRowActive.getAttribute('data-title')));
+			+ (td.logRowActive.attrRuntime || (td.logRowActive.attrRuntime = td.logRowActive.getAttribute('data-runtime')))
+			+ ' ms] td::'
+			+ (td.logRowActive.attrTitle || (td.logRowActive.attrTitle = td.logRowActive.getAttribute('data-title')));
 
-	if (TimeDebug.indexes[TimeDebug.logRowActiveId - 1] !== TimeDebug.indexes[id - 1]) {
+	if (td.indexes[td.logRowActiveId - 1] !== td.indexes[id - 1]) {
 
-		if (TimeDebug.tdListeners.length) {
-			JAK.Events.removeListeners(TimeDebug.tdListeners);
-			TimeDebug.tdListeners.length = 0;
+		if (td.tdListeners.length) {
+			JAK.Events.removeListeners(td.tdListeners);
+			td.tdListeners.length = 0;
 		}
 
-		(TimeDebug.tdView.oriId && (TimeDebug.tdView.id = TimeDebug.tdView.oriId)) || TimeDebug.tdInnerWrapper.removeChild(TimeDebug.tdView);
+		(td.tdView.oriId && (td.tdView.id = td.tdView.oriId)) || td.tdInnerWrapper.removeChild(td.tdView);
 
-		TimeDebug.tdView = TimeDebug.dumps[TimeDebug.indexes[id - 1]];
-		TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
-		if (!TimeDebug.tdView.oriId) {
-			TimeDebug.tdInnerWrapper.appendChild(TimeDebug.tdView);
-			TimeDebug.tdView.oriId = TimeDebug.tdView.id;
-			TimeDebug.tdView.activeChilds = [];
+		td.tdView = td.dumps[td.indexes[id - 1]];
+		td.tdInnerWrapper.appendChild(td.tdView);
+		if (!td.tdView.oriId) {
+			td.tdInnerWrapper.appendChild(td.tdView);
+			td.tdView.oriId = td.tdView.id;
+			td.tdView.activeChilds = [];
 		}
-		TimeDebug.tdView.id = 'tdView';
-		TimeDebug.setTitles(TimeDebug.tdView);
-		TimeDebug.tdResizeWrapper();
+		td.tdView.id = 'tdView';
+		td.setTitles(td.tdView);
+		td.tdResizeWrapper();
 	}
 
-	if (TimeDebug.tdFullWidth) TimeDebug.logRowActive.style.width = (TimeDebug.tdContainer.clientWidth - 48) + 'px';
-	TimeDebug.logRowActiveId = id;
+	if (td.tdFullWidth) td.logRowActive.style.width = (td.tdContainer.clientWidth - 48) + 'px';
+	td.logRowActiveId = id;
 
 	return true;
 };
 
-TimeDebug.setTitles = function(el) {
+td.setTitles = function(el) {
 	var titleSpan, titleStrong, titleStrongs, listeners = [];
 
 	titleStrongs = el.getElementsByTagName('strong');
@@ -1010,42 +1053,42 @@ TimeDebug.setTitles = function(el) {
 			titleSpan.tdTitle = titleStrong.parentNode;
 			titleSpan.tdTitle.tdInner = titleStrong;
 
-			listeners.push(JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, TimeDebug.showTitle),
-					JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, TimeDebug.hideTimer),
-					JAK.Events.addListener(titleSpan, 'click', titleSpan, TimeDebug.pinTitle)
+			listeners.push(JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, td.showTitle),
+					JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, td.hideTimer),
+					JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle)
 			);
 
-			if (!el.titleListener) JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, TimeDebug.titleAction);
+			if (!el.titleListener) JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
 		}
 	}
 
-	if (el === TimeDebug.tdView) {
-		TimeDebug.tdListeners = TimeDebug.tdListeners.concat(listeners);
+	if (el === td.tdView) {
+		td.tdListeners = td.tdListeners.concat(listeners);
 		if (!el.titleListener) el.titleListener = true;
 	}
 };
 
-TimeDebug.showTitle = function(e) {
+td.showTitle = function(e) {
 	e = e || window.event;
 
-	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || TimeDebug.actionData.element !== null || TimeDebug.tdConsole !== null) return false;
+	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null) return false;
 	var tdTitleRows, tdParents;
 
 	JAK.Events.stopEvent(e);
 
-	if (TimeDebug.titleActive && TimeDebug.titleActive !== this.tdTitle) {
-		TimeDebug.hideTitle();
-	} else if (TimeDebug.titleHideTimeout) {
-		window.clearTimeout(TimeDebug.titleHideTimeout);
-		TimeDebug.titleHideTimeout = null;
+	if (td.titleActive && td.titleActive !== this.tdTitle) {
+		td.hideTitle();
+	} else if (td.titleHideTimeout) {
+		window.clearTimeout(td.titleHideTimeout);
+		td.titleHideTimeout = null;
 	}
 
-	if (TimeDebug.titleActive === null && this.tdTitle.style.display != 'block') {
+	if (td.titleActive === null && this.tdTitle.style.display != 'block') {
 		this.tdTitle.style.display = 'block';
-		this.tdTitle.style.zIndex = ++TimeDebug.zIndexMax;
+		this.tdTitle.style.zIndex = ++td.zIndexMax;
 
 		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
-			if ((tdParents = TimeDebug.getParents(this)).length) this.tdTitle.parents = tdParents;
+			if ((tdParents = td.getParents(this)).length) this.tdTitle.parents = tdParents;
 			this.tdTitle.style.position = 'fixed';
 			this.tdTitle.oriWidth = this.tdTitle.clientWidth;
 			this.tdTitle.oriHeight = this.tdTitle.clientHeight;
@@ -1058,13 +1101,13 @@ TimeDebug.showTitle = function(e) {
 			if (this.tdTitle.id === 'menuTitle') {
 				this.tdTitle.menuWidth = this.tdTitle.oriWidth;
 				this.tdTitle.menuHeight = this.tdTitle.oriHeight;
-				TimeDebug.tdChangeList.style.display = 'block';
+				td.tdChangeList.style.display = 'block';
 			}
 		}
 		if (this.tdTitle.id === 'menuTitle') {
 			this.tdTitle.style.width = 'auto';
-			this.tdTitle.oriWidth = Math.max(this.tdTitle.menuWidth, TimeDebug.tdChangeList.clientWidth);
-			this.tdTitle.oriHeight = this.tdTitle.menuHeight + (this.tdTitle.changesHeight = TimeDebug.tdChangeList.clientHeight);
+			this.tdTitle.oriWidth = Math.max(this.tdTitle.menuWidth, td.tdChangeList.clientWidth);
+			this.tdTitle.oriHeight = this.tdTitle.menuHeight + (this.tdTitle.changesHeight = td.tdChangeList.clientHeight);
 		}
 		if (tdParents = tdParents || this.tdTitle.parents) {
 
@@ -1074,21 +1117,21 @@ TimeDebug.showTitle = function(e) {
 				} else tdParents[k].activeChilds = [this.tdTitle];
 			}
 		}
-		TimeDebug.titleActive = this.tdTitle;
-		TimeDebug.visibleTitles.push(TimeDebug.titleActive);
+		td.titleActive = this.tdTitle;
+		td.visibleTitles.push(td.titleActive);
 	}
 
-	if (TimeDebug.titleActive === null) return true;
+	if (td.titleActive === null) return true;
 
-	TimeDebug.titleActive.style.left = (TimeDebug.titleActive.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
-	TimeDebug.titleActive.style.top = (TimeDebug.titleActive.tdTop = (e.pageY || e.clientY) - 5) + 'px';
+	td.titleActive.style.left = (td.titleActive.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
+	td.titleActive.style.top = (td.titleActive.tdTop = (e.pageY || e.clientY) - 5) + 'px';
 
-	TimeDebug.titleAutosize();
+	td.titleAutosize();
 
 	return false;
 };
 
-TimeDebug.removeFromParents = function(el) {
+td.removeFromParents = function(el) {
 	for (var i = el.parents.length, j; i-- > 0;) {
 		for (j = el.parents[i].activeChilds.length; j-- > 0;) {
 			if (el.parents[i].activeChilds[j] === el) el.parents[i].activeChilds.splice(j, 1);
@@ -1096,7 +1139,7 @@ TimeDebug.removeFromParents = function(el) {
 	}
 };
 
-TimeDebug.getParents = function(el) {
+td.getParents = function(el) {
 	if (!el) return [];
 	var tag, parents = [];
 
@@ -1110,157 +1153,157 @@ TimeDebug.getParents = function(el) {
 	return parents;
 };
 
-TimeDebug.getMaxZIndex = function() {
-	for (var retVal = 100, i = TimeDebug.visibleTitles.length; i-- > 0;) {
-		retVal = Math.max(retVal, TimeDebug.visibleTitles[i].style.zIndex);
+td.getMaxZIndex = function() {
+	for (var retVal = 100, i = td.visibleTitles.length; i-- > 0;) {
+		retVal = Math.max(retVal, td.visibleTitles[i].style.zIndex);
 	}
 
 	return retVal;
 };
 
-TimeDebug.titleAction = function(e) {
+td.titleAction = function(e) {
 	e = e || window.event;
 
 	if (!this.pined || e.button !== JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 
-	if (this.style.zIndex < TimeDebug.zIndexMax) {
-		this.style.zIndex = ++TimeDebug.zIndexMax;
+	if (this.style.zIndex < td.zIndexMax) {
+		this.style.zIndex = ++td.zIndexMax;
 
-		if (TimeDebug.zIndexMax > TimeDebug.visibleTitles.length + 1000) {
-			TimeDebug.visibleTitles.sort(function(a,b) { return parseInt(a.style.zIndex) - parseInt(b.style.zIndex); });
-			for (var i = 0, j = TimeDebug.visibleTitles.length; i < j;) TimeDebug.visibleTitles[i].style.zIndex = ++i + 100;
-			TimeDebug.zIndexMax = j + 100;
+		if (td.zIndexMax > td.visibleTitles.length + 1000) {
+			td.visibleTitles.sort(function(a,b) { return parseInt(a.style.zIndex) - parseInt(b.style.zIndex); });
+			for (var i = 0, j = td.visibleTitles.length; i < j;) td.visibleTitles[i].style.zIndex = ++i + 100;
+			td.zIndexMax = j + 100;
 		}
 	}
 
 	if (e.altKey) {
 		if (!e.ctrlKey && !e.metaKey) {
-			if (e.shiftKey) TimeDebug.hideTitle(this);
-			else TimeDebug.startTitleDrag(e, this);
+			if (e.shiftKey) td.hideTitle(this);
+			else td.startTitleDrag(e, this);
 		} else if (!e.shiftKey) {
 			this.resized = false;
-			TimeDebug.titleAutosize(this);
+			td.titleAutosize(this);
 		} else return true;
 	} else if (e.shiftKey) return true;
 	else if (e.ctrlKey || e.metaKey) {
-		TimeDebug.startTitleResize(e, this)
+		td.startTitleResize(e, this)
 	} else return true;
 
 	JAK.Events.cancelDef(e);
 	return false;
 };
 
-TimeDebug.startTitleResize = function(e, el) {
+td.startTitleResize = function(e, el) {
 	el.resized = true;
-	TimeDebug.actionData.startX = e.screenX;
-	TimeDebug.actionData.startY = e.screenY;
-	TimeDebug.actionData.width = (el.tdWidth === 'auto' ? el.offsetWidth : el.tdWidth);
-	TimeDebug.actionData.height = (el.tdHeight === 'auto' ? el.clientHeight : el.tdHeight);
-	TimeDebug.actionData.element = el;
+	td.actionData.startX = e.screenX;
+	td.actionData.startY = e.screenY;
+	td.actionData.width = (el.tdWidth === 'auto' ? el.offsetWidth : el.tdWidth);
+	td.actionData.height = (el.tdHeight === 'auto' ? el.clientHeight : el.tdHeight);
+	td.actionData.element = el;
 
-	TimeDebug.actionData.listeners.push(
-			JAK.Events.addListener(document, 'mousemove', TimeDebug, 'titleResizing'),
-			JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'),
-			JAK.Events.addListener(el, 'selectstart', TimeDebug, 'tdStop'),
-			JAK.Events.addListener(el, 'dragstart', TimeDebug, 'tdStop')
+	td.actionData.listeners.push(
+			JAK.Events.addListener(document, 'mousemove', td, 'titleResizing'),
+			JAK.Events.addListener(document, 'mouseup', td, 'endTitleAction'),
+			JAK.Events.addListener(el, 'selectstart', td, 'tdStop'),
+			JAK.Events.addListener(el, 'dragstart', td, 'tdStop')
 	);
 
 	document.body.focus();
 };
 
-TimeDebug.titleResizing = function(e) {
+td.titleResizing = function(e) {
 	e = e || window.event;
-	var el = TimeDebug.actionData.element;
+	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
-		el.userWidth = el.tdWidth = Math.max(Math.min(TimeDebug.viewSize.width - el.tdLeft - 20, TimeDebug.actionData.width + e.screenX - TimeDebug.actionData.startX), 16);
-		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(TimeDebug.viewSize.height - el.tdTop - 35, TimeDebug.actionData.height + e.screenY - TimeDebug.actionData.startY), 16) / 16);
+		el.userWidth = el.tdWidth = Math.max(Math.min(td.viewSize.width - el.tdLeft - 20, td.actionData.width + e.screenX - td.actionData.startX), 16);
+		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(td.viewSize.height - el.tdTop - 35, td.actionData.height + e.screenY - td.actionData.startY), 16) / 16);
 
 		JAK.DOM.setStyle(el, { width:el.tdWidth + 'px', height:el.tdHeight + 'px' });
 	} else {
-		TimeDebug.endTitleAction();
+		td.endTitleAction();
 	}
 };
 
-TimeDebug.startTitleDrag = function(e, el) {
-	TimeDebug.actionData.startX = e.screenX;
-	TimeDebug.actionData.startY = e.screenY;
-	TimeDebug.actionData.offsetX = el.tdLeft;
-	TimeDebug.actionData.offsetY = el.tdTop;
-	TimeDebug.actionData.element = el;
+td.startTitleDrag = function(e, el) {
+	td.actionData.startX = e.screenX;
+	td.actionData.startY = e.screenY;
+	td.actionData.offsetX = el.tdLeft;
+	td.actionData.offsetY = el.tdTop;
+	td.actionData.element = el;
 
-	TimeDebug.actionData.listeners.push(
-			JAK.Events.addListener(document, 'mousemove', TimeDebug, 'titleDragging'),
-			JAK.Events.addListener(document, 'mouseup', TimeDebug, 'endTitleAction'),
-			JAK.Events.addListener(el, 'selectstart', TimeDebug, 'tdStop'),
-			JAK.Events.addListener(el, 'dragstart', TimeDebug, 'tdStop')
+	td.actionData.listeners.push(
+			JAK.Events.addListener(document, 'mousemove', td, 'titleDragging'),
+			JAK.Events.addListener(document, 'mouseup', td, 'endTitleAction'),
+			JAK.Events.addListener(el, 'selectstart', td, 'tdStop'),
+			JAK.Events.addListener(el, 'dragstart', td, 'tdStop')
 	);
 
 	document.body.focus();
 };
 
-TimeDebug.titleDragging = function(e) {
+td.titleDragging = function(e) {
 	e = e || window.event;
-	var el = TimeDebug.actionData.element;
+	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
-		el.tdLeft = Math.max(Math.min(TimeDebug.viewSize.width - 36, TimeDebug.actionData.offsetX + e.screenX - TimeDebug.actionData.startX), 0);
-		el.tdTop = Math.max(Math.min(TimeDebug.viewSize.height - 51, TimeDebug.actionData.offsetY + e.screenY - TimeDebug.actionData.startY), 0);
+		el.tdLeft = Math.max(Math.min(td.viewSize.width - 36, td.actionData.offsetX + e.screenX - td.actionData.startX), 0);
+		el.tdTop = Math.max(Math.min(td.viewSize.height - 51, td.actionData.offsetY + e.screenY - td.actionData.startY), 0);
 
 		JAK.DOM.setStyle(el, { left:el.tdLeft + 'px', top:el.tdTop + 'px' });
 
-		TimeDebug.titleAutosize(el);
+		td.titleAutosize(el);
 	} else {
-		TimeDebug.endTitleAction();
+		td.endTitleAction();
 	}
 };
 
-TimeDebug.endTitleAction = function() {
-	var el = TimeDebug.actionData.element;
+td.endTitleAction = function() {
+	var el = td.actionData.element;
 
 	if (el !== null) {
-		JAK.Events.removeListeners(TimeDebug.actionData.listeners);
-		TimeDebug.actionData.listeners.length = 0;
-		TimeDebug.actionData.element = null;
+		JAK.Events.removeListeners(td.actionData.listeners);
+		td.actionData.listeners.length = 0;
+		td.actionData.element = null;
 	}
 };
 
-TimeDebug.tdFalse = function() {
+td.tdFalse = function() {
 	return false;
 };
 
-TimeDebug.tdStop = function(e) {
+td.tdStop = function(e) {
 	e = e || window.event;
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 	return false;
 };
 
-TimeDebug.titleAutosize = function(el) {
-	el = el || TimeDebug.titleActive;
+td.titleAutosize = function(el) {
+	el = el || td.titleActive;
 
 	var tdCheckWidthDif = false;
 	var tdWidthDif;
-	TimeDebug.spaceX = Math.max(TimeDebug.viewSize.width - el.tdLeft - 20, 0);
-	TimeDebug.spaceY = 16 * parseInt(Math.max(TimeDebug.viewSize.height - el.tdTop - 35, 0) / 16);
+	td.spaceX = Math.max(td.viewSize.width - el.tdLeft - 20, 0);
+	td.spaceY = 16 * parseInt(Math.max(td.viewSize.height - el.tdTop - 35, 0) / 16);
 
 	if (el.resized) {
-		el.style.width = (TimeDebug.spaceX < el.userWidth ? el.tdWidth = TimeDebug.spaceX : el.tdWidth = el.userWidth) + 'px';
-	} else if (TimeDebug.spaceX < el.oriWidth) {
-		el.style.width = (el.tdWidth = TimeDebug.spaceX) + 'px';
+		el.style.width = (td.spaceX < el.userWidth ? el.tdWidth = td.spaceX : el.tdWidth = el.userWidth) + 'px';
+	} else if (td.spaceX < el.oriWidth) {
+		el.style.width = (el.tdWidth = td.spaceX) + 'px';
 	} else {
 		el.style.width = el.tdWidth = 'auto';
 		tdCheckWidthDif = true;
 	}
 
 	if (el.resized) {
-		el.style.height = (TimeDebug.spaceY < el.userHeight ? el.tdHeight = TimeDebug.spaceY : el.tdHeight = el.userHeight) + 'px';
-	} else if (TimeDebug.spaceY < (el.changesHeight || 0) + el.tdInner.clientHeight || TimeDebug.spaceY < el.oriHeight) {
-		el.style.height = (el.tdHeight = TimeDebug.spaceY) + 'px';
+		el.style.height = (td.spaceY < el.userHeight ? el.tdHeight = td.spaceY : el.tdHeight = el.userHeight) + 'px';
+	} else if (td.spaceY < (el.changesHeight || 0) + el.tdInner.clientHeight || td.spaceY < el.oriHeight) {
+		el.style.height = (el.tdHeight = td.spaceY) + 'px';
 		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0))) {
-			el.style.width = (el.tdWidth = Math.min(el.oriWidth + tdWidthDif, TimeDebug.spaceX)) + 'px';
+			el.style.width = (el.tdWidth = Math.min(el.oriWidth + tdWidthDif, td.spaceX)) + 'px';
 		}
 	} else {
 		el.style.height = el.tdHeight = 'auto';
@@ -1268,47 +1311,47 @@ TimeDebug.titleAutosize = function(el) {
 	return true;
 };
 
-TimeDebug.hideTimer = function(e) {
+td.hideTimer = function(e) {
 	e = e || window.event;
 	JAK.Events.stopEvent(e);
-	if (TimeDebug.titleHideTimeout) window.clearTimeout(TimeDebug.titleHideTimeout);
-	TimeDebug.titleHideTimeout = window.setTimeout(TimeDebug.hideTitle, 300);
+	if (td.titleHideTimeout) window.clearTimeout(td.titleHideTimeout);
+	td.titleHideTimeout = window.setTimeout(td.hideTitle, 300);
 };
 
-TimeDebug.hideTitle = function(el) {
+td.hideTitle = function(el) {
 	var index;
 
-	if (TimeDebug.titleHideTimeout) {
-		window.clearTimeout(TimeDebug.titleHideTimeout);
-		TimeDebug.titleHideTimeout = null;
+	if (td.titleHideTimeout) {
+		window.clearTimeout(td.titleHideTimeout);
+		td.titleHideTimeout = null;
 	}
 
 	if (el && el.pined) {
 		el.pined = false;
-	} else if ((el = TimeDebug.titleActive) !== null) {
-		TimeDebug.titleActive = null;
+	} else if ((el = td.titleActive) !== null) {
+		td.titleActive = null;
 	} else return false;
 
-	if ((index = TimeDebug.visibleTitles.indexOf(el)) !== -1) TimeDebug.visibleTitles.splice(index, 1);
-	if (el.style.zIndex == TimeDebug.zIndexMax) TimeDebug.zIndexMax = TimeDebug.getMaxZIndex();
-	if (el.parents) TimeDebug.removeFromParents(el);
+	if ((index = td.visibleTitles.indexOf(el)) !== -1) td.visibleTitles.splice(index, 1);
+	if (el.style.zIndex == td.zIndexMax) td.zIndexMax = td.getMaxZIndex();
+	if (el.parents) td.removeFromParents(el);
 	if (el.activeChilds && el.activeChilds.length) {
-		for (index = el.activeChilds.length; index-- > 0;) TimeDebug.hideTitle(el.activeChilds[index]);
+		for (index = el.activeChilds.length; index-- > 0;) td.hideTitle(el.activeChilds[index]);
 	}
 	el.style.display = 'none';
 
 	return true;
 };
 
-TimeDebug.pinTitle = function(e) {
+td.pinTitle = function(e) {
 	e = e || window.event;
 	JAK.Events.stopEvent(e);
 
 	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left) return false;
 
-	if (TimeDebug.titleHideTimeout) {
-		window.clearTimeout(TimeDebug.titleHideTimeout);
-		TimeDebug.titleHideTimeout = null;
+	if (td.titleHideTimeout) {
+		window.clearTimeout(td.titleHideTimeout);
+		td.titleHideTimeout = null;
 	}
 
 	var el = JAK.Events.getTarget(e);
@@ -1316,180 +1359,180 @@ TimeDebug.pinTitle = function(e) {
 
 	if (!JAK.DOM.hasClass(el, 'nd-titled')) return false;
 
-	if (TimeDebug.titleActive && TimeDebug.titleActive !== el.tdTitle) TimeDebug.hideTitle();
+	if (td.titleActive && td.titleActive !== el.tdTitle) td.hideTitle();
 
-	if (TimeDebug.titleActive === null) {
-		TimeDebug.titleActive = el.tdTitle;
-		TimeDebug.titleActive.pined = false;
+	if (td.titleActive === null) {
+		td.titleActive = el.tdTitle;
+		td.titleActive.pined = false;
 	} else {
-		TimeDebug.titleActive.pined = true;
-		TimeDebug.titleActive = null;
+		td.titleActive.pined = true;
+		td.titleActive = null;
 	}
 	return false;
 };
 
-TimeDebug.showLog = function(e, el) {
+td.showLog = function(e, el) {
 	if (e === true) {
-		TimeDebug.showDump(el.logId);
-	} else if (TimeDebug.deleteChange.showLogRow === true) {
-		TimeDebug.showDump(this.logId);
+		td.showDump(el.logId);
+	} else if (td.deleteChange.showLogRow === true) {
+		td.showDump(this.logId);
 	}
 };
 
-TimeDebug.logClick = function(e) {
+td.logClick = function(e) {
 	e = e || window.event;
 	var id = parseInt(this.logId);
 
 	if (e.altKey) {
-		if (TimeDebug.tdConsole && TimeDebug.keyChanges.indexOf(e.keyCode)) {}
+		if (td.tdConsole && td.keyChanges.indexOf(e.keyCode)) {}
 	} else if (e.ctrlKey || e.metaKey) {
-		TimeDebug.logRowsChosen[id - 1] = !TimeDebug.logRowsChosen[id - 1];
-		if (TimeDebug.logRowsChosen[id - 1]) JAK.DOM.addClass(TimeDebug.logRows[id - 1], 'nd-chosen');
-		else JAK.DOM.removeClass(TimeDebug.logRows[id - 1], 'nd-chosen');
+		td.logRowsChosen[id - 1] = !td.logRowsChosen[id - 1];
+		if (td.logRowsChosen[id - 1]) JAK.DOM.addClass(td.logRows[id - 1], 'nd-chosen');
+		else JAK.DOM.removeClass(td.logRows[id - 1], 'nd-chosen');
 	} else if (e.shiftKey) {
 		var unset = false;
 		if (JAK.DOM.hasClass(this, 'nd-chosen')) unset = true;
-		for (var i = Math.min(TimeDebug.logRowActiveId, id), j = Math.max(TimeDebug.logRowActiveId, id); i <= j; ++i) {
+		for (var i = Math.min(td.logRowActiveId, id), j = Math.max(td.logRowActiveId, id); i <= j; ++i) {
 			if (unset) {
-				TimeDebug.logRowsChosen[i - 1] = false;
-				JAK.DOM.removeClass(TimeDebug.logRows[i - 1], 'nd-chosen');
+				td.logRowsChosen[i - 1] = false;
+				JAK.DOM.removeClass(td.logRows[i - 1], 'nd-chosen');
 			} else {
-				TimeDebug.logRowsChosen[i - 1] = true;
-				JAK.DOM.addClass(TimeDebug.logRows[i - 1], 'nd-chosen');
+				td.logRowsChosen[i - 1] = true;
+				JAK.DOM.addClass(td.logRows[i - 1], 'nd-chosen');
 			}
 		}
 	} else {
-		TimeDebug.showDump(id);
+		td.showDump(id);
 	}
 	return false;
 };
 
-TimeDebug.readConsoleKeyPress = function(e) {
+td.readConsoleKeyPress = function(e) {
 	e = e || window.event;
 	var key = String.fromCharCode(e.which);
 
-	if (this.selectedText) TimeDebug.unselectConsole();
+	if (this.selectedText) td.unselectConsole();
 
 	if (e.ctrlKey || e.metaKey) {
-		if (key == 'd') return TimeDebug.duplicateText(e, this);
-		else if (key == 'y') return TimeDebug.removeRows(e, this);
-		else if (key == 'b') return TimeDebug.selectBlock(e, this);
+		if (key == 'd') return td.duplicateText(e, this);
+		else if (key == 'y') return td.removeRows(e, this);
+		else if (key == 'b') return td.selectBlock(e, this);
 	} else if (this.selectionStart === this.selectionEnd) {
-		if (TimeDebug.consoleSelects[key]) TimeDebug.selectConsole(e, this, key);
-	} else if (TimeDebug.keyChanges[key]) return TimeDebug.wrapSelection(e, this, key);
+		if (td.consoleSelects[key]) td.selectConsole(e, this, key);
+	} else if (td.keyChanges[key]) return td.wrapSelection(e, this, key);
 
 	return true;
 };
 
-TimeDebug.readKeyDown = function(e) {
+td.readKeyDown = function(e) {
 	e = e || window.event;
 
 	var tdNext;
 
 	if (e.shiftKey) {
-		if (e.keyCode == 13 && TimeDebug.tdConsole) return TimeDebug.tdConsole.callback();
+		if (e.keyCode == 13 && td.tdConsole) return td.tdConsole.callback();
 	} else if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-		if (e.keyCode == 38 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId > 1) {
-			tdNext = TimeDebug.selected() ? TimeDebug.getPrevious() : TimeDebug.logRowActiveId - 1;
-			if (tdNext === TimeDebug.logRowActiveId) return true;
-			TimeDebug.showDump(tdNext);
-			if (!TimeDebug.tdFullWidth) {
-				TimeDebug.setLocationHashes(true, [[TimeDebug.logWrapper, 'loganchor', TimeDebug.logContainer, 50]]);
+		if (e.keyCode == 38 && !td.tdConsole && td.logRowActiveId > 1) {
+			tdNext = td.selected() ? td.getPrevious() : td.logRowActiveId - 1;
+			if (tdNext === td.logRowActiveId) return true;
+			td.showDump(tdNext);
+			if (!td.tdFullWidth) {
+				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 50]]);
 			}
 			return false;
-		} else if (e.keyCode == 40 && !TimeDebug.tdConsole && TimeDebug.logRowActiveId < TimeDebug.indexes.length) {
-			TimeDebug.logView.blur();
-			tdNext = TimeDebug.selected() ? TimeDebug.getNext() : TimeDebug.logRowActiveId + 1;
-			if (tdNext === TimeDebug.logRowActiveId) return true;
-			TimeDebug.showDump(tdNext);
-			if (!TimeDebug.tdFullWidth) {
-				TimeDebug.setLocationHashes(true, [[TimeDebug.logWrapper, 'loganchor', TimeDebug.logContainer, 50]]);
+		} else if (e.keyCode == 40 && !td.tdConsole && td.logRowActiveId < td.indexes.length) {
+			td.logView.blur();
+			tdNext = td.selected() ? td.getNext() : td.logRowActiveId + 1;
+			if (tdNext === td.logRowActiveId) return true;
+			td.showDump(tdNext);
+			if (!td.tdFullWidth) {
+				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 50]]);
 			}
 			return false;
-		} else if (e.keyCode == 37 && TimeDebug.titleActive) {
-				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop - 16) / 16);
+		} else if (e.keyCode == 37 && td.titleActive) {
+				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop - 16) / 16);
 				return false;
-		} else if (e.keyCode == 39 && TimeDebug.titleActive) {
-				TimeDebug.titleActive.scrollTop = 16 * parseInt((TimeDebug.titleActive.scrollTop + 16) / 16);
+		} else if (e.keyCode == 39 && td.titleActive) {
+				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop + 16) / 16);
 				return false;
 		} else if (e.keyCode == 27) {
-			if (TimeDebug.tdConsole) return TimeDebug.consoleClose();
-			if (!(TimeDebug.visibleTitles.length - (TimeDebug.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni?')) {
+			if (td.tdConsole) return td.consoleClose();
+			if (!(td.visibleTitles.length - (td.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni?')) {
 				return true;
 			}
-			if (TimeDebug.titleHideTimeout) {
-				window.clearTimeout(TimeDebug.titleHideTimeout);
-				TimeDebug.titleHideTimeout = null;
+			if (td.titleHideTimeout) {
+				window.clearTimeout(td.titleHideTimeout);
+				td.titleHideTimeout = null;
 			}
-			for (var i = TimeDebug.visibleTitles.length; i-- > 0;) {
-				TimeDebug.visibleTitles[i].style.display = 'none';
-				TimeDebug.visibleTitles[i].pined = false;
-				TimeDebug.visibleTitles[i].resized = false;
+			for (var i = td.visibleTitles.length; i-- > 0;) {
+				td.visibleTitles[i].style.display = 'none';
+				td.visibleTitles[i].pined = false;
+				td.visibleTitles[i].resized = false;
 			}
-			TimeDebug.visibleTitles.length = 0;
-			TimeDebug.zIndexMax = 100;
-			TimeDebug.titleActive = null;
+			td.visibleTitles.length = 0;
+			td.zIndexMax = 100;
+			td.titleActive = null;
 			return false;
-		} else if (e.keyCode == 13 && TimeDebug.tdConsole) {
+		} else if (e.keyCode == 13 && td.tdConsole) {
 			JAK.Events.stopEvent(e);
 		}
 	}
 	return true;
 };
 
-TimeDebug.windowResize = function() {
-	TimeDebug.tdResizeWrapper();
-	TimeDebug.viewSize = JAK.DOM.getDocSize();
-	if (TimeDebug.tdFullWidth) {
-		TimeDebug.logContainer.style.width = TimeDebug.tdContainer.clientWidth + 'px';
-		TimeDebug.logRowActive.style.width = (TimeDebug.tdContainer.clientWidth - 48) + 'px';
+td.windowResize = function() {
+	td.tdResizeWrapper();
+	td.viewSize = JAK.DOM.getDocSize();
+	if (td.tdFullWidth) {
+		td.logContainer.style.width = td.tdContainer.clientWidth + 'px';
+		td.logRowActive.style.width = (td.tdContainer.clientWidth - 48) + 'px';
 	}
-	for (var i = TimeDebug.visibleTitles.length; i-- > 0;) TimeDebug.titleAutosize(TimeDebug.visibleTitles[i]);
+	for (var i = td.visibleTitles.length; i-- > 0;) td.titleAutosize(td.visibleTitles[i]);
 };
 
-TimeDebug.tdResizeWrapper = function() {
-	var viewWidth = TimeDebug.tdView.clientWidth;
-	var viewHeight = TimeDebug.tdView.clientHeight;
-	if (viewWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width = viewWidth + 'px';
-	if (viewHeight > TimeDebug.tdOuterWrapper.clientHeight) TimeDebug.tdOuterWrapper.style.height = viewHeight + 'px';
-	if (TimeDebug.tdContainer.clientWidth > TimeDebug.tdOuterWrapper.clientWidth) TimeDebug.tdOuterWrapper.style.width = '100%';
+td.tdResizeWrapper = function() {
+	var viewWidth = td.tdView.clientWidth;
+	var viewHeight = td.tdView.clientHeight;
+	if (viewWidth > td.tdOuterWrapper.clientWidth) td.tdOuterWrapper.style.width = viewWidth + 'px';
+	if (viewHeight > td.tdOuterWrapper.clientHeight) td.tdOuterWrapper.style.height = viewHeight + 'px';
+	if (td.tdContainer.clientWidth > td.tdOuterWrapper.clientWidth) td.tdOuterWrapper.style.width = '100%';
 };
 
-TimeDebug.selected = function() {
-	for (var i = TimeDebug.logRowsChosen.length; i-- > 0;) {
-		if (TimeDebug.logRowsChosen[i]) return true;
+td.selected = function() {
+	for (var i = td.logRowsChosen.length; i-- > 0;) {
+		if (td.logRowsChosen[i]) return true;
 	}
 	return false;
 };
 
-TimeDebug.getPrevious = function() {
-	for (var i = TimeDebug.logRowActiveId; --i > 0;) {
-		if (TimeDebug.logRowsChosen[i - 1]) return i;
+td.getPrevious = function() {
+	for (var i = td.logRowActiveId; --i > 0;) {
+		if (td.logRowsChosen[i - 1]) return i;
 	}
-	return TimeDebug.logRowActiveId;
+	return td.logRowActiveId;
 };
 
-TimeDebug.getNext = function() {
-	for (var i = TimeDebug.logRowActiveId, j = TimeDebug.logRowsChosen.length; i++ < j;) {
-		if (TimeDebug.logRowsChosen[i - 1]) return i;
+td.getNext = function() {
+	for (var i = td.logRowActiveId, j = td.logRowsChosen.length; i++ < j;) {
+		if (td.logRowsChosen[i - 1]) return i;
 	}
-	return TimeDebug.logRowActiveId;
+	return td.logRowActiveId;
 };
 
-TimeDebug.htmlEncode = function(text) {
-	for (var retVal = '', i = 0, j = text.length; i < j; ++i) retVal += TimeDebug.encodeChars[text[i]] || text[i];
+td.htmlEncode = function(text) {
+	for (var retVal = '', i = 0, j = text.length; i < j; ++i) retVal += td.encodeChars[text[i]] || text[i];
 	return retVal;
 };
 
-TimeDebug.restore = function() {
+td.restore = function() {
 	location.href = location.protocol + '//' + location.host + location.pathname;
 };
 
-TimeDebug.sendChanges = function(e) {
+td.sendChanges = function(e) {
 	e = e || window.event;
 
 	var retVal = [];
-	for (var i = 0, j = TimeDebug.changes.length; i < j; ++i) retVal.push(TimeDebug.changes[i].data);
+	for (var i = 0, j = td.changes.length; i < j; ++i) retVal.push(td.changes[i].data);
 
 	if (!retVal.length) return false;
 
@@ -1497,53 +1540,53 @@ TimeDebug.sendChanges = function(e) {
 	if (e.shiftKey) req.target = '_blank';
 
 	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(retVal)}));
-	TimeDebug.logView.appendChild(req);
+	td.logView.appendChild(req);
 	req.submit();
 
 	return false;
 };
 
-TimeDebug.getRows = function(el, start, end) {
+td.getRows = function(el, start, end) {
 	var i = el.value.indexOf('\n', end || start);
 	return [start - el.value.slice(0, start).split('\n').reverse()[0].length, i === -1 ? el.value.length : i];
 };
 
-TimeDebug.duplicateText = function(e, el) {
+td.duplicateText = function(e, el) {
 	var start = el.selectionStart, end = el.selectionEnd;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
 	if (start === end || el.value.slice(start, end).indexOf('\n') !== -1) {
-		var rows = TimeDebug.getRows(el, start, end);
-		TimeDebug.areaWrite(el, el.value.slice(0, rows[1]) + '\n' + el.value.slice(rows[0]), start, end);
-	} else TimeDebug.areaWrite(el, el.value.slice(0, end) + el.value.slice(start), start, end);
+		var rows = td.getRows(el, start, end);
+		td.areaWrite(el, el.value.slice(0, rows[1]) + '\n' + el.value.slice(rows[0]), start, end);
+	} else td.areaWrite(el, el.value.slice(0, end) + el.value.slice(start), start, end);
 
 	return false;
 };
 
-TimeDebug.removeRows = function(e, el) {
-	var rows = TimeDebug.getRows(el, el.selectionStart, el.selectionEnd);
+td.removeRows = function(e, el) {
+	var rows = td.getRows(el, el.selectionStart, el.selectionEnd);
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	TimeDebug.areaWrite(el, el.value.slice(0, rows[0]) + el.value.slice(rows[1] + 1), rows[0]);
+	td.areaWrite(el, el.value.slice(0, rows[0]) + el.value.slice(rows[1] + 1), rows[0]);
 
 	return false;
 };
 
-TimeDebug.getBlock = function(el, index) {
-	var blockStart, i = TimeDebug.findNearestChar(el.value, '[{', index, true, {'"': false});
+td.getBlock = function(el, index) {
+	var blockStart, i = td.findNearestChar(el.value, '[{', index, true, {'"': false});
 	blockStart = i === false ? 0 : i;
 
-	var blockEnd, j = TimeDebug.findNearestChar(el.value, ']}', index, false, {'"': false});
+	var blockEnd, j = td.findNearestChar(el.value, ']}', index, false, {'"': false});
 	blockEnd = j === false ? el.value.length : j + 1;
 
 	return [blockStart, blockEnd];
 };
 
-TimeDebug.selectBlock = function(e, el) {
+td.selectBlock = function(e, el) {
 	var start = el.selectionStart, end = el.selectionEnd;
 	var i, j, s, longest = [start, end];
 
@@ -1559,7 +1602,7 @@ TimeDebug.selectBlock = function(e, el) {
 	}
 
 	for (i = 0, j = checkPoints.length; i < j; ++i) {
-		s = TimeDebug.getBlock(el, checkPoints[i]);
+		s = td.getBlock(el, checkPoints[i]);
 		if (s[1] - s[0] > longest[1] - longest[0]) longest = s;
 	}
 
@@ -1568,53 +1611,53 @@ TimeDebug.selectBlock = function(e, el) {
 	return false;
 };
 
-TimeDebug.selectConsole  = function(e, el, key) {
+td.selectConsole  = function(e, el, key) {
 	var end = el.selectionEnd;
 	var text = el.value.slice(0, end) + key + el.value.slice(end);
-	var start = TimeDebug.findNearestChar(text, TimeDebug.consoleSelects[key], end, true, {'"': false});
+	var start = td.findNearestChar(text, td.consoleSelects[key], end, true, {'"': false});
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	if (start === false) TimeDebug.areaWrite(el, text, end + 1);
+	if (start === false) td.areaWrite(el, text, end + 1);
 	else {
-		TimeDebug.areaWrite(el, text, start, end + 1);
-		TimeDebug.unselectConsole(el.selectedText = true);
+		td.areaWrite(el, text, start, end + 1);
+		td.unselectConsole(el.selectedText = true);
 	}
 
 	return false;
 };
 
-TimeDebug.unselectConsole = function(wait) {
-	if (TimeDebug.consoleSelectTimeout) {
-		window.clearTimeout(TimeDebug.consoleSelectTimeout);
-		TimeDebug.consoleSelectTimeout = null;
+td.unselectConsole = function(wait) {
+	if (td.consoleSelectTimeout) {
+		window.clearTimeout(td.consoleSelectTimeout);
+		td.consoleSelectTimeout = null;
 	}
 
-	if (wait) TimeDebug.consoleSelectTimeout = window.setTimeout(TimeDebug.unselectConsole, 1000);
+	if (wait) td.consoleSelectTimeout = window.setTimeout(td.unselectConsole, 1000);
 	else {
-		TimeDebug.tdConsole.area.selectionStart = TimeDebug.tdConsole.area.selectionEnd;
-		TimeDebug.tdConsole.area.selectedText = false;
+		td.tdConsole.area.selectionStart = td.tdConsole.area.selectionEnd;
+		td.tdConsole.area.selectedText = false;
 	}
 };
 
-TimeDebug.wrapSelection = function(e, el, key) {
+td.wrapSelection = function(e, el, key) {
 	var start = el.selectionStart, end = el.selectionEnd;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	var swap = TimeDebug.keyChanges[key];
+	var swap = td.keyChanges[key];
 	var retVal = el.value.slice(0, start) + swap[0];
 
 	if (end - start > 1 && (key == "'" || key == '"') && ((el.value[start] == '"' && el.value[end - 1] == '"') || (el.value[start] == "'" && el.value[end - 1] == "'"))) {
-		TimeDebug.areaWrite(el, retVal + el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end), start + 1, end - 1);
-	} else TimeDebug.areaWrite(el, retVal + el.value.slice(start, end) + swap[1] + el.value.slice(end), start + 1, end + 1);
+		td.areaWrite(el, retVal + el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end), start + 1, end - 1);
+	} else td.areaWrite(el, retVal + el.value.slice(start, end) + swap[1] + el.value.slice(end), start + 1, end + 1);
 
 	return false;
 };
 
-TimeDebug.areaWrite = function(el, text, start, end) {
+td.areaWrite = function(el, text, start, end) {
 	start = start || 0;
 	end = end || start;
 	var top = el.scrollTop;

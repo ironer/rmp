@@ -1,9 +1,6 @@
 <?php
 
-require_once(CLASSES . '/Router.php');
 $router = new Router($this->router, $this);
-
-require_once(CLASSES . '/Reader.php');
 $reader = new Reader('reader1', $this);
 
 $reader->used_cache = 'mailer1';

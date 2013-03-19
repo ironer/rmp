@@ -2,10 +2,7 @@
 
 if (!isset($_GET['roman']) || $_GET['roman']!=1) die('Fatal Big Error! OK! Done! Bсе работает!');
 
-require_once(CLASSES . '/Router.php');
 $router = new Router($this->router, $this);
-
-require_once(CLASSES . '/Mailer.php');
 
     $db=mysql_connect("essens1505.dbaserver.net", "essens1505","XTtanjBd");
     mysql_select_db('essens1505');

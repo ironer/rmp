@@ -15,10 +15,12 @@ define('JS', '/js');
 define('LOGS', '/logs');
 define('TEMP', '/temp');
 
-require_once(CLASSES . '/App.php');
+function __autoload($className) {
+	if (file_exists(CLASSES . "/$className.php")) require_once(CLASSES . "/$className.php");
+	elseif (file_exists(LIBS . "/$className/$className.php")) require_once(LIBS . "/$className/$className.php");
+}
 
 if (DEBUG) {
-	require_once(LIBS . '/TimeDebug/TimeDebug.php');
 	TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0);
 	App::dump(TimeDebug::$message);
 }

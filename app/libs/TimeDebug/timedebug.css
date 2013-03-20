@@ -176,7 +176,7 @@ pre.nd {
 	line-height: 16px;
 	font-size: 13px;
 }
-.nd-td .nd-valid-json, .nd-td .nd-invalid-json, .nd-td .nd-ok, .nd-td .nd-error {
+.nd-td .nd-valid-json, .nd-td .nd-invalid-json, .nd-td .nd-result {
 	font-weight: bold;
 	color: #008;
 	line-height: 16px;
@@ -200,7 +200,7 @@ pre.nd {
 	height: 16px;
 	background: #fa5;
 }
-.nd-td .nd-ok, .nd-td .nd-error {
+.nd-td .nd-result {
 	padding-left: 3em;
 	text-indent: -3em;
 }
@@ -211,6 +211,10 @@ pre.nd {
 .nd-td .nd-error {
 	color: #700;
 	background: #fbb;
+}
+.nd-result:hover, .nd-result.nd-hovered {
+	color: #000;
+	background: #fc8;
 }
 .nd-change-data {
 	position: relative;

@@ -297,7 +297,7 @@ class TimeDebug {
 				self::applyChange($var, $change['varPath'], $change['value'], $change['resId']);
 				$change['res'] = 1;
 			} catch(Exception $e) {
-				echo '<pre id="' . $change['resId'] . '" class="nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
+				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
 				$change['res'] = 2;
 			}
 			unset($change['varPath']);
@@ -322,7 +322,7 @@ class TimeDebug {
 		}
 
 		if ($changeType >= 7)  {
-			echo '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-ok">';
+			echo '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result nd-ok">';
 			if ($changeType === 7) echo ' Chranena property "' . $varPath[0]['key'] . '":';
 			elseif ($changeType === 8) echo ' Klic/property "' . $varPath[0]['key'] . '":';
 			echo ' Zmena z ' . json_encode($var) . ' (' . gettype($var);

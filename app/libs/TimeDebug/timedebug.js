@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: oprava jsonu co je jen \w
 // TODO: nacist response
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
@@ -196,7 +195,7 @@ td.loadChanges = function(changes) {
 			fire(varEl);
 			if (varEl) {
 				varEl = td.duplicateNode(varEl);
-				change = td.createChange(changes[i].path, changes[i].value, container, varEl, log);
+				change = td.createChange(changes[i], container, varEl, log);
 				change.valid = true;
 				change.formated = true;
 				varEl.title = td.formatJson(changes[i].value);
@@ -702,12 +701,12 @@ td.saveVarChange = function() {
 		revPath.push(el.id, 'dump');
 	} else return false;
 
-	if (change = varEl.varListRow) {
+	if (change = varEl.change) {
 		if (change.data.value === value && change.valid === valid && change.formated === formated) return true;
 		change.data.value = value;
 	} else {
 		varEl = td.duplicateNode(varEl);
-		change = td.createChange(revPath.reverse().join(','), value, el, varEl, logRow);
+		change = td.createChange({'path': revPath.reverse().join(','), 'value': value}, el, varEl, logRow);
 	}
 
 	change.valid = valid;
@@ -718,19 +717,19 @@ td.saveVarChange = function() {
 	return true;
 };
 
-td.createChange = function(path, value, container, varEl, logRow) {
+td.createChange = function(data, container, varEl, logRow) {
 	logRow = logRow || false;
 
-	var change = JAK.mel('pre', {className:'nd-change-data'}), changeEls, i, j, k, key;
-	change.data = {'path': path, 'value': value};
+	var change = JAK.mel('pre', {className:'nd-change-data'}), changeEls, i, j, k, key, resEl;
+	change.data = data;
 	td.changes.push(change);
 
 	change.runtime = logRow ? logRow.attrRuntime : container.attrRuntime;
 	change.varEl = varEl;
-	varEl.varListRow = change;
+	varEl.change = change;
 	change.listeners = [
-		JAK.Events.addListener(varEl, 'mouseover', change, td.hoverChange),
-		JAK.Events.addListener(varEl, 'mouseout', change, td.unhoverChange),
+		JAK.Events.addListener(varEl, 'mouseover', varEl, td.hoverChange),
+		JAK.Events.addListener(varEl, 'mouseout', varEl, td.unhoverChange),
 		JAK.Events.addListener(change, 'mouseover', change, td.activateChange),
 		JAK.Events.addListener(change, 'mouseout', change, td.deactivateChange),
 		JAK.Events.addListener(change, 'mousedown', change, td.changeAction)
@@ -761,6 +760,16 @@ td.createChange = function(path, value, container, varEl, logRow) {
 		}
 	}
 
+	if (data.resId) {
+		if (resEl = JAK.gel(data.resId)) {
+			change.resEl = resEl;
+			resEl.change = change;
+			resEl.res = data.res;
+			change.listeners.push(JAK.Events.addListener(resEl, 'mouseover', resEl, td.hoverChange));
+			change.listeners.push(JAK.Events.addListener(resEl, 'mouseout', resEl, td.unhoverChange));
+		} else data.resId = null;
+	}
+
 	return change;
 };
 
@@ -783,6 +792,7 @@ td.activateChange = function(e, el) {
 	td.tdHashEl = td.hoveredChange.varEl;
 	td.tdHashEl.parentNode.insertBefore(td.tdAnchor, td.tdHashEl);
 	JAK.DOM.addClass(td.tdHashEl, 'nd-hovered');
+	if (td.hoveredChange.resEl) JAK.DOM.addClass(td.hoveredChange.resEl, 'nd-hovered');
 
 	td.hoveredChange.appendChild(td.checkDeleteChange());
 };
@@ -792,16 +802,21 @@ td.deactivateChange = function(e, el) {
 
 	if (el === td.tdHashEl) td.tdHashEl = null;
 	JAK.DOM.removeClass(el, 'nd-hovered');
+	if (el.change.resEl) JAK.DOM.removeClass(el.change.resEl, 'nd-hovered');
 
 	if (this === td.hoveredChange) td.hoveredChange = null;
 };
 
 td.hoverChange = function() {
-	JAK.DOM.addClass(this, 'nd-hovered');
+	JAK.DOM.addClass(this.change, 'nd-hovered');
+	if (this.res && this.change.varEl) JAK.DOM.addClass(this.change.varEl, 'nd-hovered');
+	else if (this.change.resEl) JAK.DOM.addClass(this.change.resEl, 'nd-hovered');
 };
 
 td.unhoverChange = function() {
-	JAK.DOM.removeClass(this, 'nd-hovered');
+	JAK.DOM.removeClass(this.change, 'nd-hovered');
+	if (this.res && this.change.varEl) JAK.DOM.removeClass(this.change.varEl, 'nd-hovered');
+	else if (this.change.resEl) JAK.DOM.removeClass(this.change.resEl, 'nd-hovered');
 };
 
 td.consoleHover = function(areaClass) {
@@ -892,9 +907,9 @@ td.catchMask = function(e) {
 };
 
 td.consoleClose = function() {
-	if (td.tdConsole.parentNode.varListRow) {
-		JAK.DOM.removeClass(td.tdConsole.parentNode.varListRow, 'nd-hovered');
-	}
+	if (td.tdConsole.parentNode.change) JAK.DOM.removeClass(td.tdConsole.parentNode.change, 'nd-hovered');
+	if (td.tdConsole.parentNode.change.resEl) JAK.DOM.removeClass(td.tdConsole.parentNode.change.resEl, 'nd-hovered');
+
 	if (td.tdConsole.listeners) {
 		JAK.Events.removeListeners(td.tdConsole.listeners);
 		td.tdConsole.listeners = null;
@@ -1535,15 +1550,15 @@ td.restore = function() {
 td.sendChanges = function(e) {
 	e = e || window.event;
 
-	var retVal = [];
-	for (var i = 0, j = td.changes.length; i < j; ++i) retVal.push(td.changes[i].data);
+	var request = [];
+	for (var i = 0, j = td.changes.length; i < j; ++i) request.push({'path': td.changes[i].data.path, 'value': td.changes[i].data.value});
 
-	if (!retVal.length) return false;
+	if (!request.length) return false;
 
 	var req = JAK.mel('form', {'action': location.protocol + '//' + location.host + location.pathname, method:'get'}, {'display': 'none'});
 	if (e.shiftKey) req.target = '_blank';
 
-	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(retVal)}));
+	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(request)}));
 	td.logView.appendChild(req);
 	req.submit();
 

@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: nacist response
+// TODO: zobrazovani chyb a prazdnych, pripadne
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -183,31 +183,31 @@ td.init = function(logId) {
 };
 
 td.loadChanges = function(changes) {
+	var path, log, container, varEl, change;
 	for (var i = 0, j = changes.length; i < j; ++i) {
-		var path = changes[i].path.split(','), log, container, varEl, change, formated;
-		fire(path);
+		path = changes[i].path.split(',');
+		log = container = varEl = null;
 
-		if (path[0] === 'log') {
+		if (changes[i].res === 2) {
+		} else if (path[0] === 'log') {
 			log = JAK.gel(path[1]);
 			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];
-			fire(container);
 			varEl = td.findVarEl(container, path.slice(3));
-			fire(varEl);
-			if (varEl) {
-				varEl = td.duplicateNode(varEl);
-				change = td.createChange(changes[i], container, varEl, log);
-				change.valid = true;
-				change.formated = true;
-				varEl.title = td.formatJson(changes[i].value);
-				td.updateChangeList();
-			}
 		} else {
 			container = JAK.gel(path[1]);
-			fire(container);
 			varEl = td.findVarEl(container, path.slice(2));
-			fire(varEl);
 		}
+
+		if (varEl) {
+			varEl = td.duplicateNode(varEl);
+			varEl.title = td.formatJson(changes[i].value);
+		}
+
+		change = td.createChange(changes[i], container, varEl, log);
+		change.valid = true;
+		change.formated = true;
 	}
+	td.updateChangeList();
 };
 
 td.findVarEl = function(el, path) {
@@ -215,7 +215,7 @@ td.findVarEl = function(el, path) {
 	if (path[0][0] === '#' || path[0][0] === '*') path[0] = path[0].slice(1);
 	var type = parseInt(path[0][0]);
 
-	if (type === 9) return JAK.DOM.getElementsByClass('nd-top', el, 'span');
+	if (type === 9) return JAK.DOM.getElementsByClass('nd-top', el, 'span')[0] || null;
 	else if (type >= 7) {
 		for (j = el.childNodes.length; i < j; ++i) {
 			if (el.childNodes[i].nodeType == 1 && el.childNodes[i].className === 'nd-key' && el.childNodes[i].innerHTML === path[0].slice(1)) {
@@ -718,9 +718,11 @@ td.saveVarChange = function() {
 };
 
 td.createChange = function(data, container, varEl, logRow) {
+	container = container || null;
+	varEl = varEl || null;
 	logRow = logRow || false;
 
-	var change = JAK.mel('pre', {className:'nd-change-data'}), changeEls, i, j, k, key, resEl;
+	var change = JAK.mel('pre', {'className': 'nd-change-data'}), changeEls, i, j, k, key, resEl;
 	change.data = data;
 	td.changes.push(change);
 
@@ -907,8 +909,10 @@ td.catchMask = function(e) {
 };
 
 td.consoleClose = function() {
-	if (td.tdConsole.parentNode.change) JAK.DOM.removeClass(td.tdConsole.parentNode.change, 'nd-hovered');
-	if (td.tdConsole.parentNode.change.resEl) JAK.DOM.removeClass(td.tdConsole.parentNode.change.resEl, 'nd-hovered');
+	if (td.tdConsole.parentNode.change) {
+		JAK.DOM.removeClass(td.tdConsole.parentNode.change, 'nd-hovered');
+		if (td.tdConsole.parentNode.change.resEl) JAK.DOM.removeClass(td.tdConsole.parentNode.change.resEl, 'nd-hovered');
+	}
 
 	if (td.tdConsole.listeners) {
 		JAK.Events.removeListeners(td.tdConsole.listeners);

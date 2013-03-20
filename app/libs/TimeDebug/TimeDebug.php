@@ -298,7 +298,7 @@ class TimeDebug {
 				$change['res'] = 1;
 			} catch(Exception $e) {
 				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
-				$change['res'] = 2;
+				$change['res'] = $e->getCode();
 			}
 			unset($change['varPath']);
 		}
@@ -307,7 +307,7 @@ class TimeDebug {
 
 	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL, $name = NULL) {
 		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena neprazdna cesta typu pole (nalezen typ '
-				. gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var));
+				. gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var), 2);
 
 		$changeType = $varPath[0]['type'];
 		$priv = isset($varPath[0]['priv']) ? $varPath[0]['priv'] : 0;
@@ -329,19 +329,19 @@ class TimeDebug {
 			$var = $value;
 			echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
-			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.');
+			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 3);
 			$index = $varPath[1]['key'];
-			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index);
+			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index, 3);
 			self::applyChange($var[$index], array_slice($varPath, 1), $value, $name);
 		} elseif ($changeType === 1 || $changeType === 3 || $changeType === 5) {
-			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.');
+			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.', 3);
 			if ($changeType === 1) {
 				$objClass = $varPath[0]['key'];
-				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.');
+				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.', 3);
 			} else $objClass = get_class($var);
 			$property = $varPath[1]['key'];
 			if ($priv) {
-				if (!isset($varArray, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
+				if (!isset($varArray, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 3);
 				self::applyChange($varArray[$property], array_slice($varPath, 1), $value, $name);
 				if ($priv === 2) {
 					$refObj = new ReflectionObject($var);
@@ -350,10 +350,10 @@ class TimeDebug {
 					$refProp->setValue($var, $varArray[$property]);
 				}
 			} else {
-				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.');
+				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 3);
 				self::applyChange($var->$property, array_slice($varPath, 1), $value, $name);
 			}
-		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.');
+		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.', 2);
 
 	}
 

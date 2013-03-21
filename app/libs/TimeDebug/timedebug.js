@@ -4,7 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: zobrazovani chyb a prazdnych, pripadne
+// TODO: zobrazit cas 32767 jako 'never'
+// TODO: udelat obarveni podle .res
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -296,7 +297,7 @@ td.changeAction = function(e) {
 		}
 
 		if (this.logRow) td.showLog(true, this.logRow);
-		td.consoleOpen(this.varEl, td.saveVarChange);
+		if (this.varEl) td.consoleOpen(this.varEl, td.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
 		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
@@ -324,13 +325,13 @@ td.changeAction = function(e) {
 			td.showLog(true, this.logRow);
 
 			if (td.tdFullWidth) {
-				hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 150]);
+				if (this.varEl) hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 150]);
 			} else {
-				hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 50]);
+				if (this.varEl) hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 50]);
 				hashes.push([td.logWrapper, 'loganchor', td.logContainer, 50]);
 			}
 		} else {
-			hashes.push([td.logWrapper, 'tdanchor', td.logContainer, 50]);
+			if (this.varEl) hashes.push([td.logWrapper, 'tdanchor', td.logContainer, 50]);
 		}
 
 		td.setLocationHashes(true, hashes);
@@ -390,8 +391,10 @@ td.setLocationHashes = function(e, hashes) {
 		td.setLocHashTimeout = null;
 	}
 	if (e === true) {
-		td.locationHashes = hashes;
-		td.setLocHashTimeout = window.setTimeout(td.setLocationHashes, 1);
+		if (hashes) {
+			td.locationHashes = hashes;
+			td.setLocHashTimeout = window.setTimeout(td.setLocationHashes, 1);
+		}
 	} else if (i = (hashes = td.locationHashes).length) {
 		while (i-- > 0) {
 			hashes[i][0].style.height = (2 * hashes[i][0].clientHeight) + 'px';

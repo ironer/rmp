@@ -469,9 +469,11 @@ td.updateChangeList = function(el) {
 				change.logRow.varChanges.splice(j, 1);
 			}
 			if (change.listeners.length) JAK.Events.removeListeners(change.listeners);
-			td.deactivateChange(true, change.varEl);
-			if (change.varEl.hideEl) change.varEl.hideEl.removeAttribute('style');
-			change.varEl.parentNode.removeChild(change.varEl);
+			if (change.varEl) {
+				td.deactivateChange(true, change.varEl);
+				if (change.varEl.hideEl) change.varEl.hideEl.removeAttribute('style');
+				change.varEl.parentNode.removeChild(change.varEl);
+			}
 			td.changes.splice(i, 1);
 			continue;
 		}
@@ -484,7 +486,7 @@ td.updateChangeList = function(el) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
 		} else if (el) change.removeAttribute('id');
-		change.title = change.varEl.title;
+		change.title = change.varEl ? change.varEl.title : td.formatJson(change.data.value);
 		td.tdChangeList.appendChild(change);
 	}
 	td.changes.reverse();
@@ -776,8 +778,6 @@ td.createChange = function(data, container, varEl, logRow) {
 		change.listeners.push(JAK.Events.addListener(varEl, 'mouseout', varEl, td.unhoverChange));
 	} else change.sortVals = {'parentPrefix': key[0] || 'zzzzz', 'parentIndex': key[1] || 32767, 'changeIndex': ++td.noContainerChangeIndex};
 
-	fire(change.sortVals);
-
 	if (data.resId) {
 		if (resEl = JAK.gel(data.resId)) {
 			change.resEl = resEl;
@@ -807,9 +807,11 @@ td.checkDeleteChange = function() {
 
 td.activateChange = function(e, el) {
 	td.hoveredChange = e === true ? el : this;
-	td.tdHashEl = td.hoveredChange.varEl;
-	td.tdHashEl.parentNode.insertBefore(td.tdAnchor, td.tdHashEl);
-	JAK.DOM.addClass(td.tdHashEl, 'nd-hovered');
+	if (td.hoveredChange.varEl) {
+		td.tdHashEl = td.hoveredChange.varEl;
+		td.tdHashEl.parentNode.insertBefore(td.tdAnchor, td.tdHashEl);
+		JAK.DOM.addClass(td.tdHashEl, 'nd-hovered');
+	}
 	if (td.hoveredChange.resEl) JAK.DOM.addClass(td.hoveredChange.resEl, 'nd-hovered');
 
 	td.hoveredChange.appendChild(td.checkDeleteChange());
@@ -818,9 +820,12 @@ td.activateChange = function(e, el) {
 td.deactivateChange = function(e, el) {
 	el = e === true ? el : this.varEl;
 
-	if (el === td.tdHashEl) td.tdHashEl = null;
-	JAK.DOM.removeClass(el, 'nd-hovered');
-	if (el.change.resEl) JAK.DOM.removeClass(el.change.resEl, 'nd-hovered');
+	if (el) {
+		if (el === td.tdHashEl) td.tdHashEl = null;
+		JAK.DOM.removeClass(el, 'nd-hovered');
+	}
+	if (this.resEl) JAK.DOM.removeClass(this.resEl, 'nd-hovered');
+	else if (el && el.change.resEl) JAK.DOM.removeClass(el.change.resEl, 'nd-hovered');
 
 	if (this === td.hoveredChange) td.hoveredChange = null;
 };
@@ -1707,10 +1712,10 @@ td.areaWrite = function(el, text, start, end) {
 	el.scrollTop = top;
 };
 
-function fire(text) {
+td.fire = function(text) {
 	if (!--this.counter) {
 		this.counter = 1000;
 		console.clear();
 	}
 	console.debug(text);
-}
+};

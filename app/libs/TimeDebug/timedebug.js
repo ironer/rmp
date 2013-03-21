@@ -61,6 +61,7 @@ td.changes = [];
 td.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
 td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'showLogRow': true});
 td.hoveredChange = null;
+td.noContainerChangeIndex = 0;
 
 td.tdHashEl = null;
 td.tdAnchor = JAK.mel('a', {'name': 'tdanchor'});
@@ -188,7 +189,7 @@ td.loadChanges = function(changes) {
 		path = changes[i].path.split(',');
 		log = container = varEl = null;
 
-		if (changes[i].res === 2) {
+		if (changes[i].res === 0 || changes[i].res === 2) {
 		} else if (path[0] === 'log') {
 			log = JAK.gel(path[1]);
 			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];
@@ -454,9 +455,9 @@ td.updateChangeList = function(el) {
 
 	td.changes.sort(function(b,a) {
 		return (parseFloat(a.runtime) - parseFloat(b.runtime)) ||
-				(a.varEl.parentPrefix !== b.varEl.parentPrefix ? a.varEl.parentPrefix > b.varEl.parentPrefix :
-						(a.varEl.parentIndex !== b.varEl.parentIndex ? a.varEl.parentIndex > b.varEl.parentIndex :
-								a.varEl.changeIndex > b.varEl.changeIndex)
+				(a.sortVals.parentPrefix !== b.sortVals.parentPrefix ? a.sortVals.parentPrefix > b.sortVals.parentPrefix :
+						(a.sortVals.parentIndex !== b.sortVals.parentIndex ? a.sortVals.parentIndex > b.sortVals.parentIndex :
+								a.sortVals.changeIndex > b.sortVals.changeIndex)
 				);
 	});
 
@@ -722,45 +723,60 @@ td.createChange = function(data, container, varEl, logRow) {
 	varEl = varEl || null;
 	logRow = logRow || false;
 
-	var change = JAK.mel('pre', {'className': 'nd-change-data'}), changeEls, i, j, k, key, resEl;
+	var change = JAK.mel('pre', {'className': 'nd-change-data'}), changeEls, i, j, k, key = [], resEl;
 	change.data = data;
 	td.changes.push(change);
 
-	change.runtime = logRow ? logRow.attrRuntime : container.attrRuntime;
 	change.varEl = varEl;
-	varEl.change = change;
 	change.listeners = [
-		JAK.Events.addListener(varEl, 'mouseover', varEl, td.hoverChange),
-		JAK.Events.addListener(varEl, 'mouseout', varEl, td.unhoverChange),
 		JAK.Events.addListener(change, 'mouseover', change, td.activateChange),
 		JAK.Events.addListener(change, 'mouseout', change, td.deactivateChange),
 		JAK.Events.addListener(change, 'mousedown', change, td.changeAction)
 	];
 
 	if (logRow) {
-		if (typeof(logRow.varChanges) == 'undefined') logRow.varChanges = [varEl];
-		else logRow.varChanges.push(varEl);
 		change.logRow = logRow;
+		change.runtime = logRow.attrRuntime;
 		change.listeners.push(JAK.Events.addListener(change, 'mouseover', change.logRow, td.showLog));
+		key = change.logRow.id.split('_');
 
-		JAK.DOM.addClass(varEl, 'nd-var-change');
-		changeEls = JAK.DOM.getElementsByClass('nd-var-change', container.parentNode);
-		for (i = 0, j = changeEls.length, k = 0; i < j; ++i) {
-			if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
-				changeEls[i].parentPrefix = (key = change.logRow.id.split('_'))[0];
-				changeEls[i].parentIndex = key[1];
-				changeEls[i].changeIndex = k++;
+		if (container && varEl) {
+			if (typeof(logRow.varChanges) == 'undefined') logRow.varChanges = [varEl];
+			else logRow.varChanges.push(varEl);
+
+			JAK.DOM.addClass(varEl, 'nd-var-change');
+			changeEls = JAK.DOM.getElementsByClass('nd-var-change', container.parentNode);
+			for (i = 0, j = changeEls.length, k = 0; i < j; ++i) {
+				if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
+					changeEls[i].parentPrefix = key[0];
+					changeEls[i].parentIndex = key[1];
+					changeEls[i].changeIndex = k++;
+				}
 			}
 		}
-	} else {
-		JAK.DOM.addClass(varEl, 'nd-var-change');
-		changeEls = JAK.DOM.getElementsByClass('nd-var-change', container);
-		for (i = 0, j = changeEls.length; i < j; ++i) {
-			changeEls[i].parentPrefix = (key = container.id.split('_'))[0];
-			changeEls[i].parentIndex = key[1];
-			changeEls[i].changeIndex = i;
+	} else if (container) {
+		change.runtime = container.attrRuntime;
+		key = container.id.split('_');
+
+		if (varEl) {
+			JAK.DOM.addClass(varEl, 'nd-var-change');
+			changeEls = JAK.DOM.getElementsByClass('nd-var-change', container);
+			for (i = 0, j = changeEls.length; i < j; ++i) {
+				changeEls[i].parentPrefix = key[0];
+				changeEls[i].parentIndex = key[1];
+				changeEls[i].changeIndex = i;
+			}
+			change.sortVals = change.varEl;
 		}
-	}
+	} else change.runtime = 32767;
+
+	if (varEl) {
+		varEl.change = change;
+		change.listeners.push(JAK.Events.addListener(varEl, 'mouseover', varEl, td.hoverChange));
+		change.listeners.push(JAK.Events.addListener(varEl, 'mouseout', varEl, td.unhoverChange));
+	} else change.sortVals = {'parentPrefix': key[0] || 'zzzzz', 'parentIndex': key[1] || 32767, 'changeIndex': ++td.noContainerChangeIndex};
+
+	fire(change.sortVals);
 
 	if (data.resId) {
 		if (resEl = JAK.gel(data.resId)) {

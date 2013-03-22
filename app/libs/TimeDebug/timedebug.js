@@ -468,12 +468,12 @@ td.updateChangeList = function(el) {
 		change = td.changes[i];
 		if (change.deleteMe === true) {
 			change.style.display = 'none';
-			if (change.logRow && change.logRow.varChanges && (j = change.logRow.varChanges.indexOf(change.varEl)) != -1) {
-				change.logRow.varChanges.splice(j, 1);
+			if (change.logRow && change.logRow.changedVarEls && (j = change.logRow.changedVarEls.indexOf(change.varEl)) != -1) {
+				change.logRow.changedVarEls.splice(j, 1);
 			}
 			if (change.listeners.length) JAK.Events.removeListeners(change.listeners);
 			if (change.varEl) {
-				td.deactivateChange(true, change.varEl);
+				td.deactivateChange(true, change);
 				if (change.varEl.hideEl) change.varEl.hideEl.removeAttribute('style');
 				change.varEl.parentNode.removeChild(change.varEl);
 			}
@@ -746,13 +746,13 @@ td.createChange = function(data, container, varEl, logRow) {
 		key = change.logRow.id.split('_');
 
 		if (container && varEl) {
-			if (typeof(logRow.varChanges) == 'undefined') logRow.varChanges = [varEl];
-			else logRow.varChanges.push(varEl);
+			if (typeof(logRow.changedVarEls) == 'undefined') logRow.changedVarEls = [varEl];
+			else logRow.changedVarEls.push(varEl);
 
 			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', container.parentNode);
 			for (i = 0, j = changeEls.length, k = 0; i < j; ++i) {
-				if (change.logRow.varChanges.indexOf(changeEls[i]) != -1) {
+				if (change.logRow.changedVarEls.indexOf(changeEls[i]) != -1) {
 					changeEls[i].parentPrefix = key[0];
 					changeEls[i].parentIndex = key[1];
 					changeEls[i].changeIndex = k++;
@@ -808,8 +808,8 @@ td.checkDeleteChange = function() {
 	return td.deleteChange;
 };
 
-td.activateChange = function(e, el) {
-	td.hoveredChange = e === true ? el : this;
+td.activateChange = function(e, change) {
+	td.hoveredChange = e === true ? change : this;
 	if (td.hoveredChange.varEl) {
 		td.tdHashEl = td.hoveredChange.varEl;
 		td.tdHashEl.parentNode.insertBefore(td.tdAnchor, td.tdHashEl);
@@ -820,16 +820,14 @@ td.activateChange = function(e, el) {
 	td.hoveredChange.appendChild(td.checkDeleteChange());
 };
 
-td.deactivateChange = function(e, el) {
-	el = e === true ? el : this.varEl;
+td.deactivateChange = function(e, change) {
+	change = e === true ? change : this;
 
-	if (el) {
-		if (el === td.tdHashEl) td.tdHashEl = null;
-		JAK.DOM.removeClass(el, 'nd-hovered');
+	if (change.varEl) {
+		if (change.varEl === td.tdHashEl) td.tdHashEl = null;
+		JAK.DOM.removeClass(change.varEl, 'nd-hovered');
 	}
-	if (this.resEl) JAK.DOM.removeClass(this.resEl, 'nd-hovered');
-	else if (el && el.change.resEl) JAK.DOM.removeClass(el.change.resEl, 'nd-hovered');
-
+	if (change.resEl) JAK.DOM.removeClass(change.resEl, 'nd-hovered');
 	if (this === td.hoveredChange) td.hoveredChange = null;
 };
 
@@ -1026,18 +1024,18 @@ td.endLogResize = function() {
 	td.actionData.element = null;
 };
 
-td.showVarChanges = function(changes) {
-	for (var i = changes.length; i-- > 0;) {
-		changes[i].style.display = 'inline';
-		changes[i].hideEl.style.display = 'none';
+td.showVarChanges = function(varEls) {
+	for (var i = varEls.length; i-- > 0;) {
+		varEls[i].style.display = 'inline';
+		varEls[i].hideEl.style.display = 'none';
 	}
 };
 
-td.hideVarChanges = function(changes) {
-	if (td.tdHashEl !== null) td.deactivateChange(true, td.tdHashEl);
-	for (var i = changes.length; i-- > 0;) {
-		changes[i].style.display = 'none';
-		changes[i].hideEl.style.display = 'inline';
+td.hideVarChanges = function(varEls) {
+	for (var i = varEls.length; i-- > 0;) {
+		varEls[i].style.display = 'none';
+		varEls[i].hideEl.style.display = 'inline';
+		if (varEls[i] === td.tdHashEl) td.deactivateChange(true, varEls[i].change);
 	}
 };
 
@@ -1046,17 +1044,13 @@ td.showDump = function(id) {
 	if (td.logRowActive) {
 		JAK.DOM.removeClass(td.logRowActive, 'nd-active');
 		td.logRowActive.removeAttribute('style');
-		if (td.logRowActive.varChanges) td.hideVarChanges(td.logRowActive.varChanges);
+		if (td.logRowActive.changedVarEls) td.hideVarChanges(td.logRowActive.changedVarEls);
 	}
 
 	JAK.DOM.addClass(td.logRowActive = td.logRows[id - 1], 'nd-active');
-	if (td.logRowActive.varChanges) td.showVarChanges(td.logRowActive.varChanges);
-
+	if (td.logRowActive.changedVarEls) td.showVarChanges(td.logRowActive.changedVarEls);
 	td.logRowActive.parentNode.insertBefore(td.logAnchor, td.logRowActive);
-
-	if (td.hoveredChange && td.hoveredChange.logRow === td.logRowActive) {
-		td.activateChange(true, td.hoveredChange);
-	}
+	if (td.hoveredChange && td.hoveredChange.logRow === td.logRowActive) td.activateChange(true, td.hoveredChange);
 
 	document.title = '['
 			+ (td.logRowActive.attrRuntime || (td.logRowActive.attrRuntime = td.logRowActive.getAttribute('data-runtime')))

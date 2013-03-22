@@ -1584,14 +1584,21 @@ td.sendChanges = function(e) {
 	td.logView.appendChild(req);
 //	req.submit();
 
-	var shrek = td.deltaShrinkToBase8(td.compressLZW(JSON.stringify(request)));
-	var base62 = td.base8To62(shrek);
+	var base62 = td.compress(JSON.stringify(request));
 
-	td.fire(JSON.stringify(request));
+	td.fire(base62);
 	td.fire('base62shrink:' + base62.length);
 	td.fire('original:' + (td.decompressLZW(td.deltaUnshrinkFromBase8(td.base62To8(base62)))).length);
 
 	return false;
+};
+
+td.compress = function(text) {
+	return text ? td.base8To62(td.deltaShrinkToBase8(td.compressLZW(td.encodeUtf8(text)))) : '';
+};
+
+td.decompress = function(compressed) {
+	return compressed ? td.decodeUtf8(td.decompressLZW(td.deltaUnshrinkFromBase8(td.base62To8(compressed)))) : '';
 };
 
 td.base8To62 = function(base8) {
@@ -1640,6 +1647,14 @@ td.compressLZW = function(text) {
 	if (w !== "") result.push(dict[w]);
 	return result;
 };
+
+td.encodeUtf8 = function(text) {
+	return unescape(encodeURIComponent(text));
+}
+
+td.decodeUtf8 = function(text) {
+	return decodeURIComponent(escape(text));
+}
 
 td.decompressLZW = function(compressed) {
 	"use strict";

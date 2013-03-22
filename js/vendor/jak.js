@@ -1062,39 +1062,34 @@ JAK.gel = function (id, doc) {
 		return id;
 	}
 };
-JAK.query = function (query) {
-	var filterNodes = function (nodes, attributes) {
+JAK.query = function(query, root) {
+	var filterNodes = function(nodes, attributes) {
 		var arr = [];
-		for (var i = 0; i < nodes.length; i++) {
+		for (var i=0;i<nodes.length;i++) {
 			var node = nodes[i];
 			var ok = true;
-			for (var j = 0; j < attributes.length; j++) {
+			for (var j=0;j<attributes.length;j++) {
 				var attrib = attributes[j];
 				var ch = attrib.charAt(0);
 				var value = attrib.substr(1).toLowerCase();
-				if (ch == "#" && value != node.id.toLowerCase()) {
-					ok = false;
-				}
-				if (ch == "." && !JAK.DOM.hasClass(node, value)) {
-					ok = false;
-				}
+				if (ch == "#" && value != node.id.toLowerCase()) { ok = false; }
+				if (ch == "." && !JAK.DOM.hasClass(node, value)) { ok = false; }
 			}
-			if (ok) {
-				arr.push(node);
-			}
+			if (ok) { arr.push(node); }
 		}
 		return arr;
 	};
 	var result = [];
+	root = root || document;
 	var selectors = query.split(",");
 	while (selectors.length) {
 		var selector = selectors.shift().trim();
 		var parts = selector.split(/ +/);
-		var candidates = [document];
-		for (var i = 0; i < parts.length; i++) {
+		var candidates = [root];
+		for (var i=0;i<parts.length;i++) {
 			var newCandidates = [];
 			var part = parts[i];
-			var tagName = part.match(/^[a-z]*/i)[0] || "*";
+			var tagName = part.match(/^[a-z0-9]*/i)[0] || "*";
 			var attributes = part.match(/[\.#][^\.#]+/g) || [];
 			while (candidates.length) {
 				var candidate = candidates.shift();
@@ -1103,11 +1098,9 @@ JAK.query = function (query) {
 			}
 			candidates = newCandidates;
 		}
-		for (var i = 0; i < candidates.length; i++) {
+		for (var i=0;i<candidates.length;i++) {
 			var c = candidates[i];
-			if (result.indexOf(c) == -1) {
-				result.push(c);
-			}
+			if (result.indexOf(c) == -1) { result.push(c); }
 		}
 	}
 	return result;

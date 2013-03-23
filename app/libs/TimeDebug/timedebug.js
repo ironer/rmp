@@ -1631,7 +1631,7 @@ td.deltaUnshrinkFromBase8 = function(base8) {
 td.compressLZW = function(text) {
 	"use strict";
 	var i, j, dict = {}, c, wc, w = "", result = [], dictSize = 256;
-	for (i = 0; i < 256; i += 1) dict[String.fromCharCode(i)] = i;
+	for (i = 0; i < dictSize; ++i) dict[String.fromCharCode(i)] = i;
 
 	for (i = 0, j = text.length; i < j; ++i) {
 		c = text.charAt(i);
@@ -1648,32 +1648,30 @@ td.compressLZW = function(text) {
 	return result;
 };
 
-td.encodeUtf8 = function(text) {
-	return unescape(encodeURIComponent(text));
-}
-
-td.decodeUtf8 = function(text) {
-	return decodeURIComponent(escape(text));
-}
-
 td.decompressLZW = function(compressed) {
 	"use strict";
-	var i, dict = [], w, result, k, entry = "", dictSize = 256;
-	for (i = 0; i < 256; i += 1) dict[i] = String.fromCharCode(i);
+	var i, j, dict = [], w, result, k, entry = "", dictSize = 256;
+	for (i = 0; i < dictSize; ++i) dict[i] = String.fromCharCode(i);
 
-	w = String.fromCharCode(compressed[0]);
-	result = w;
-	for (i = 1; i < compressed.length; i += 1) {
+	result = w = String.fromCharCode(compressed[0]);
+	for (i = 1, j = compressed.length; i < j; ++i) {
 		k = compressed[i];
 		if (dict[k]) entry = dict[k];
 		else if (k === dictSize) entry = w + w.charAt(0);
 		else return null;
 
-		result += entry;
 		dict[dictSize++] = w + entry.charAt(0);
-		w = entry;
+		result += w = entry;
 	}
 	return result;
+};
+
+td.encodeUtf8 = function(text) {
+	return unescape(encodeURIComponent(text));
+};
+
+td.decodeUtf8 = function(text) {
+	return decodeURIComponent(escape(text));
 };
 
 td.getRows = function(el, start, end) {

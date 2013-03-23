@@ -126,6 +126,7 @@ td.init = function(logId) {
 				td.logRows.push(logNodes[i]);
 				logNodes[i].logId = td.logRows.length;
 				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
+				logNodes[i].attrTitle = logNodes[i].getAttribute('data-title');
 				logNodes[i].onclick = td.logClick;
 				td.setTitles(logNodes[i]);
 				elements = logNodes[i].getElementsByTagName('a');
@@ -1052,10 +1053,7 @@ td.showDump = function(id) {
 	td.logRowActive.parentNode.insertBefore(td.logAnchor, td.logRowActive);
 	if (td.hoveredChange && td.hoveredChange.logRow === td.logRowActive) td.activateChange(true, td.hoveredChange);
 
-	document.title = '['
-			+ (td.logRowActive.attrRuntime || (td.logRowActive.attrRuntime = td.logRowActive.getAttribute('data-runtime')))
-			+ ' ms] td::'
-			+ (td.logRowActive.attrTitle || (td.logRowActive.attrTitle = td.logRowActive.getAttribute('data-title')));
+	document.title = '[' + td.logRowActive.attrRuntime + ' ms] ' + td.logRowActive.id + '::' + td.logRowActive.attrTitle;
 
 	if (td.indexes[td.logRowActiveId - 1] !== td.indexes[id - 1]) {
 
@@ -1582,7 +1580,7 @@ td.sendChanges = function(e) {
 
 	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(request)}));
 	td.logView.appendChild(req);
-//	req.submit();
+	req.submit();
 
 	var base62 = td.compress(JSON.stringify(request));
 

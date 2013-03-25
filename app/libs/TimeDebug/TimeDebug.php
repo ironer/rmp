@@ -107,11 +107,13 @@ class TimeDebug {
 		echo "\n</style></head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logWrapper\">\n<div id=\"logView\">\n";
 
 		if (isset($_GET['tdrequest'])) {
-			self::$request = json_decode($_GET['tdrequest'], TRUE);
+			self::$request = json_decode(Base62Shrink::decompress($_GET['tdrequest']), TRUE);
 			self::$request['count'] = count(self::$request);
 			self::$request['dumps'] = array();
 			self::$request['logs'] = array();
 			for ($i = 0; $i < self::$request['count']; ++$i) {
+				self::$request[$i]['path'] = self::$request[$i][0]; unset(self::$request[$i][0]);
+				self::$request[$i]['value'] = self::$request[$i][1]; unset(self::$request[$i][1]);
 				$path = explode(',', self::$request[$i]['path']);
 				if ($path[0] == 'dump') {
 					self::$request[$i]['varPath'] = array_slice($path, 2);
@@ -201,11 +203,13 @@ class TimeDebug {
 		echo "\n<script>\n";
 		readfile(__DIR__ . '/jak.packer.js');
 		echo "\n";
+		readfile(__DIR__ . '/b62s.packer.js');
+		echo "\n";
 		readfile(__DIR__ . '/timedebug.js');
 		echo "\ntd.local = " . (self::$local ? 'true' : 'false') . ";\n"
-				. "td.indexes = ". json_encode(self::$timeDebug) . ";\n"
-				. "td.response = ". json_encode(self::getResponse()) . ";\n"
-				. "td.helpHtml = ". (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
+				. "td.indexes = " . json_encode(self::$timeDebug) . ";\n"
+				. "td.response = " . json_encode(self::getResponse()) . ";\n"
+				. "td.helpHtml = " . (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
 				. "td.init(1);\n</script>\n";
 	}
 

@@ -1571,105 +1571,18 @@ td.sendChanges = function(e) {
 	e = e || window.event;
 
 	var request = [];
-	for (var i = 0, j = td.changes.length; i < j; ++i) request.push({'path': td.changes[i].data.path, 'value': td.changes[i].data.value});
+	for (var i = 0, j = td.changes.length; i < j; ++i) request.push([td.changes[i].data.path, td.changes[i].data.value]);
 
 	if (!request.length) return false;
 
 	var req = JAK.mel('form', {'action': location.protocol + '//' + location.host + location.pathname, method:'get'}, {'display': 'none'});
 	if (e.shiftKey) req.target = '_blank';
 
-	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': JSON.stringify(request)}));
+	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': b62s.compress(JSON.stringify(request))}));
 	td.logView.appendChild(req);
 	req.submit();
 
-	var base62 = td.compress(JSON.stringify(request));
-
-	td.fire(base62);
-	td.fire('base62shrink:' + base62.length);
-	td.fire('original:' + (td.decompressLZW(td.deltaUnshrinkFromBase8(td.base62To8(base62)))).length);
-
 	return false;
-};
-
-td.compress = function(text) {
-	return text ? td.base8To62(td.deltaShrinkToBase8(td.compressLZW(td.encodeUtf8(text)))) : '';
-};
-
-td.decompress = function(compressed) {
-	return compressed ? td.decodeUtf8(td.decompressLZW(td.deltaUnshrinkFromBase8(td.base62To8(compressed)))) : '';
-};
-
-td.base8To62 = function(base8) {
-	base8 = base8.length % 2 ? '1' + base8 : '0' + base8 + '0';
-	for (var base62 = '', i = 0, j = base8.length; ++i < j; ++i) {
-		base62 += 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[parseInt((base8.substr(i - 1, 2)), 8)];
-	}
-	return base62;
-};
-
-td.base62To8 = function(base62) {
-	for (var base8 = '', i = 0, j = base62.length, k; i < j; ++i) {
-		k = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.indexOf(base62[i]).toString(8);
-		base8 += k[1] ? k[0] + k[1] : '0' + k[0];
-	}
-	return base8[0] === '1' ? base8.slice(1) : base8.slice(1, -1);
-};
-
-td.deltaShrinkToBase8 = function(intArray) {
-	for (var compArray = [], i = 0, j = intArray.length, k = 0, l; i < j; k = l) compArray.push(((l = intArray[i++]) - k).toString(6));
-	return compArray.join('6').replace(/6-/g, '7');
-};
-
-td.deltaUnshrinkFromBase8 = function(base8) {
-	var compArray = base8.replace(/7/g, '6-').split('6');
-	for (var intArray = [], i = 0, j = compArray.length, k = 0, l; i < j; k = l) intArray.push(l = (k + parseInt(compArray[i++], 6)));
-	return intArray;
-};
-
-td.compressLZW = function(text) {
-	"use strict";
-	var i, j, dict = {}, c, wc, w = "", result = [], dictSize = 256;
-	for (i = 0; i < dictSize; ++i) dict[String.fromCharCode(i)] = i;
-
-	for (i = 0, j = text.length; i < j; ++i) {
-		c = text.charAt(i);
-		wc = w + c;
-		if (dict.hasOwnProperty(wc)) w = wc;
-		else {
-			result.push(dict[w]);
-			dict[wc] = dictSize++;
-			w = String(c);
-		}
-	}
-
-	if (w !== "") result.push(dict[w]);
-	return result;
-};
-
-td.decompressLZW = function(compressed) {
-	"use strict";
-	var i, j, dict = [], w, result, k, entry = "", dictSize = 256;
-	for (i = 0; i < dictSize; ++i) dict[i] = String.fromCharCode(i);
-
-	result = w = String.fromCharCode(compressed[0]);
-	for (i = 1, j = compressed.length; i < j; ++i) {
-		k = compressed[i];
-		if (dict[k]) entry = dict[k];
-		else if (k === dictSize) entry = w + w.charAt(0);
-		else return null;
-
-		dict[dictSize++] = w + entry.charAt(0);
-		result += w = entry;
-	}
-	return result;
-};
-
-td.encodeUtf8 = function(text) {
-	return unescape(encodeURIComponent(text));
-};
-
-td.decodeUtf8 = function(text) {
-	return decodeURIComponent(escape(text));
 };
 
 td.getRows = function(el, start, end) {

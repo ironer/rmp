@@ -186,7 +186,7 @@ td.loadChanges = function(changes) {
 		path = changes[i].path.split(',');
 		log = container = varEl = null;
 
-		if (changes[i].res === 0 || changes[i].res === 2) {
+		if (changes[i].res === 0 || changes[i].res === 3) {
 		} else if (path[0] === 'log') {
 			log = JAK.gel(path[1]);
 			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];

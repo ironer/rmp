@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: zobrazit cas 32767 jako 'never'
 // TODO: udelat obarveni podle .res
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
@@ -777,13 +776,13 @@ td.createChange = function(data, container, varEl, logRow) {
 			}
 			change.sortVals = change.varEl;
 		}
-	} else change.runtime = 32767;
+	} else change.runtime = ' N/A ';
 
 	if (varEl) {
 		varEl.change = change;
 		change.listeners.push(JAK.Events.addListener(varEl, 'mouseover', varEl, td.hoverChange));
 		change.listeners.push(JAK.Events.addListener(varEl, 'mouseout', varEl, td.unhoverChange));
-	} else change.sortVals = {'parentPrefix': key[0] || 'zzzzz', 'parentIndex': key[1] || 32767, 'changeIndex': ++td.noContainerChangeIndex};
+	} else change.sortVals = {'parentPrefix': key[0] || 'zzzzz', 'parentIndex': key[1] || 65535, 'changeIndex': ++td.noContainerChangeIndex};
 
 	if (data.resId) {
 		if (resEl = JAK.gel(data.resId)) {

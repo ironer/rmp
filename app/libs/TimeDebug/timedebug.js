@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat obarveni podle .res
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -483,7 +482,8 @@ td.updateChangeList = function(el) {
 			continue;
 		}
 
-		change.innerHTML = '[' + change.runtime + '] ' + td.printPath(change.data.path) + ' <span class="nd-'
+		change.innerHTML = '<span' + (typeof(change.data.res) != 'undefined' ? ' class="nd-res nd-restype' + change.data.res + '">' : '>')
+				+ '[' + change.runtime + ']</span> ' + td.printPath(change.data.path) + ' <span class="nd-'
 				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
 				+ JSON.stringify(change.data.value) + '</span>';
 

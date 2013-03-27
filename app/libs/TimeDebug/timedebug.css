@@ -227,6 +227,37 @@ pre.nd {
 	height: 16px;
 	overflow: hidden;
 }
+.nd-res:after {
+	display: inline-block;
+	height: 16px;
+	width: 6px;
+	font-size: 10px;
+	padding-left: 1px;
+	margin: 0 -6px 0 -1px;
+	color: #fff;
+	background: #800;
+}
+.nd-restype0:after {
+	background: #333;
+	content: "0";
+}
+.nd-restype1:after {
+	background: #080;
+	content: "⎷";
+}
+.nd-restype2:after {
+	background: #ba0;
+	content: "i";
+}
+.nd-restype3:after {
+	content: "∄";
+}
+.nd-restype4:after {
+	content: "∉";
+}
+.nd-restype5:after {
+	content: "$";
+}
 #tdChangeList .nd-change-data:hover, #tdChangeList .nd-change-data.nd-hovered, #tdChangeList .nd-change-data.nd-edited {
 	background: #fc8;
 }

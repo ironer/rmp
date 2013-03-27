@@ -12,9 +12,7 @@
 // TODO: vypnout logovani
 
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
-// TODO: vytvorit unit testy
 // TODO: ulozit serii automatickych otevreni TimeDebugu
-// TODO: pridat do JAKu nove Query z Masteru z Gitu
 
 var td = {};
 
@@ -84,11 +82,11 @@ td.jsonReplaces = {
 };
 
 td.jsonRepairs = [
+	["constants"],
 	["string"],
 	["commas", "numbers"],
 	["dblquotes", "quotes", "commas", "numbers"],
 	["keys"],
-	["constants"],
 	["dblquotes", "quotes", "keys", "constants"],
 	["quotes", "keys", "constants"],
 	["objects", "keys", "constants"],
@@ -759,6 +757,7 @@ td.createChange = function(data, container, varEl, logRow) {
 					changeEls[i].changeIndex = k++;
 				}
 			}
+			change.sortVals = change.varEl;
 		}
 	} else if (container) {
 		change.runtime = container.attrRuntime;
@@ -1578,7 +1577,7 @@ td.sendChanges = function(e) {
 	var req = JAK.mel('form', {'action': location.protocol + '//' + location.host + location.pathname, method:'get'}, {'display': 'none'});
 	if (e.shiftKey) req.target = '_blank';
 
-	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': b62s.compress(JSON.stringify(request))}));
+	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': b62s.base8To62(b62s.compress(JSON.stringify(request)))}));
 	td.logView.appendChild(req);
 	req.submit();
 

@@ -5,6 +5,7 @@
  * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
  */
 
+// TODO: oznacit nalezenou, ale nezmenenou hodnotu !!! => unit testy
 // TODO: zobrazit v dumpu a logu provedene nebo neprovedene zmeny
 
 // TODO: zkontrolovat dumpovani resources
@@ -298,8 +299,7 @@ class TimeDebug {
 			$change = &self::$request[$changes[$i]];
 			$change['resId'] = 'tdchres_' . ++self::$varCounter;
 			try {
-				self::applyChange($var, $change['varPath'], $change['value'], $change['resId']);
-				$change['res'] = 1;
+				$change['res'] = self::applyChange($var, $change['varPath'], $change['value'], $change['resId']);
 			} catch(Exception $e) {
 				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
 				$change['res'] = $e->getCode();
@@ -326,12 +326,23 @@ class TimeDebug {
 		}
 
 		if ($changeType >= 7)  {
-			echo '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result nd-ok">';
+			echo '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result ';
+			if($var === $value) {
+				echo 'nd-equal">';
+			} else {
+				echo 'nd-ok">';
+				$changed = TRUE;
+			}
 			if ($changeType === 7) echo ' Chranena property "' . $varPath[0]['key'] . '":';
 			elseif ($changeType === 8) echo ' Klic/property "' . $varPath[0]['key'] . '":';
-			echo ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
-			$var = $value;
-			echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+			if (isset($changed)) {
+				echo ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
+				$var = $value;
+				echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+				return 1;
+			}
+			echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+			return 9;
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 4);
 			$index = $varPath[1]['key'];
@@ -358,7 +369,7 @@ class TimeDebug {
 				self::applyChange($var->$property, array_slice($varPath, 1), $value, $name);
 			}
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.', 3);
-
+		return 5;
 	}
 
 

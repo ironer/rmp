@@ -203,7 +203,6 @@ pre.nd {
 	text-indent: -3em;
 	white-space: pre-wrap;
 	word-wrap: break-word;
-	max-height: 32px;
 }
 .nd-td .nd-equal {
 	color: #440;

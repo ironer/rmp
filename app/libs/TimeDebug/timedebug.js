@@ -1,9 +1,10 @@
 /**
  * Copyright (c) 2013 Stefan Fiedler
- * Object for td GUI
+ * Object for TimeDebug GUI
  * @author: Stefan Fiedler
  */
 
+// TODO: pri kliknuti na report zmeny reagovat jako na change
 // TODO: zobrazit cas 32767 jako 'never'
 // TODO: udelat obarveni podle .res
 // TODO: udelat pridavani prvku do pole
@@ -298,7 +299,10 @@ td.changeAction = function(e) {
 		if (this.logRow) td.showLog(true, this.logRow);
 		if (this.varEl) td.consoleOpen(this.varEl, td.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
-		if (el.id === 'tdDeleteChange') {
+		if (JAK.DOM.hasClass(el, 'nd-result') && this.logRow) {
+			td.showLog(true, this.logRow);
+			return false;
+		} else if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
 			td.checkDeleteChange();
 			return false;
@@ -788,6 +792,7 @@ td.createChange = function(data, container, varEl, logRow) {
 			resEl.res = data.res;
 			change.listeners.push(JAK.Events.addListener(resEl, 'mouseover', resEl, td.hoverChange));
 			change.listeners.push(JAK.Events.addListener(resEl, 'mouseout', resEl, td.unhoverChange));
+			change.listeners.push(JAK.Events.addListener(resEl, 'mousedown', change, td.changeAction));
 		} else data.resId = null;
 	}
 

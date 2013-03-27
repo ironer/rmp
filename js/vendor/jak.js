@@ -1130,11 +1130,12 @@ JAK.DOM.addClass = function (element, className) {
 	element.className = element.className ? element.className + " " + className : className;
 };
 JAK.DOM.removeClass = function (element, className) {
-	var names = element.className.split(" ");
+	var classes = element.className.split(" ");
+	var classNames = className.toLowerCase().split(" ");
 	var newClassArr = [];
-	for (var i = 0; i < names.length; i++) {
-		if (names[i].toLowerCase() != className.toLowerCase()) {
-			newClassArr.push(names[i]);
+	for (var i = 0; i < classes.length; i++) {
+		if (classNames.indexOf(classes[i].toLowerCase()) === -1) {
+			newClassArr.push(classes[i]);
 		}
 	}
 	element.className = newClassArr.join(" ");

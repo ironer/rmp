@@ -216,7 +216,7 @@ pre.nd {
 	color: #700;
 	background: #fbb;
 }
-.nd-result:hover, .nd-result.nd-hovered {
+.nd-result:hover, .nd-result.nd-hovered, .nd-result.nd-edited {
 	color: #000;
 	background: #fc8;
 }
@@ -227,7 +227,7 @@ pre.nd {
 	height: 16px;
 	overflow: hidden;
 }
-#tdChangeList .nd-change-data:hover, #tdChangeList .nd-change-data.nd-hovered {
+#tdChangeList .nd-change-data:hover, #tdChangeList .nd-change-data.nd-hovered, #tdChangeList .nd-change-data.nd-edited {
 	background: #fc8;
 }
 .nd-change-data:hover #tdDeleteChange {
@@ -358,11 +358,12 @@ span.nd-var-change {
 	color: #000;
 	background: #fc8;
 }
-.nd-local .nd-key.nd-hovered, .nd-local .nd-top.nd-hovered {
+.nd-local .nd-key.nd-hovered, .nd-local .nd-top.nd-hovered, .nd-local .nd-key.nd-edited, .nd-local .nd-top.nd-edited {
 	color: #000;
 	background: #fc8;
 }
-.nd-local .nd-key.nd-hovered:before, .nd-local .nd-top.nd-hovered:before {
+.nd-local .nd-key.nd-hovered:before, .nd-local .nd-top.nd-hovered:before,
+.nd-local .nd-key.nd-edited:before, .nd-local .nd-top.nd-edited:before {
 	display: inline;
 	content: '$>';
 	color: #000;
@@ -419,7 +420,6 @@ span.nd-var-change {
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#000066', endColorstr='#00ffffff',GradientType=0 );
 }
 #tdConsole {
-	display: block;
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -429,7 +429,6 @@ span.nd-var-change {
 	overflow: hidden;
 }
 #tdConsoleMask {
-	display: block;
 	position: absolute;
 	width: 100%;
 	height: 100%;

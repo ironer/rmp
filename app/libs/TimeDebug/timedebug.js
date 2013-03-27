@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: presunout konzoli na konec body!
 // TODO: zobrazit cas 32767 jako 'never'
 // TODO: udelat obarveni podle .res
 // TODO: udelat pridavani prvku do pole
@@ -665,7 +664,7 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 };
 
 td.saveVarChange = function() {
-	var varEl = td.tdConsole.parentNode;
+	var varEl = td.tdConsole.varEl;
 	var el = varEl;
 	var key = parseInt(el.getAttribute('data-pk')) || 8;
 	var privateVar = !!(key % 2);
@@ -890,8 +889,8 @@ td.consoleAction = function(e) {
 };
 
 td.consoleOpen = function(el, callback) {
-	td.tdConsole = JAK.mel('span', {'id':'tdConsole'});
-	td.tdConsole.mask = JAK.mel('span', {'id':'tdConsoleMask'});
+	td.tdConsole = JAK.mel('div', {'id':'tdConsole'});
+	td.tdConsole.mask = JAK.mel('div', {'id':'tdConsoleMask'});
 
 	var attribs = {id:'tdConsoleArea'};
   if (el.title) {
@@ -903,7 +902,8 @@ td.consoleOpen = function(el, callback) {
 		'height':td.consoleConfig.y + 'px'});
 	td.tdConsole.appendChild(td.tdConsole.mask);
 	td.tdConsole.appendChild(td.tdConsole.area);
-	el.appendChild(td.tdConsole);
+	td.tdConsole.varEl = el;
+	document.body.appendChild(td.tdConsole);
 
 	td.tdConsole.listeners = [
 		JAK.Events.addListener(td.tdConsole.area, 'keypress', td.tdConsole.area, td.readConsoleKeyPress),
@@ -913,6 +913,12 @@ td.consoleOpen = function(el, callback) {
 
 	td.tdConsole.callback = callback || td.tdStop;
 	td.textareaTimeout = window.setTimeout(td.textareaFocus, 1);
+
+	JAK.DOM.addClass(el, 'nd-edited');
+	if (el.change) {
+		JAK.DOM.addClass(el.change, 'nd-edited');
+		if (el.change.resEl) JAK.DOM.addClass(el.change.resEl, 'nd-edited');
+	}
 };
 
 td.textareaFocus = function() {
@@ -937,11 +943,11 @@ td.catchMask = function(e) {
 };
 
 td.consoleClose = function() {
-	if (td.tdConsole.parentNode.change) {
-		JAK.DOM.removeClass(td.tdConsole.parentNode.change, 'nd-hovered');
-		if (td.tdConsole.parentNode.change.resEl) {
-			JAK.DOM.removeClass(td.tdConsole.parentNode.change.resEl, 'nd-hovered');
-		}
+	var varEl = td.tdConsole.varEl;
+	JAK.DOM.removeClass(varEl, 'nd-hovered nd-edited');
+	if (varEl.change) {
+		JAK.DOM.removeClass(varEl.change, 'nd-hovered nd-edited');
+		if (varEl.change.resEl) JAK.DOM.removeClass(varEl.change.resEl, 'nd-hovered nd-edited');
 	}
 
 	if (td.tdConsole.listeners) {
@@ -958,8 +964,8 @@ td.consoleClose = function() {
 	cc.x = td.tdConsole.area.offsetWidth - 8;
 	cc.y = td.tdConsole.area.clientHeight;
 
-	if (td.tdConsole.mask.title) td.tdConsole.parentNode.title = td.tdConsole.mask.title;
-	td.tdConsole.parentNode.removeChild(td.tdConsole);
+	if (td.tdConsole.mask.title) varEl.title = td.tdConsole.mask.title;
+	document.body.removeChild(td.tdConsole);
 	td.tdConsole = null;
 	return false;
 };
@@ -1502,7 +1508,7 @@ td.readKeyDown = function(e) {
 				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop + 16) / 16);
 				return false;
 		} else if (e.keyCode == 27) {
-			if (td.tdConsole) return td.consoleClose(true);
+			if (td.tdConsole) return td.consoleClose();
 			if (!(td.visibleTitles.length - (td.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni?')) {
 				return true;
 			}

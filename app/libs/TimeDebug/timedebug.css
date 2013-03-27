@@ -205,15 +205,15 @@ pre.nd {
 	word-wrap: break-word;
 }
 .nd-td .nd-equal {
-	color: #440;
+	color: #420;
 	background: #ff9;
 }
 .nd-td .nd-ok {
-	color: #060;
+	color: #050;
 	background: #bfb;
 }
 .nd-td .nd-error {
-	color: #700;
+	color: #600;
 	background: #fbb;
 }
 .nd-result:hover, .nd-result.nd-hovered, .nd-result.nd-edited {

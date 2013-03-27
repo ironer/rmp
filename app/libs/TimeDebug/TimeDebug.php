@@ -335,15 +335,16 @@ class TimeDebug {
 				echo ' Zmena z ' . json_encode($var) . ' (' . gettype($var);
 				$var = $value;
 				echo ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-				return 1;
+				$retVal = 1;
+			} else {
+				echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+				$retVal = 9;
 			}
-			echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-			return 9;
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 4);
 			$index = $varPath[1]['key'];
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index, 4);
-			self::applyChange($var[$index], array_slice($varPath, 1), $value, $name);
+			$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name);
 		} elseif ($changeType === 1 || $changeType === 3 || $changeType === 5) {
 			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.', 4);
 			if ($changeType === 1) {
@@ -353,7 +354,7 @@ class TimeDebug {
 			$property = $varPath[1]['key'];
 			if ($priv) {
 				if (!isset($varArray, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 4);
-				self::applyChange($varArray[$property], array_slice($varPath, 1), $value, $name);
+				$retVal = self::applyChange($varArray[$property], array_slice($varPath, 1), $value, $name);
 				if ($priv === 2) {
 					$refObj = new ReflectionObject($var);
 					$refProp = $refObj->getProperty($property);
@@ -362,10 +363,10 @@ class TimeDebug {
 				}
 			} else {
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 4);
-				self::applyChange($var->$property, array_slice($varPath, 1), $value, $name);
+				$retVal = self::applyChange($var->$property, array_slice($varPath, 1), $value, $name);
 			}
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.', 3);
-		return 5;
+		return $retVal;
 	}
 
 

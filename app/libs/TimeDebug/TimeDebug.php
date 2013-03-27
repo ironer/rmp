@@ -5,13 +5,8 @@
  * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
  */
 
-// TODO: oznacit nalezenou, ale nezmenenou hodnotu !!! => unit testy
-// TODO: zobrazit v dumpu a logu provedene nebo neprovedene zmeny
-
 // TODO: zkontrolovat dumpovani resources
 // TODO: opravit editor:// linky na macbooku pro PHPStorm 6
-// TODO: odesilat slozite zmeny postem asynchronne + getem uid
-
 
 class TimeDebug {
 
@@ -301,7 +296,8 @@ class TimeDebug {
 			try {
 				$change['res'] = self::applyChange($var, $change['varPath'], $change['value'], $change['resId']);
 			} catch(Exception $e) {
-				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne: ' . $e->getMessage() . ' </pre>';
+				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne na hodnotu '
+						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';
 				$change['res'] = $e->getCode();
 			}
 			unset($change['varPath']);

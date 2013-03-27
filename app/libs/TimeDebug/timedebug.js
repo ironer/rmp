@@ -4,13 +4,11 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: pri kliknuti na report zmeny reagovat jako na change
+// TODO: presunout konzoli na konec body!
 // TODO: zobrazit cas 32767 jako 'never'
 // TODO: udelat obarveni podle .res
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
-
-// TODO: vypnout logovani
 
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
 // TODO: ulozit serii automatickych otevreni TimeDebugu
@@ -281,10 +279,16 @@ td.changeAction = function(e) {
 
 	if (!td.local || e.altKey || e.ctrlKey || e.metaKey) return true;
 
+	var el = JAK.Events.getTarget(e);
+
+	if (JAK.DOM.hasClass(el, 'nd-result') && e.button === JAK.Browser.mouse.left) {
+		if (this.logRow) td.showLog(true, this.logRow);
+		return true;
+	}
+
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
 
-	var el = JAK.Events.getTarget(e);
 	var hashes = [];
 
 	if (e.button === JAK.Browser.mouse.right) {
@@ -299,10 +303,7 @@ td.changeAction = function(e) {
 		if (this.logRow) td.showLog(true, this.logRow);
 		if (this.varEl) td.consoleOpen(this.varEl, td.saveVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
-		if (JAK.DOM.hasClass(el, 'nd-result') && this.logRow) {
-			td.showLog(true, this.logRow);
-			return false;
-		} else if (el.id === 'tdDeleteChange') {
+		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
 			td.checkDeleteChange();
 			return false;
@@ -401,12 +402,12 @@ td.setLocationHashes = function(e, hashes) {
 	} else if (i = (hashes = td.locationHashes).length) {
 		while (i-- > 0) {
 			hashes[i][0].style.height = (2 * hashes[i][0].clientHeight) + 'px';
-			window.location.hash = hashes[i][1];
+			window.location.replace('#' + hashes[i][1]);
 			hashes[i][2].scrollTop -= hashes[i][3];
 			hashes[i][0].removeAttribute('style');
 		}
 		td.locationHashes.length = 0;
-		window.location.hash = null;
+		window.location.replace('#');
 	}
 };
 
@@ -938,7 +939,9 @@ td.catchMask = function(e) {
 td.consoleClose = function() {
 	if (td.tdConsole.parentNode.change) {
 		JAK.DOM.removeClass(td.tdConsole.parentNode.change, 'nd-hovered');
-		if (td.tdConsole.parentNode.change.resEl) JAK.DOM.removeClass(td.tdConsole.parentNode.change.resEl, 'nd-hovered');
+		if (td.tdConsole.parentNode.change.resEl) {
+			JAK.DOM.removeClass(td.tdConsole.parentNode.change.resEl, 'nd-hovered');
+		}
 	}
 
 	if (td.tdConsole.listeners) {
@@ -1499,7 +1502,7 @@ td.readKeyDown = function(e) {
 				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop + 16) / 16);
 				return false;
 		} else if (e.keyCode == 27) {
-			if (td.tdConsole) return td.consoleClose();
+			if (td.tdConsole) return td.consoleClose(true);
 			if (!(td.visibleTitles.length - (td.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni?')) {
 				return true;
 			}

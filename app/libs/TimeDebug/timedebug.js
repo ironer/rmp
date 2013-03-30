@@ -253,7 +253,7 @@ td.mouseWheel = function(e) {
 td.changeVar = function(e) {
 	e = e || window.event;
 
-	if (!td.local || e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) return true;
+	if (!td.local || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) return true;
 
 	var el = JAK.Events.getTarget(e);
 	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
@@ -261,7 +261,12 @@ td.changeVar = function(e) {
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
 
-	if (JAK.DOM.hasClass(el, 'nd-key')) {
+	if (e.altKey) {
+		if (JAK.DOM.hasClass(el, 'nd-array')) {
+			if (JAK.DOM.hasClass(el, 'nd-top')) td.hideTitle(td.titleActive);
+			td.consoleOpen(el, td.saveArrayAdd);
+		}
+	} else if (JAK.DOM.hasClass(el, 'nd-key')) {
 		td.consoleOpen(el, td.saveVarChange);
 	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
 		td.hideTitle(td.titleActive);
@@ -725,6 +730,14 @@ td.saveVarChange = function() {
 	return true;
 };
 
+td.saveArrayAdd = function() {
+	var varEl = td.tdConsole.varEl;
+
+	console.debug(td.tdConsole.area);
+	td.consoleClose();
+	return true;
+};
+
 td.createChange = function(data, container, varEl, logRow) {
 	container = container || null;
 	varEl = varEl || null;
@@ -1094,10 +1107,10 @@ td.showDump = function(id) {
 	return true;
 };
 
-td.setTitles = function(el) {
+td.setTitles = function(container) {
 	var titleSpan, titleStrong, titleStrongs, listeners = [];
 
-	titleStrongs = el.getElementsByTagName('strong');
+	titleStrongs = container.getElementsByTagName('strong');
 	for (var i = titleStrongs.length; i-- > 0;) {
 		if ((titleStrong = titleStrongs[i]).className == 'nd-inner') {
 			titleSpan = titleStrong.parentNode.parentNode;
@@ -1109,13 +1122,13 @@ td.setTitles = function(el) {
 					JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle)
 			);
 
-			if (!el.titleListener) JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
+			if (!container.titleListener) JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
 		}
 	}
 
-	if (el === td.tdView) {
+	if (container === td.tdView) {
 		td.tdListeners = td.tdListeners.concat(listeners);
-		if (!el.titleListener) el.titleListener = true;
+		if (!container.titleListener) container.titleListener = true;
 	}
 };
 

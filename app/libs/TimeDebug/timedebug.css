@@ -1,6 +1,12 @@
 body {
 	margin: 0;
 }
+hr {
+	margin: 7px 0;
+}
+hr + hr {
+	display: none;
+}
 body.nd-loading {
 	visibility: hidden;
 }
@@ -384,17 +390,23 @@ span.nd-var-change {
 .nd-td #logContainer {
 	overflow: scroll;
 }
-.nd-local #tdView .nd-key:hover, .nd-local .nd-top:hover, .nd-local .nd-dump .nd-key:hover
+.nd-local .nd-top:hover,
+.nd-local .nd-dump .nd-key:hover,
+.nd-local #tdView .nd-key:hover,
+.nd-local .nd-top.nd-hovered, .nd-local .nd-top.nd-edited,
+.nd-local .nd-key.nd-hovered, .nd-local .nd-key.nd-edited
 {
 	color: #000;
 	background: #fc8;
 }
-.nd-local .nd-key.nd-hovered, .nd-local .nd-top.nd-hovered, .nd-local .nd-key.nd-edited, .nd-local .nd-top.nd-edited {
+.nd-local .nd-dump .nd-array:hover,
+.nd-local #tdView div .nd-array:hover,
+.nd-local .nd-array.nd-hovered, .nd-local .nd-array.nd-edited {
 	color: #000;
 	background: #fc8;
 }
-.nd-local .nd-key.nd-hovered:before, .nd-local .nd-top.nd-hovered:before,
-.nd-local .nd-key.nd-edited:before, .nd-local .nd-top.nd-edited:before {
+.nd-local .nd-top.nd-hovered:before, .nd-local .nd-top.nd-edited:before,
+.nd-local .nd-key.nd-hovered:before, .nd-local .nd-key.nd-edited:before {
 	display: inline;
 	content: '$>';
 	color: #000;
@@ -500,7 +512,4 @@ span.nd-var-change {
 	height: 1px;
 	width: 1px;
 	font-size: 1px;
-}
-hr + hr {
-	display: none;
 }

@@ -419,7 +419,7 @@ class TimeDebug {
 				))
 				. ($file ? '<small>in <' . (empty($options[self::LOCATION_LINK]) ? 'span' : 'a href="editor://open/?file='
 						. rawurlencode($file) . "&amp;line=$line\"" ) . " class=\"nd-editor\"><i>"
-						. htmlspecialchars(substr($file, strlen(self::$root))) . "</i> <b>@$line</b></a> $code</small>" : '') . "</pre>\n";
+						. htmlspecialchars(substr($file, strlen(self::$root))) . "</i> <b>@$line</b></a> $code</small>" : '') . "</pre>";
 	}
 
 
@@ -565,10 +565,11 @@ class TimeDebug {
 			$marker = uniqid("\x00", TRUE);
 		}
 
-		$out = '<span class="nd-array' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top') . '">array</span> (';
+		$out = '<span class="nd-array' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top')
+				. ($parentKey ? '" data-pk="' . $parentKey : '') . '">array</span> (';
 
 		if (empty($var)) {
-			return $out . "0)" . ($options[self::NO_BREAK] ? '' : "\n");
+			return $out . '0)' . ($options[self::NO_BREAK] ? '' : "\n");
 
 		} elseif (isset($var[$marker])) {
 			return $out . (count($var) - 1) . ") [ <i>RECURSION</i> ]" . ($options[self::NO_BREAK] ? '' : "\n");

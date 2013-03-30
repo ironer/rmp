@@ -12,10 +12,10 @@ class Router {
 	private $usedRoute = array();
 
 
-	public function __construct($_id, $_container) {
-		if (get_class($_container) === 'App') {
-			$this->id = $_id;
-			$this->container = $_container;
+	public function __construct($id, $container) {
+		if ($container instanceof App) {
+			$this->id = $id;
+			$this->container = $container;
 			App::lg("Vytvoren router '$this->id'", $this);
 		} else {
 			throw new Exception("Konstruktor routeru ocekava odkaz na kontajner. Druhy argument neni objekt tridy 'App'.");

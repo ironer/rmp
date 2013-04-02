@@ -303,7 +303,7 @@ td.changeAction = function(e) {
 		}
 
 		if (this.logRow) td.showLog(true, this.logRow);
-		if (this.varEl) td.consoleOpen(this.varEl, td.saveVarChange);
+		if (this.varEl) td.consoleOpen(this.varEl, td.editVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
 		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
@@ -413,8 +413,8 @@ td.setLocationHashes = function(e, hashes) {
 	}
 };
 
-td.printPath = function(path) {
-	path = (path || '').split(',');
+td.printPath = function(change) {
+	var path = change.data.path.split(',');
 	var i, j = path.length, k, close = '', key, retKey, retVal = '', elStart = '', elEnd = '';
 
 	if (path[0] == 'log') {
@@ -451,7 +451,10 @@ td.printPath = function(path) {
 		}
 	}
 
-	if (k == 9) retVal += '<i>(' + retKey + ')</i> =';
+	if (change.arrayAdd) {
+		if (k == 9) retVal += '<i>(' + retKey + ')</i>' + (change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =');
+		else retVal = retVal.slice(0, -1) + (change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =');
+	} else if (k == 9) retVal += '<i>(' + retKey + ')</i> =';
 	else retVal += (!close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close) + ' =';
 
 	return retVal;
@@ -487,8 +490,8 @@ td.updateChangeList = function(el) {
 			continue;
 		}
 
-		change.innerHTML = '<span' + (typeof(change.data.res) != 'undefined' ? ' class="nd-res nd-restype' + change.data.res + '">' : '>')
-				+ '[' + change.runtime + ']</span> ' + td.printPath(change.data.path) + ' <span class="nd-'
+		change.innerHTML = '<span' + (typeof change.data.res != 'undefined' ? ' class="nd-res nd-restype' + change.data.res + '">' : '>')
+				+ '[' + change.runtime + ']</span> ' + td.printPath(change) + ' <span class="nd-'
 				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
 				+ JSON.stringify(change.data.value) + '</span>';
 
@@ -503,7 +506,7 @@ td.updateChangeList = function(el) {
 
 	el = td.tdChangeList.parentNode;
 
-	if (typeof(el.menuWidth) == 'undefined' && el.oriWidth) {
+	if (typeof el.menuWidth == 'undefined' && el.oriWidth) {
 		el.menuWidth = el.oriWidth;
 		el.menuHeight = el.oriHeight;
 	}
@@ -667,10 +670,10 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 	return false;
 };
 
-td.saveVarChange = function(array) {
+td.saveVarChange = function(arrayAdd) {
 	var varEl = td.tdConsole.varEl;
 	var el = varEl;
-	var key = el.getAttribute('data-pk');
+	var key = el.getAttribute('data-pk') || '8';
 	var privateVar = key === '7';
 
 	var areaVal = td.tdConsole.area.value;
@@ -718,21 +721,26 @@ td.saveVarChange = function(array) {
 		}
 	}
 
+	console.debug(revPath);
 	if (change = varEl.change) {
-		if (change.data.value === value && change.valid === valid && change.formated === formated) return true;
+		if (change.data.value === value && change.valid === valid && change.formated === formated && change.arrayAdd === !!arrayAdd) return true;
 		change.data.value = value;
 	} else {
 		varEl = td.duplicateNode(varEl);
 		change = td.createChange({'path': revPath.reverse().join(','), 'value': value}, el, varEl, logRow);
 	}
 
-	change.arrayAdd = array || false;
+	change.arrayAdd = !!arrayAdd;
 	change.valid = valid;
 	change.formated = formated;
 	varEl.title = areaVal;
 
 	td.updateChangeList(change);
 	return true;
+};
+
+td.editVarChange = function() {
+	return td.saveVarChange(td.tdConsole.varEl.change.arrayAdd);
 };
 
 td.saveArrayAdd = function() {
@@ -762,7 +770,7 @@ td.createChange = function(data, container, varEl, logRow) {
 		key = change.logRow.id.split('_');
 
 		if (container && varEl) {
-			if (typeof(logRow.changedVarEls) == 'undefined') logRow.changedVarEls = [varEl];
+			if (typeof logRow.changedVarEls == 'undefined') logRow.changedVarEls = [varEl];
 			else logRow.changedVarEls.push(varEl);
 
 			JAK.DOM.addClass(varEl, 'nd-var-change');
@@ -890,7 +898,7 @@ td.consoleAction = function(e) {
 			} else td.consoleHover('nd-area-error');
 		} else if (!e.shiftKey && e.altKey) {
 			var cc = td.consoleConfig;
-			if (typeof(cc.oriX) != 'undefined') {
+			if (typeof cc.oriX != 'undefined') {
 				cc.x = cc.oriX;
 				cc.y = cc.oriY;
 			}
@@ -969,7 +977,7 @@ td.consoleClose = function() {
 	}
 
 	var cc = td.consoleConfig;
-	if (typeof(cc.oriX) == 'undefined') {
+	if (typeof cc.oriX == 'undefined') {
 		cc.oriX = cc.x;
 		cc.oriY = cc.y;
 	}

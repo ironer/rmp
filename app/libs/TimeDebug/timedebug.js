@@ -6,9 +6,8 @@
 
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
-
+// TODO: ulozit serii testu v TimeDebugu
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
-// TODO: ulozit serii automatickych otevreni TimeDebugu
 
 var td = {};
 
@@ -208,7 +207,9 @@ td.loadChanges = function(changes) {
 };
 
 td.findVarEl = function(el, path) {
+	if (typeof path[0] === 'undefined') return false;
 	var i = 0, j;
+
 	if (path[0][0] === '#' || path[0][0] === '*') path[0] = path[0].slice(1);
 	var type = parseInt(path[0][0]);
 
@@ -451,7 +452,7 @@ td.printPath = function(change) {
 		}
 	}
 
-	if (change.arrayAdd) {
+	if (change.data.add) {
 		if (k == 9) retVal += '<i>(' + retKey + ')</i>' + (change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =');
 		else retVal = retVal.slice(0, -1) + (change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =');
 	} else if (k == 9) retVal += '<i>(' + retKey + ')</i> =';
@@ -670,7 +671,7 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 	return false;
 };
 
-td.saveVarChange = function(arrayAdd) {
+td.saveVarChange = function(add) {
 	var varEl = td.tdConsole.varEl;
 	var el = varEl;
 	var key = el.getAttribute('data-pk') || '8';
@@ -721,16 +722,15 @@ td.saveVarChange = function(arrayAdd) {
 		}
 	}
 
-	console.debug(revPath);
 	if (change = varEl.change) {
-		if (change.data.value === value && change.valid === valid && change.formated === formated && change.arrayAdd === !!arrayAdd) return true;
+		if (change.data.value === value && change.valid === valid && change.formated === formated && change.data.add === !!add) return true;
 		change.data.value = value;
 	} else {
 		varEl = td.duplicateNode(varEl);
 		change = td.createChange({'path': revPath.reverse().join(','), 'value': value}, el, varEl, logRow);
 	}
 
-	change.arrayAdd = !!arrayAdd;
+	change.data.add = !!add;
 	change.valid = valid;
 	change.formated = formated;
 	varEl.title = areaVal;
@@ -740,7 +740,7 @@ td.saveVarChange = function(arrayAdd) {
 };
 
 td.editVarChange = function() {
-	return td.saveVarChange(td.tdConsole.varEl.change.arrayAdd);
+	return td.saveVarChange(td.tdConsole.varEl.change.data.add);
 };
 
 td.saveArrayAdd = function() {
@@ -1605,7 +1605,11 @@ td.sendChanges = function(e) {
 	e = e || window.event;
 
 	var request = [];
-	for (var i = 0, j = td.changes.length; i < j; ++i) request.push([td.changes[i].data.path, td.changes[i].data.value]);
+	for (var i = 0, j = td.changes.length, change; i < j; ++i) {
+		change = [td.changes[i].data.path, td.changes[i].data.value];
+		if (td.changes[i].data.add) change.push(1);
+		request.push(change);
+	}
 
 	if (!request.length) return false;
 

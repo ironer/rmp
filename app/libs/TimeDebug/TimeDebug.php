@@ -108,8 +108,10 @@ class TimeDebug {
 			self::$request['dumps'] = array();
 			self::$request['logs'] = array();
 			for ($i = 0; $i < self::$request['count']; ++$i) {
-				self::$request[$i]['path'] = self::$request[$i][0]; unset(self::$request[$i][0]);
-				self::$request[$i]['value'] = self::$request[$i][1]; unset(self::$request[$i][1]);
+				self::$request[$i]['path'] = self::$request[$i][0];
+				self::$request[$i]['value'] = self::$request[$i][1];
+				if (isset(self::$request[$i][2])) self::$request[$i]['add'] = self::$request[$i][2];
+				unset(self::$request[$i][0], self::$request[$i][1], self::$request[$i][2]);
 				$path = explode(',', self::$request[$i]['path']);
 				if ($path[0] == 'dump') {
 					self::$request[$i]['varPath'] = array_slice($path, 2);

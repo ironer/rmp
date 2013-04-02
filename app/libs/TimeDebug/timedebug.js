@@ -667,11 +667,11 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 	return false;
 };
 
-td.saveVarChange = function() {
+td.saveVarChange = function(array) {
 	var varEl = td.tdConsole.varEl;
 	var el = varEl;
-	var key = parseInt(el.getAttribute('data-pk')) || 8;
-	var privateVar = !!(key % 2);
+	var key = el.getAttribute('data-pk');
+	var privateVar = key === '7';
 
 	var areaVal = td.tdConsole.area.value;
 	var i = -1, s = td.parseJson(areaVal);
@@ -692,14 +692,22 @@ td.saveVarChange = function() {
 
 	td.consoleClose();
 
-	if (JAK.DOM.hasClass(el, 'nd-key')) {
-		revPath.push(key + el.innerHTML);
+	if (JAK.DOM.hasClass(el, 'nd-top')) {
+		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
+		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
+		revPath.push(el.id, 'dump');
+	} else {
+		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
+		else if (JAK.DOM.hasClass(el, 'nd-array')) revPath.push(key);
+		else return false;
 
 		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
 			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
 				revPath.push((i ? '#' : '*') + key);
 				privateVar = false;
-			} else revPath.push(key);
+			} else {
+				revPath.push(key);
+			}
 			if (key[0] === '3' || key[0] === '4') privateVar = true;
 		}
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
@@ -708,11 +716,7 @@ td.saveVarChange = function() {
 			revPath.push(el.tdIndex, td.logRowActive.id, 'log');
 			logRow = td.logRowActive;
 		}
-	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
-		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
-		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
-		revPath.push(el.id, 'dump');
-	} else return false;
+	}
 
 	if (change = varEl.change) {
 		if (change.data.value === value && change.valid === valid && change.formated === formated) return true;
@@ -722,6 +726,7 @@ td.saveVarChange = function() {
 		change = td.createChange({'path': revPath.reverse().join(','), 'value': value}, el, varEl, logRow);
 	}
 
+	change.arrayAdd = array || false;
 	change.valid = valid;
 	change.formated = formated;
 	varEl.title = areaVal;
@@ -731,11 +736,7 @@ td.saveVarChange = function() {
 };
 
 td.saveArrayAdd = function() {
-	var varEl = td.tdConsole.varEl;
-
-	console.debug(td.tdConsole.area);
-	td.consoleClose();
-	return true;
+	return td.saveVarChange(true);
 };
 
 td.createChange = function(data, container, varEl, logRow) {
@@ -1697,12 +1698,14 @@ td.unselectConsole = function(wait) {
 		window.clearTimeout(td.consoleSelectTimeout);
 		td.consoleSelectTimeout = null;
 	}
+	if (td.tdConsole === null) return false;
 
 	if (wait) td.consoleSelectTimeout = window.setTimeout(td.unselectConsole, 1000);
 	else {
 		td.tdConsole.area.selectionStart = td.tdConsole.area.selectionEnd;
 		td.tdConsole.area.selectedText = false;
 	}
+	return true;
 };
 
 td.wrapSelection = function(e, el, key) {

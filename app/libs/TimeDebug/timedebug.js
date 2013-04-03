@@ -55,7 +55,7 @@ td.changes = [];
 td.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
 td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'showLogRow': true});
 td.hoveredChange = null;
-td.noContainerChangeIndex = 0;
+td.noContainerChangeIndex = 32767;
 
 td.tdHashEl = null;
 td.tdAnchor = JAK.mel('a', {'name': 'tdanchor'});
@@ -188,10 +188,10 @@ td.loadChanges = function(changes) {
 		} else if (path[0] === 'log') {
 			log = JAK.gel(path[1]);
 			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];
-			varEl = td.findVarEl(container, path.slice(3));
+			varEl = td.findVarEl(container, path.slice(3), changes[i].add);
 		} else {
 			container = JAK.gel(path[1]);
-			varEl = td.findVarEl(container, path.slice(2));
+			varEl = td.findVarEl(container, path.slice(2), changes[i].add);
 		}
 
 		if (varEl) {
@@ -206,7 +206,7 @@ td.loadChanges = function(changes) {
 	td.updateChangeList();
 };
 
-td.findVarEl = function(el, path) {
+td.findVarEl = function(el, path, add) {
 	if (typeof path[0] === 'undefined') return false;
 	var i = 0, j;
 
@@ -223,7 +223,7 @@ td.findVarEl = function(el, path) {
 	} else {
 		for (j = el.childNodes.length; i < j; ++i) {
 			if (el.childNodes[i].nodeType == 1 && el.childNodes[i].getAttribute('data-pk') === path[0]) {
-				return td.findVarEl(el.childNodes[i], path.slice(1));
+				return td.findVarEl(el.childNodes[i], path.slice(1), add);
 			}
 		}
 	}

@@ -22,6 +22,10 @@ function __autoload($className) {
 
 if (DEBUG) TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0);
 
+//TimeDebug::$idPrefix = 'test';
+//App::dump(TimeDebug::$request);
+//TimeDebug::$idPrefix = 'td';
+
 $app = new App('GM');
 
 if (!empty($_GET['mail'])) {

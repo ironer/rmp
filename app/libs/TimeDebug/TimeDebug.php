@@ -558,9 +558,14 @@ class TimeDebug {
 
 
 	private static function dumpArray(&$var, $options, $level) {
-		if (!isset($options[self::PARENT_KEY])) $parentKey = FALSE;
-		elseif ($options[self::PARENT_KEY][0] === '#') $parentKey = '4' . substr($options[self::PARENT_KEY], 1);
-		else $parentKey = '6' . $options[self::PARENT_KEY];
+		if (!isset($options[self::PARENT_KEY])) $parentKey = $arrKey = FALSE;
+		elseif ($options[self::PARENT_KEY][0] === '#') {
+			$parentKey = '4' . substr($options[self::PARENT_KEY], 1);
+			$arrKey = '7' . substr($options[self::PARENT_KEY], 1);
+		} else {
+			$parentKey = '6' . $options[self::PARENT_KEY];
+			$arrKey = '8' . $options[self::PARENT_KEY];
+		}
 
 		static $marker;
 		if ($marker === NULL) {
@@ -568,7 +573,7 @@ class TimeDebug {
 		}
 
 		$out = '<span class="nd-array' . (($level || empty($options[self::DUMP_ID])) ? '' : ' nd-top')
-				. ($parentKey ? '" data-pk="' . $parentKey : '') . '">array</span> (';
+				. ($arrKey ? '" data-pk="' . $arrKey : '') . '">array</span> (';
 
 		if (empty($var)) {
 			return $out . '0)' . ($options[self::NO_BREAK] ? '' : "\n");

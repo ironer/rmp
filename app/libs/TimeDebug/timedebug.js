@@ -4,6 +4,7 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: najit a odstranit zbytecne data parametry (titles k polim u argumentu volani)
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 // TODO: ulozit serii testu v TimeDebugu
@@ -443,7 +444,7 @@ td.printPath = function(change) {
 		}
 		if (k > 6) break;
 
-		retVal += (!close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close);
+		retVal += !close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close;
 
 		if (k % 2) {
 			retVal += '->'; close = "";
@@ -452,11 +453,11 @@ td.printPath = function(change) {
 		}
 	}
 
-	if (change.data.add) {
-		if (k == 9) retVal += '<i>(' + retKey + ')</i>' + (change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =');
-		else retVal = retVal.slice(0, -1) + (change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =');
-	} else if (k == 9) retVal += '<i>(' + retKey + ')</i> =';
-	else retVal += (!close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close) + ' =';
+	if (k == 9) retVal += '<i>(' + retKey + ')</i>';
+	else retVal += !close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close;
+
+	if (change.data.add) retVal += change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =';
+	else retVal += ' =';
 
 	return retVal;
 };
@@ -675,7 +676,7 @@ td.saveVarChange = function(add) {
 	var varEl = td.tdConsole.varEl;
 	var el = varEl;
 	var key = el.getAttribute('data-pk') || '8';
-	var privateVar = key === '7';
+	var privateVar = key[0] === '7';
 
 	var areaVal = td.tdConsole.area.value;
 	var i = -1, s = td.parseJson(areaVal);
@@ -702,8 +703,10 @@ td.saveVarChange = function(add) {
 		revPath.push(el.id, 'dump');
 	} else {
 		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
-		else if (JAK.DOM.hasClass(el, 'nd-array')) revPath.push(key);
-		else return false;
+		else if (JAK.DOM.hasClass(el, 'nd-array')) {
+			revPath.push(key);
+			if (JAK.DOM.hasClass(el.parentNode, 'nette-toggle')) el = el.parentNode;
+		} else return false;
 
 		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
 			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {

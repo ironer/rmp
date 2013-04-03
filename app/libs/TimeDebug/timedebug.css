@@ -256,12 +256,20 @@ pre.nd {
 	content: "i";
 }
 .nd-restype3:after {
-	content: "∄";
+	background: #00f;
+	content: "+";
 }
 .nd-restype4:after {
-	content: "∉";
+	background: #077;
+	content: "-";
 }
 .nd-restype5:after {
+	content: "∄";
+}
+.nd-restype6:after {
+	content: "∉";
+}
+.nd-restype7:after {
 	content: "$";
 }
 #tdChangeList .nd-change-data:hover, #tdChangeList .nd-change-data.nd-hovered, #tdChangeList .nd-change-data.nd-edited {

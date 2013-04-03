@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: najit a odstranit zbytecne data parametry (titles k polim u argumentu volani)
 // TODO: udelat pridavani prvku do pole
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 // TODO: ulozit serii testu v TimeDebugu
@@ -185,7 +184,7 @@ td.loadChanges = function(changes) {
 		path = changes[i].path.split(',');
 		log = container = varEl = null;
 
-		if (changes[i].res === 0 || changes[i].res === 3) {
+		if (changes[i].res === 0 || changes[i].res === 5) {
 		} else if (path[0] === 'log') {
 			log = JAK.gel(path[1]);
 			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];

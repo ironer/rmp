@@ -210,13 +210,21 @@ pre.nd {
 	white-space: pre-wrap;
 	word-wrap: break-word;
 }
+.nd-td .nd-ok {
+	color: #050;
+	background: #bfb;
+}
 .nd-td .nd-equal {
 	color: #420;
 	background: #ff9;
 }
-.nd-td .nd-ok {
-	color: #050;
-	background: #bfb;
+.nd-td .nd-array-add {
+	color: #117;
+	background: #ddf;
+}
+.nd-td .nd-array-overwrite {
+	color: #603;
+	background: #fdf;
 }
 .nd-td .nd-error {
 	color: #600;
@@ -241,35 +249,40 @@ pre.nd {
 	padding-left: 1px;
 	margin: 0 -6px 0 -1px;
 	color: #fff;
-	background: #800;
+	background: #a00;
+	content: " ";
 }
 .nd-restype0:after {
 	background: #333;
-	content: "0";
 }
 .nd-restype1:after {
-	background: #080;
-	content: "⎷";
+	background: #090;
 }
 .nd-restype2:after {
-	background: #ba0;
+	background: #d90;
 	content: "i";
 }
 .nd-restype3:after {
-	background: #00f;
-	content: "+";
+	background: #33e;
 }
 .nd-restype4:after {
-	background: #077;
-	content: "-";
+	background: #f09;
 }
 .nd-restype5:after {
-	content: "∄";
+	background: #33e;
+	content: "i";
 }
 .nd-restype6:after {
-	content: "∉";
+	background: #f09;
+	content: "i";
 }
 .nd-restype7:after {
+	content: "∄";
+}
+.nd-restype8:after {
+	content: "∉";
+}
+.nd-restype9:after {
 	content: "$";
 }
 #tdChangeList .nd-change-data:hover, #tdChangeList .nd-change-data.nd-hovered, #tdChangeList .nd-change-data.nd-edited {

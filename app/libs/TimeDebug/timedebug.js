@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat pridavani prvku do pole
+// TODO: zobrazovani zmen v maximalizovanem rezimu
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 // TODO: ulozit serii testu v TimeDebugu
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
@@ -55,7 +55,7 @@ td.changes = [];
 td.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
 td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'showLogRow': true});
 td.hoveredChange = null;
-td.noContainerChangeIndex = 32767;
+td.noContainerChangeIndex = 65535;
 
 td.tdHashEl = null;
 td.tdAnchor = JAK.mel('a', {'name': 'tdanchor'});
@@ -194,6 +194,8 @@ td.loadChanges = function(changes) {
 			varEl = td.findVarEl(container, path.slice(2), changes[i].add);
 		}
 
+		if (changes[i].add === 2) changes[i].value = JSON.parse(changes[i].value);
+
 		if (varEl) {
 			varEl = td.duplicateNode(varEl);
 			varEl.title = td.formatJson(changes[i].value);
@@ -208,16 +210,26 @@ td.loadChanges = function(changes) {
 
 td.findVarEl = function(el, path, add) {
 	if (typeof path[0] === 'undefined') return false;
-	var i = 0, j;
+	var i = 0, j, child;
 
 	if (path[0][0] === '#' || path[0][0] === '*') path[0] = path[0].slice(1);
 	var type = parseInt(path[0][0]);
 
-	if (type === 9) return JAK.DOM.getElementsByClass('nd-top', el, 'span')[0] || null;
+	if (type === 9) return JAK.DOM.getElementsByClass('nd-top', el)[0] || null;
 	else if (type >= 7) {
-		for (j = el.childNodes.length; i < j; ++i) {
-			if (el.childNodes[i].nodeType == 1 && el.childNodes[i].className === 'nd-key' && el.childNodes[i].innerHTML === path[0].slice(1)) {
-				return el.childNodes[i];
+		if (add) {
+			for (j = el.childNodes.length; i < j; ++i) {
+				child = el.childNodes[i];
+				if (child.nodeType == 1) {
+					if (JAK.DOM.hasClass(child, 'nd-toggle')) child = child.firstChild;
+					if (child.className === 'nd-array' && child.getAttribute('data-pk') === path[0]) return child;
+				}
+			}
+		} else {
+			for (j = el.childNodes.length; i < j; ++i) {
+				if (el.childNodes[i].nodeType == 1 && el.childNodes[i].className === 'nd-key' && el.childNodes[i].innerHTML === path[0].slice(1)) {
+					return el.childNodes[i];
+				}
 			}
 		}
 	} else {
@@ -446,7 +458,7 @@ td.printPath = function(change) {
 		retVal += !close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close;
 
 		if (k % 2) {
-			retVal += '->'; close = "";
+			retVal += '.'; close = "";
 		} else {
 			retVal += "["; close = "]";
 		}
@@ -671,7 +683,7 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 	return false;
 };
 
-td.saveVarChange = function(add) {
+td.saveVarChange = function(arrayAdd) {
 	var varEl = td.tdConsole.varEl;
 	var el = varEl;
 	var key = el.getAttribute('data-pk') || '8';
@@ -684,11 +696,13 @@ td.saveVarChange = function(add) {
 	var revPath = [];
 	var change;
 	var logRow = false;
+	var add = arrayAdd ? 1 : 0;
 
 	if (s.status) {
 		value = s.json;
 		valid = s.valid;
 		formated = valid && (areaVal === td.formatJson(value));
+		if (add && valid && JSON.stringify(value)[0] === '{') add = 2;
 	} else {
 		value = areaVal;
 		formated = valid = false;
@@ -704,7 +718,7 @@ td.saveVarChange = function(add) {
 		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
 		else if (JAK.DOM.hasClass(el, 'nd-array')) {
 			revPath.push(key);
-			if (JAK.DOM.hasClass(el.parentNode, 'nette-toggle')) el = el.parentNode;
+			if (JAK.DOM.hasClass(el.parentNode, 'nd-toggle')) el = el.parentNode;
 		} else return false;
 
 		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
@@ -725,14 +739,14 @@ td.saveVarChange = function(add) {
 	}
 
 	if (change = varEl.change) {
-		if (change.data.value === value && change.valid === valid && change.formated === formated && change.data.add === !!add) return true;
+		if (change.data.value === value && change.valid === valid && change.formated === formated && change.data.add === add) return true;
 		change.data.value = value;
+		change.data.add = add;
 	} else {
 		varEl = td.duplicateNode(varEl);
-		change = td.createChange({'path': revPath.reverse().join(','), 'value': value}, el, varEl, logRow);
+		change = td.createChange({'path': revPath.reverse().join(','), 'value': value, 'add': add}, el, varEl, logRow);
 	}
 
-	change.data.add = !!add;
 	change.valid = valid;
 	change.formated = formated;
 	varEl.title = areaVal;
@@ -746,7 +760,7 @@ td.editVarChange = function() {
 };
 
 td.saveArrayAdd = function() {
-	return td.saveVarChange(true);
+	return td.saveVarChange(1);
 };
 
 td.createChange = function(data, container, varEl, logRow) {
@@ -806,7 +820,11 @@ td.createChange = function(data, container, varEl, logRow) {
 		varEl.change = change;
 		change.listeners.push(JAK.Events.addListener(varEl, 'mouseover', varEl, td.hoverChange));
 		change.listeners.push(JAK.Events.addListener(varEl, 'mouseout', varEl, td.unhoverChange));
-	} else change.sortVals = {'parentPrefix': key[0] || 'zzzzz', 'parentIndex': key[1] || 65535, 'changeIndex': ++td.noContainerChangeIndex};
+	} else change.sortVals = {
+		'parentPrefix': key[0] || 'zzzzz',
+		'parentIndex': key[1] || 65535,
+		'changeIndex': data.resId ? 32767 + data.resId.split('_').reverse()[0] : ++td.noContainerChangeIndex
+	};
 
 	if (data.resId) {
 		if (resEl = JAK.gel(data.resId)) {
@@ -1606,11 +1624,10 @@ td.restore = function() {
 td.sendChanges = function(e) {
 	e = e || window.event;
 
-	var request = [];
-	for (var i = 0, j = td.changes.length, change; i < j; ++i) {
-		change = [td.changes[i].data.path, td.changes[i].data.value];
-		if (td.changes[i].data.add) change.push(1);
-		request.push(change);
+	var change, request = [];
+	for (var i = 0, j = td.changes.length; i < j; ++i) {
+		change = td.changes[i].data;
+		request.push([change.path, change.add === 2 ? JSON.stringify(change.value) : change.value, td.changes[i].data.add]);
 	}
 
 	if (!request.length) return false;

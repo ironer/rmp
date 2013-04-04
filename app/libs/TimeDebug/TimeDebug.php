@@ -110,7 +110,7 @@ class TimeDebug {
 			for ($i = 0; $i < self::$request['count']; ++$i) {
 				self::$request[$i]['path'] = self::$request[$i][0];
 				self::$request[$i]['value'] = self::$request[$i][1];
-				self::$request[$i]['add'] = empty(self::$request[$i][2]) ? 0 : 1;
+				self::$request[$i]['add'] = self::$request[$i][2];
 				unset(self::$request[$i][0], self::$request[$i][1], self::$request[$i][2]);
 				$path = explode(',', self::$request[$i]['path']);
 				if ($path[0] == 'dump') {
@@ -302,13 +302,12 @@ class TimeDebug {
 						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';
 				$change['res'] = $e->getCode();
 			}
-			if ($change['add'] === 0) unset($change['add']);
 			unset($change['varPath']);
 		}
 	}
 
 
-	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL, &$name = NULL, &$add = FALSE) {
+	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL, &$name = NULL, &$add = 0) {
 		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena neprazdna cesta typu pole (nalezen typ '
 				. gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var), 7);
 
@@ -326,13 +325,13 @@ class TimeDebug {
 			echo '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result ';
 
 			$oriVar = $var;
+			$values = $add === 2 ? json_decode($value) : (is_array($value) ? $value : array($value));
 			$changed = FALSE;
 			$overwrite = FALSE;
 
 			if ($add) {
-				$values = is_array($value) ? $value : array($value);
 				foreach ($values as $key => $val) {
-					if (is_numeric($key)) $var[] = $val;
+					if ($add === 1) $var[] = $val;
 					else {
 						if (isset($var[$key])) $overwrite = TRUE;
 						$var[$key] = $val;
@@ -351,12 +350,14 @@ class TimeDebug {
 
 			if ($add) {
 				if ($overwrite) {
-					echo ' Upraveno pole ' . json_encode($oriVar) . ' polem ' . json_encode($values) . '. </pre>';
+					echo ' Upraveno';
 					$retVal = 4;
 				} else {
-					echo ' Doplneno pole ' . json_encode($oriVar) . ' polem ' . json_encode($values) . '. </pre>';
+					echo ' Doplneno';
 					$retVal = 3;
 				}
+
+				echo ' pole ' . json_encode($oriVar) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
 				if ($oriVar === $var) $retVal += 2;
 			} elseif ($changed) {
 				echo ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
@@ -401,7 +402,8 @@ class TimeDebug {
 
 		for ($i = 0; $i < self::$request['count']; ++$i) {
 			$change = self::$request[$i];
-			$response[] = isset($change['res']) ? $change : array('path' => $change['path'], 'value' => $change['value'], 'res' => 0);
+			if (empty($change['res'])) $change = array('path' => $change['path'], 'value' => $change['value'], 'add' => $change['add'], 'res' => 0);
+			$response[] = $change;
 		}
 		return $response;
 	}
@@ -606,7 +608,7 @@ class TimeDebug {
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($var) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
-			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . count($var)
+			$out = '<span class="nd-toggle nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . count($var)
 					. ")</span>\n<div" . ($collapsed ? ' class="nette-collapsed"' : '')
 					. (self::$advancedLog && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"2\">" : '>'));
 			$var[$marker] = TRUE;
@@ -646,7 +648,7 @@ class TimeDebug {
 
 		} elseif (!$options[self::DEPTH] || $level < $options[self::DEPTH]) {
 			$collapsed = $level ? count($fields) >= $options[self::COLLAPSE_COUNT] : $options[self::COLLAPSE];
-			$out = '<span class="nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . "</span>\n<div"
+			$out = '<span class="nd-toggle nette-toggle' . ($collapsed ? '-collapsed">' : '">') . $out . "</span>\n<div"
 					. ($collapsed ? ' class="nette-collapsed"' : '')
 					. (self::$advancedLog && $parentKey ? " data-pk=\"$parentKey\">" : (!$level ? " data-pk=\"1$varClass\">" : '>'));
 			$list[] = $var;
@@ -673,7 +675,7 @@ class TimeDebug {
 		$type = get_resource_type($var);
 		$out = '<span class="nd-resource">' . htmlSpecialChars($type) . ' resource</span>';
 		if (isset(self::$resources[$type])) {
-			$out = "<span class=\"nette-toggle-collapsed\">$out</span>\n<div class=\"nette-collapsed\">";
+			$out = "<span class=\"nd-toggle nette-toggle-collapsed\">$out</span>\n<div class=\"nette-collapsed\">";
 			foreach (call_user_func(self::$resources[$type], $var) as $k => $v) {
 				$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span>'
 						. '<span class="nd-key">' . htmlSpecialChars($k) . "</span> => " . self::dumpVar($v, $options, $level + 1);

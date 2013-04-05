@@ -296,7 +296,9 @@ class TimeDebug {
 			$change = &self::$request[$changes[$i]];
 			$change['resId'] = 'tdchres_' . ++self::$varCounter;
 			try {
-				$change['res'] = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add']);
+				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add']);
+				$change['res'] = $applied[0];
+				if (isset($applied[1])) $change['oriVar'] = $applied[1];
 			} catch(Exception $e) {
 				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne na hodnotu '
 						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';
@@ -351,20 +353,21 @@ class TimeDebug {
 			if ($add) {
 				if ($overwrite) {
 					echo ' Upraveno';
-					$retVal = 4;
+					$retVal = array(4);
 				} else {
 					echo ' Doplneno';
-					$retVal = 3;
+					$retVal = array(3);
 				}
 
-				echo ' pole ' . json_encode($oriVar) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
-				if ($oriVar === $var) $retVal += 2;
+				echo ' pole ' . ($enc = json_encode($oriVar)) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
+				if ($oriVar === $var) $retVal[0] += 2;
+				else $retVal[1] = $enc;
 			} elseif ($changed) {
-				echo ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-				$retVal = 1;
+				echo ' Zmena z ' . ($enc = json_encode($oriVar)) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+				$retVal = array(1, $enc);
 			} else {
 				echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-				$retVal = 2;
+				$retVal = array(2);
 			}
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);

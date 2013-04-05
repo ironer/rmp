@@ -4,10 +4,12 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: zobrazovani zmen v maximalizovanem rezimu
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
+
 // TODO: ulozit serii testu v TimeDebugu
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
+// TODO: zobrazovani zmen v maximalizovanem rezimu
+// TODO: udelat nastaveni (zvyraznovani sudych radku titulku, zobrazovani titulku jen u aktualniho logu, automaticke prepinani logu, zobrazovani odpovedi v max rezimu)
 
 var td = {};
 

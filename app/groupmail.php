@@ -23,9 +23,7 @@ function __autoload($className) {
 if (DEBUG) TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0,
 	array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP'));
 
-//TimeDebug::$idPrefix = 'test';
 //App::dump(TimeDebug::$request);
-//TimeDebug::$idPrefix = 'td';
 
 $app = new App('GM');
 

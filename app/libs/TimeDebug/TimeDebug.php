@@ -5,7 +5,6 @@
  * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
  */
 
-// TODO: udelat pojmenovavani dumpu a logu podle rozhovoru s Filipem
 // TODO: zkontrolovat dumpovani resources
 // TODO: opravit editor:// linky na macbooku pro PHPStorm 6
 
@@ -252,7 +251,7 @@ class TimeDebug {
 
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
-				if (isset(self::$request['logs'][$logId][$i])) self::updateVar($curObj, self::$request['logs'][$logId][$i]);
+				if (isset(self::$request['logs'][$logHash][$i])) self::updateVar($curObj, self::$request['logs'][$logHash][$i]);
 				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
 			}
 			$dump = implode('<hr>', $dumpVars);
@@ -303,7 +302,7 @@ class TimeDebug {
 				$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
 				$dumpHash = self::getPathHash("$relative|d|$place");
 
-				if (isset(self::$request['dumps'][$dumpId])) self::updateVar($var, self::$request['dumps'][$dumpId]);
+				if (isset(self::$request['dumps'][$dumpHash])) self::updateVar($var, self::$request['dumps'][$dumpHash]);
 
 				$options = array(self::DUMP_ID => $dumpId);
 			} else {

@@ -24,6 +24,7 @@ td.logRowActiveId = 0;
 td.dumps = [];
 td.indexes = [];
 td.response = null;
+td.hash2Id = {};
 
 td.tdContainer = JAK.mel('div', {id: 'tdContainer'});
 td.tdOuterWrapper = JAK.mel('div', {id: 'tdOuterWrapper'});
@@ -113,12 +114,14 @@ td.init = function(logId) {
 	for (var i = 0, j = logNodes.length, k; i < j; ++i) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
+				td.hash2Id[logNodes[i].attrHash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
 				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
 				logNodes[i].onmousedown = td.changeVar;
 				td.setTitles(logNodes[i]);
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-log')) {
 				td.logRows.push(logNodes[i]);
 				logNodes[i].logId = td.logRows.length;
+				td.hash2Id[logNodes[i].attrHash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
 				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
 				logNodes[i].attrTitle = logNodes[i].getAttribute('data-title');
 				logNodes[i].onclick = td.logClick;
@@ -187,11 +190,11 @@ td.loadChanges = function(changes) {
 
 		if (changes[i].res === 0 || changes[i].res === 7) {
 		} else if (path[0] === 'log') {
-			log = JAK.gel(path[1]);
+			log = JAK.gel(td.hash2Id[path[1]]);
 			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];
 			varEl = td.findVarEl(container, path.slice(3), changes[i].add);
 		} else {
-			container = JAK.gel(path[1]);
+			container = JAK.gel(td.hash2Id[path[1]]);
 			varEl = td.findVarEl(container, path.slice(2), changes[i].add);
 		}
 
@@ -444,9 +447,9 @@ td.printPath = function(change) {
 	var i, j = path.length, k, close = '', key, retKey, retVal = '', elStart = '', elEnd = '';
 
 	if (path[0] == 'log') {
-		retVal = '<b>' + path[1] + '</b>(' + path[i = 2] + ') ';
+		retVal = '<b>' + td.hash2Id[path[1]] + '</b>(' + path[i = 2] + ') ';
 	} else if (path[0] == 'dump') {
-		retVal = '<b>' + path[i = 1] + '</b> ';
+		retVal = '<b>' + td.hash2Id[path[i = 1]] + '</b> ';
 	} else return '';
 
 	while (++i < j) {
@@ -727,7 +730,7 @@ td.saveVarChange = function(arrayAdd) {
 	if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
-		revPath.push(el.id, 'dump');
+		revPath.push(el.attrHash, 'dump');
 	} else {
 		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
 		else if (JAK.DOM.hasClass(el, 'nd-array')) {
@@ -745,9 +748,9 @@ td.saveVarChange = function(arrayAdd) {
 			if (key[0] === '3' || key[0] === '4') privateVar = true;
 		}
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
-			revPath.push(el.id, 'dump');
+			revPath.push(el.attrHash, 'dump');
 		} else {
-			revPath.push(el.tdIndex, td.logRowActive.id, 'log');
+			revPath.push(el.tdIndex, td.logRowActive.attrHash, 'log');
 			logRow = td.logRowActive;
 		}
 	}
@@ -1410,7 +1413,7 @@ td.titleAutosize = function(el) {
 	} else if (td.spaceY < (el.changesHeight || 0) + el.tdInner.clientHeight || td.spaceY < el.oriHeight) {
 		el.style.height = (el.tdHeight = td.spaceY) + 'px';
 		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0))) {
-			el.style.width = (el.tdWidth = Math.min(el.oriWidth + tdWidthDif, td.spaceX)) + 'px';
+			el.style.width = (el.tdWidth = Math.min(el.oriWidth + tdWidthDif + 1, td.spaceX)) + 'px';
 		}
 	} else {
 		el.style.height = el.tdHeight = 'auto';

@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat titulkum v change listu vlastni pojmenovani podle rodice
 // TODO: posouvani titulku i s pripinovanymy podtitulky!
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -220,7 +219,7 @@ td.loadChanges = function(changes) {
 
 td.createOriVar = function(oriVar) {
 	var el = JAK.mel('div', {'className': 'nd-titled nd-ori-var', 'title': ' '});
-	el.innerHTML = '<span class="nd-title"><strong class="nd-inner"><pre class="nd">' + oriVar + '</pre></strong></span>$';
+	el.innerHTML = oriVar + '$';
 	return el;
 };
 

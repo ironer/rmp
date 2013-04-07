@@ -251,7 +251,7 @@ class TimeDebug {
 
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
-				if (isset(self::$request['logs'][$logHash][$i])) self::updateVar($curObj, self::$request['logs'][$logHash][$i]);
+				if (isset(self::$request['logs'][$logHash][$i])) self::updateVar($curObj, self::$request['logs'][$logHash][$i], $logHash);
 				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
 			}
 			$dump = implode('<hr>', $dumpVars);
@@ -302,7 +302,7 @@ class TimeDebug {
 				$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
 				$dumpHash = self::getPathHash("$relative|d|$place");
 
-				if (isset(self::$request['dumps'][$dumpHash])) self::updateVar($var, self::$request['dumps'][$dumpHash]);
+				if (isset(self::$request['dumps'][$dumpHash])) self::updateVar($var, self::$request['dumps'][$dumpHash], $dumpHash);
 
 				$options = array(self::DUMP_ID => $dumpId);
 			} else {
@@ -317,14 +317,17 @@ class TimeDebug {
 
 	private static $varCounter = 0;
 
-	private static function updateVar(&$var = NULL, array &$changes = NULL) {
+	private static function updateVar(&$var = NULL, array &$changes = NULL, $hash = '') {
+		if (!$hash) $hash = md5(self::$idPrefix);
+
 		for ($i = 0, $j = count($changes); $i < $j; ++$i) {
 			$change = &self::$request[$changes[$i]];
 			$change['resId'] = 'tdchres_' . ++self::$varCounter;
 			try {
-				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add']);
+				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add'], $hash);
 				$change['res'] = $applied[0];
-				if (isset($applied[1])) $change['oriVar'] = $applied[1];
+				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . $hash . '_0" class="nd-title"><strong class="nd-inner"><pre class="nd">'
+						. $applied[1] . '</pre></strong></span>';
 			} catch(Exception $e) {
 				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne na hodnotu '
 						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';
@@ -335,7 +338,7 @@ class TimeDebug {
 	}
 
 
-	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL, &$name = NULL, &$add = 0) {
+	private static function applyChange(&$var = NULL, $varPath = array(), &$value = NULL, &$name = NULL, &$add = 0, &$hash = '') {
 		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena neprazdna cesta typu pole (nalezen typ '
 				. gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var), 7);
 
@@ -387,10 +390,18 @@ class TimeDebug {
 
 				echo ' pole ' . json_encode($oriVar) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
 				if ($oriVar === $var) $retVal[0] += 2;
-				else $retVal[1] = self::dumpSmallVar($oriVar);
+				else {
+					$idPrefix = self::$idPrefix;
+					self::$idPrefix = $hash;
+					$retVal[1] = self::dumpSmallVar($oriVar);
+					self::$idPrefix = $idPrefix;
+				}
 			} elseif ($changed) {
 				echo ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+				$idPrefix = self::$idPrefix;
+				self::$idPrefix = $hash;
 				$retVal = array(1, self::dumpSmallVar($oriVar));
+				self::$idPrefix = $idPrefix;
 			} else {
 				echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
 				$retVal = array(2);
@@ -399,7 +410,7 @@ class TimeDebug {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);
 			$index = $varPath[1]['key'];
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index, 9);
-			$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name, $add);
+			$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name, $add, $hash);
 		} elseif ($changeType === 1 || $changeType === 3 || $changeType === 5) {
 			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.', 9);
 			if ($changeType === 1) {
@@ -409,7 +420,7 @@ class TimeDebug {
 			$property = $varPath[1]['key'];
 			if ($priv) {
 				if (!isset($varArray, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 9);
-				$retVal = self::applyChange($varArray[$property], array_slice($varPath, 1), $value, $name, $add);
+				$retVal = self::applyChange($varArray[$property], array_slice($varPath, 1), $value, $name, $add, $hash);
 				if ($priv === 2) {
 					$refObj = new ReflectionObject($var);
 					$refProp = $refObj->getProperty($property);
@@ -418,7 +429,7 @@ class TimeDebug {
 				}
 			} else {
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 9);
-				$retVal = self::applyChange($var->$property, array_slice($varPath, 1), $value, $name, $add);
+				$retVal = self::applyChange($var->$property, array_slice($varPath, 1), $value, $name, $add, $hash);
 			}
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.', 8);
 		return $retVal;

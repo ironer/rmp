@@ -4,7 +4,9 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: zobrazovani puvodnich hodnot jako titulku v seznamu zmen
+// TODO: opravit neprepinani posledni editovane pro velke objekty
+// TODO: udelat titulkum v change listu vlastni pojmenovani podle rodice
+// TODO: posouvani titulku i s pripinovanymy podtitulky!
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
 // TODO: ulozit serii testu v TimeDebugu
@@ -55,7 +57,7 @@ td.textareaTimeout = null;
 td.consoleHoverTimeout = null;
 td.changes = [];
 td.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
-td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'showLogRow': true});
+td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'title': ' ', 'showLogRow': true});
 td.hoveredChange = null;
 td.noContainerChangeIndex = 65535;
 
@@ -219,8 +221,8 @@ td.loadChanges = function(changes) {
 };
 
 td.createOriVar = function(oriVar) {
-	var el = JAK.mel('div', {'className': 'nd-titled nd-ori-var'});
-	el.innerHTML = '<span class="nd-title"><strong class="nd-inner">' + td.htmlEncode(oriVar) + '</strong></span> $';
+	var el = JAK.mel('div', {'className': 'nd-titled nd-ori-var', 'title': ' '});
+	el.innerHTML = '<span class="nd-title"><strong class="nd-inner"><pre class="nd">' + oriVar + '</pre></strong></span>$';
 	return el;
 };
 
@@ -334,6 +336,7 @@ td.changeAction = function(e) {
 		if (this.logRow) td.showLog(true, this.logRow);
 		if (this.varEl) td.consoleOpen(this.varEl, td.editVarChange);
 	} else if (e.button === JAK.Browser.mouse.left) {
+		if (JAK.DOM.hasClass(el, 'nd-ori-var')) return false;
 		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
 			td.checkDeleteChange();
@@ -524,7 +527,8 @@ td.updateChangeList = function(el) {
 				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
 				+ JSON.stringify(change.data.value) + '</span>';
 
-		if (change.data.oriVar) change.appendChild(change.data.oriVar);
+		if (change.data.oriVar) { change.appendChild(change.data.oriVar); change.style.paddingRight = '16px'; }
+		else change.removeAttr('style');
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
@@ -1421,9 +1425,7 @@ td.titleAutosize = function(el) {
 	return true;
 };
 
-td.hideTimer = function(e) {
-	e = e || window.event;
-	JAK.Events.stopEvent(e);
+td.hideTimer = function() {
 	if (td.titleHideTimeout) window.clearTimeout(td.titleHideTimeout);
 	td.titleHideTimeout = window.setTimeout(td.hideTitle, 300);
 };

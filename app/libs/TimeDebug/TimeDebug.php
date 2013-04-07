@@ -385,12 +385,12 @@ class TimeDebug {
 					$retVal = array(3);
 				}
 
-				echo ' pole ' . ($enc = json_encode($oriVar)) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
+				echo ' pole ' . json_encode($oriVar) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
 				if ($oriVar === $var) $retVal[0] += 2;
-				else $retVal[1] = $enc;
+				else $retVal[1] = self::dumpSmallVar($oriVar);
 			} elseif ($changed) {
-				echo ' Zmena z ' . ($enc = json_encode($oriVar)) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-				$retVal = array(1, $enc);
+				echo ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+				$retVal = array(1, self::dumpSmallVar($oriVar));
 			} else {
 				echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
 				$retVal = array(2);
@@ -422,6 +422,18 @@ class TimeDebug {
 			}
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.', 8);
 		return $retVal;
+	}
+
+
+	private static function dumpSmallVar(&$var = NULL) {
+		return self::dumpVar($var, array(
+			self::APP_RECURSION => FALSE,
+			self::DEPTH => 2,
+			self::COLLAPSE => FALSE,
+			self::COLLAPSE_COUNT => 5,
+			self::TRUNCATE => 30,
+			self::NO_BREAK => FALSE
+		));
 	}
 
 
@@ -517,14 +529,7 @@ class TimeDebug {
 							if(self::$advancedLog && is_array($arg) && $titleId = self::incCounter() && $cnt = count($arg)) {
 								$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . $titleId
 										. '" class="nd-title"><strong class="nd-inner"><pre class="nd">'
-										.self::dumpVar($arg, array(
-											self::APP_RECURSION => FALSE,
-											self::DEPTH => 2,
-											self::COLLAPSE => FALSE,
-											self::COLLAPSE_COUNT => 5,
-											self::TRUNCATE => 30,
-											self::NO_BREAK => FALSE
-										)) . '</pre></strong></span>array</span> (' . $cnt . ')';
+										. self::dumpSmallVar($arg) . '</pre></strong></span>array</span> (' . $cnt . ')';
 							} else {
 								$args[] = self::dumpVar($arg, array(
 									self::APP_RECURSION => FALSE,

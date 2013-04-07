@@ -5,6 +5,7 @@
  * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
  */
 
+// TODO: udelat pojmenovavani dumpu a logu podle rozhovoru s Filipem
 // TODO: zkontrolovat dumpovani resources
 // TODO: opravit editor:// linky na macbooku pro PHPStorm 6
 
@@ -14,11 +15,8 @@ class TimeDebug {
 			TRUNCATE = 'truncate', // how truncate long strings? (defaults to 70)
 			COLLAPSE = 'collapse', // always collapse? (defaults to false)
 			COLLAPSE_COUNT = 'collapsecount', // how big array/object are collapsed? (defaults to 7)
-			LOCATION = 'location', // show location string? (defaults to false)
-			LOCATION_LINK = 'loclink', // show location string as link (defaults to true)
 			NO_BREAK = 'nobreak', // return dump without line breaks (defaults to false)
 			APP_RECURSION = 'apprecursion', // force { RECURSION } on all nested objects with given self::$recClass
-			TAG_ID_PREFIX = 'tagidprefix', // sets the prefix of auto incrementing tags' ids for dumped titles (defaults to 'tId')
 			PARENT_KEY = 'parentkey', // sets parent key for children's div to attribute 'data-pk' for arrays and objects
 			DUMP_ID = 'dumpid', // id for .nd 'pre' in HTML form
 			TDVIEW_INDEX = 'tdindex'; // data-tdindex of .nd 'pre' in tdView
@@ -31,11 +29,13 @@ class TimeDebug {
 	private static $startMem;
 	private static $lastRuntime;
 	private static $lastMemory;
+	public static $pathConsts = array();
 
 	public static $recClass = 'App';
 
 	public static $idPrefix = 'td';
-	private static $idCounters = array('dumps' => array(), 'logs' => array(), 'titles' => array());
+	public static $idOnce = '';
+	private static $idCounters = array('dumps' => array(), 'logs' => array(), 'titles' => array(), 'hashes' => array());
 
 	private static $timeDebug = array();
 	private static $timeDebugMD5 = array();
@@ -93,7 +93,7 @@ class TimeDebug {
 	}
 
 
-	public static function init($advancedLog = FALSE, $local = FALSE, $root = '', $startTime = 0, $startMem = 0) {
+	public static function init($advancedLog = FALSE, $local = FALSE, $root = '', $startTime = 0, $startMem = 0, $pathConsts = array()) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
 
 		header('Content-type: text/html; charset=utf-8');
@@ -144,6 +144,7 @@ class TimeDebug {
 		self::$root = $root;
 		self::$lastRuntime = self::$startTime = $startTime ?: microtime(TRUE);
 		self::$lastMemory = self::$startMem = $startMem;
+		foreach ($pathConsts as $const) self::$pathConsts['#^' . preg_quote(substr(constant($const), strlen(self::$root)), '#') . '#'] = $const;
 		self::$initialized = TRUE;
 
 		if (self::$advancedLog) register_shutdown_function(array(__CLASS__, '_closeDebug'));
@@ -212,10 +213,18 @@ class TimeDebug {
 	}
 
 
+	private static function getPathHash($text = '') {
+		$consted = preg_replace(array_keys(self::$pathConsts), self::$pathConsts, $text, 1);
+		$retMD5 = md5(self::$idPrefix . '|' . self::$idOnce . '|' . $consted);
+		self::$idOnce = '';
+		return $retMD5 . dechex(self::incCounter($retMD5));
+	}
+
 	public static function lg($text = '', $object = NULL, $reset = FALSE) {
 		if (!self::$initialized) throw new Exception("Trida TimeDebug nebyla inicializovana statickou metodou 'init'.");
 
-		list($file, $line, $code) = self::findLocation(TRUE);
+		list($file, $line, $code, $place) = self::findLocation(TRUE);
+		$relative = substr($file, strlen(self::$root));
 
 		if ($reset) {
 			self::$lastRuntime = self::$startTime;
@@ -239,6 +248,8 @@ class TimeDebug {
 
 		if (self::$advancedLog && isset($objects)) {
 			$logId = 'l' . self::$idPrefix . '_' . self::incCounter('logs');
+			$logHash = self::getPathHash("$relative|l|$place");
+
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
 				if (isset(self::$request['logs'][$logId][$i])) self::updateVar($curObj, self::$request['logs'][$logId][$i]);
@@ -252,7 +263,7 @@ class TimeDebug {
 				self::$timeDebug[] = self::$timeDebugMD5[$dumpMD5] = $cnt = count(self::$timeDebugMD5);
 				echo '<pre id="tdView_' . ++$cnt . '" class="nd-view-dump">' . $dump . '</pre>';
 			}
-			$tdParams = ' id="' . $logId . '" class="nd-row nd-log"';
+			$tdParams = ' data-hash="' . $logHash . '" id="' . $logId . '" class="nd-row nd-log"';
 		} else $tdParams = ' class="nd-row"';
 
 		echo "<pre" . ($object === NULL ? '' : " data-runtime=\"" . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
@@ -262,9 +273,9 @@ class TimeDebug {
 
 		if (self::$local) {
 			echo '<a href="editor://open/?file=' . rawurlencode($file) . "&line=$line"
-					. "\" class=\"nd-editor\"><i>" . htmlspecialchars(substr($file, strlen(self::$root))) . "</i> <b>@$line</b></a>";
+					. "\" class=\"nd-editor\"><i>" . htmlspecialchars($relative) . "</i> <b>@$line</b></a>";
 		} else {
-			echo "<span class=\"nd-editor\"><i>" . htmlspecialchars(substr($file, strlen(self::$root))) . "</i> <b>@$line</b></span>";
+			echo "<span class=\"nd-editor\"><i>" . htmlspecialchars($relative) . "</i> <b>@$line</b></span>";
 		}
 
 		echo ($code ? " $code" : '') . '</small>]</pre>';
@@ -279,12 +290,28 @@ class TimeDebug {
 		$callbackIndex = (func_num_args() == 0) ? 1 : 0;
 		$backtrace = debug_backtrace(FALSE);
 		echo '<hr>';
+
+		list($file, $line, $code, $place) = self::findLocation();
+		$relative = substr($file, strlen(self::$root));
+
+		$locationHtml = ($file ? '<small>in <' . (self::$local ? 'a href="editor://open/?file='
+		. rawurlencode($file) . "&amp;line=$line\"" : 'span') . " class=\"nd-editor\"><i>"
+		. htmlspecialchars($relative) . "</i> <b>@$line</b></a> $code</small>" : '');
+
 		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
-			$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
+			if (self::$advancedLog) {
+				$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
+				$dumpHash = self::getPathHash("$relative|d|$place");
 
-			if (isset(self::$request['dumps'][$dumpId])) self::updateVar($var, self::$request['dumps'][$dumpId]);
+				if (isset(self::$request['dumps'][$dumpId])) self::updateVar($var, self::$request['dumps'][$dumpId]);
 
-			echo self::toHtml($var, array(self::LOCATION => TRUE, self::LOCATION_LINK => LOCAL, self::DUMP_ID => $dumpId));
+				$options = array(self::DUMP_ID => $dumpId);
+			} else {
+				$dumpHash = '';
+				$options = array();
+			}
+
+			echo self::toHtml($var, $options, $locationHtml, $dumpHash);
 			echo '<hr>';
 		} unset($var);
 	}
@@ -434,9 +461,9 @@ class TimeDebug {
 	}
 
 
-	private static function toHtml($var, array $options = NULL) {
-		list($file, $line, $code) = empty($options[self::LOCATION]) ? NULL : self::findLocation();
-		return '<pre' . (!empty($options[self::DUMP_ID]) ? ' data-runtime="' . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
+	private static function toHtml($var, array $options = NULL, $appendHtml = '', $hash = '') {
+		return '<pre' . ($hash ? ' data-hash="' . $hash . '"' : '')
+				. (!empty($options[self::DUMP_ID]) ? ' data-runtime="' . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
 				. '" id="' . $options[self::DUMP_ID] . '" class="nd nd-dump"': ' class="nd"')
 				. (isset($options[self::TDVIEW_INDEX]) ? ' data-tdindex="' . $options[self::TDVIEW_INDEX] . '">' : '>')
 				. self::dumpVar($var, (array) $options + array(
@@ -446,16 +473,18 @@ class TimeDebug {
 					self::COLLAPSE_COUNT => 7,
 					self::NO_BREAK => FALSE,
 					self::APP_RECURSION => is_object($var) && (get_class($var) != self::$recClass)
-				))
-				. ($file ? '<small>in <' . (empty($options[self::LOCATION_LINK]) ? 'span' : 'a href="editor://open/?file='
-						. rawurlencode($file) . "&amp;line=$line\"" ) . " class=\"nd-editor\"><i>"
-						. htmlspecialchars(substr($file, strlen(self::$root))) . "</i> <b>@$line</b></a> $code</small>" : '') . "</pre>";
+				)) . "$appendHtml</pre>";
 	}
 
 
 	private static function incCounter($cType = 'titles') {
-		if(isset(self::$idCounters[$cType][self::$idPrefix])) return ++self::$idCounters[$cType][self::$idPrefix];
-		else return self::$idCounters[$cType][self::$idPrefix] = 1;
+		if (isset(self::$idCounters[$cType])) {
+			if (isset(self::$idCounters[$cType][self::$idPrefix])) return ++self::$idCounters[$cType][self::$idPrefix];
+			else return self::$idCounters[$cType][self::$idPrefix] = 1;
+		} else {
+			if (isset(self::$idCounters['hashes'][$cType])) return ++self::$idCounters['hashes'][$cType];
+			else return self::$idCounters['hashes'][$cType] = 1;
+		}
 	}
 
 
@@ -470,56 +499,53 @@ class TimeDebug {
 				$lines = file($item['file']);
 				$line = trim($lines[$item['line'] - 1]);
 
-				if (!$getMethod) {
-					$code = preg_match('#\w*dump(er::\w+)?\(.*\)#i', $line, $m) ? $m[0] : $line;
-				} else {
-					++$id;
-					while (!isset($backtrace[$id]['function'], $backtrace[$id]['class'], $backtrace[$id]['type'])) {
-						if (!isset($backtrace[++$id])) {
-							$id = 0;
-							break;
-						}
+				++$id;
+				while (!isset($backtrace[$id]['function'], $backtrace[$id]['class'], $backtrace[$id]['type'])) {
+					if (!isset($backtrace[++$id])) {
+						$id = 0;
+						break;
 					}
-
-					if ($id) {
-						$args = array();
-						if (!empty($backtrace[$id]['args'])) {
-							foreach($backtrace[$id]['args'] as $arg) {
-								if(self::$advancedLog && is_array($arg) && $titleId = self::incCounter() && $cnt = count($arg)) {
-									$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . $titleId
-											. '" class="nd-title"><strong class="nd-inner"><pre class="nd">'
-											.self::dumpVar($arg, array(
-												self::APP_RECURSION => FALSE,
-												self::DEPTH => 2,
-												self::COLLAPSE => FALSE,
-												self::COLLAPSE_COUNT => 5,
-												self::TRUNCATE => 30,
-												self::NO_BREAK => FALSE
-											)) . '</pre></strong></span>array</span> (' . $cnt . ')';
-								} else {
-									$args[] = self::dumpVar($arg, array(
-										self::APP_RECURSION => FALSE,
-										self::DEPTH => -1,
-										self::TRUNCATE => 10,
-										self::NO_BREAK => TRUE
-									));
-								}
-							}
-						}
-
-						$lines = file($backtrace[$id]['file']);
-						$line = trim($lines[$backtrace[$id]['line'] - 1]);
-
-						$code = '<span title="' . htmlspecialchars($line . "\nin " . substr($backtrace[$id]['file'], strlen(self::$root))
-								. ' @' . $backtrace[$id]['line'], ENT_COMPAT) . '">' . $backtrace[$id]['class']
-								. $backtrace[$id]['type'] . $backtrace[$id]['function'] . '</span>(' . implode(', ', $args) . ')';
-					} else {
-						$code = '';
-					}
-
 				}
 
-				return array($item['file'], $item['line'], $code);
+				if ($id) $place = $backtrace[$id]['class'] . '|' . $backtrace[$id]['type'] . '|' . $backtrace[$id]['function'];
+				else $place = '';
+
+				if (!$getMethod) $code = preg_match('#\w*dump(er::\w+)?\(.*\)#i', $line, $m) ? $m[0] : $line;
+				else if ($id) {
+					$args = array();
+					if (!empty($backtrace[$id]['args'])) {
+						foreach($backtrace[$id]['args'] as $arg) {
+							if(self::$advancedLog && is_array($arg) && $titleId = self::incCounter() && $cnt = count($arg)) {
+								$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . $titleId
+										. '" class="nd-title"><strong class="nd-inner"><pre class="nd">'
+										.self::dumpVar($arg, array(
+											self::APP_RECURSION => FALSE,
+											self::DEPTH => 2,
+											self::COLLAPSE => FALSE,
+											self::COLLAPSE_COUNT => 5,
+											self::TRUNCATE => 30,
+											self::NO_BREAK => FALSE
+										)) . '</pre></strong></span>array</span> (' . $cnt . ')';
+							} else {
+								$args[] = self::dumpVar($arg, array(
+									self::APP_RECURSION => FALSE,
+									self::DEPTH => -1,
+									self::TRUNCATE => 10,
+									self::NO_BREAK => TRUE
+								));
+							}
+						}
+					}
+
+					$lines = file($backtrace[$id]['file']);
+					$line = trim($lines[$backtrace[$id]['line'] - 1]);
+
+					$code = '<span title="' . htmlspecialchars($line . "\nin " . substr($backtrace[$id]['file'], strlen(self::$root))
+							. ' @' . $backtrace[$id]['line'], ENT_COMPAT) . '">' . $backtrace[$id]['class']
+							. $backtrace[$id]['type'] . $backtrace[$id]['function'] . '</span>(' . implode(', ', $args) . ')';
+				} else $code = '';
+
+				return array($item['file'], $item['line'], $code, $place);
 			}
 		}
 		return false;
@@ -617,7 +643,7 @@ class TimeDebug {
 			$var[$marker] = TRUE;
 			foreach ($var as $k => &$v) {
 				if ($k !== $marker) {
-					$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nd-key">'
+					$out .= '<span class="nd-key">'
 							. (preg_match('#^\w+\z#', $k) ? $myKey = $k : '"' . ($myKey = self::encodeString($k, TRUE)) . '"')
 							. '</span> => ' . self::dumpVar($v, array(self::PARENT_KEY => "$myKey") + $options, $level + 1);
 				}
@@ -661,7 +687,7 @@ class TimeDebug {
 					$vis = ' <span class="nd-visibility">' . ($k[1] === '*' ? 'protected' : 'private') . '</span>';
 					$k = substr($k, strrpos($k, "\x00") + 1);
 				}
-				$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span><span class="nd-key"' . ($vis ? ' data-pk="7">' : '>')
+				$out .= '<span class="nd-key"' . ($vis ? ' data-pk="7">' : '>')
 						. (preg_match('#^\w+\z#', $k) ? $myKey = $k : '"' . ($myKey = self::encodeString($k, TRUE)) . '"')
 						. "</span>$vis => " . self::dumpVar($v, array(self::PARENT_KEY => $vis ? "#$myKey" : "$myKey") + $options, $level + 1);
 			}
@@ -680,8 +706,7 @@ class TimeDebug {
 		if (isset(self::$resources[$type])) {
 			$out = "<span class=\"nd-toggle nette-toggle-collapsed\">$out</span>\n<div class=\"nette-collapsed\">";
 			foreach (call_user_func(self::$resources[$type], $var) as $k => $v) {
-				$out .= '<span class="nd-indent">   ' . str_repeat('|  ', $level) . '</span>'
-						. '<span class="nd-key">' . htmlSpecialChars($k) . "</span> => " . self::dumpVar($v, $options, $level + 1);
+				$out .= '<span class="nd-key">' . htmlSpecialChars($k) . "</span> => " . self::dumpVar($v, $options, $level + 1);
 			}
 			return $out . '</div>';
 		}

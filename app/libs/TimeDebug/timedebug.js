@@ -4,12 +4,11 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: zobrazovani puvodnich hodnot jako titulku v seznamu zmen
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
 // TODO: ulozit serii testu v TimeDebugu
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
-// TODO: zobrazovani zmen v maximalizovanem rezimu
-// TODO: udelat nastaveni (zvyraznovani sudych radku titulku, zobrazovani titulku jen u aktualniho logu, automaticke prepinani logu, zobrazovani odpovedi v max rezimu)
 
 var td = {};
 
@@ -198,6 +197,12 @@ td.loadChanges = function(changes) {
 
 		if (changes[i].add === 2) changes[i].value = JSON.parse(changes[i].value);
 
+		if (changes[i].oriVar) {
+			changes[i].oriVar = td.createOriVar(changes[i].oriVar);
+			console.debug(changes[i].oriVar);
+			td.setTitles(changes[i].oriVar);
+		}
+
 		if (varEl) {
 			varEl = td.duplicateNode(varEl);
 			varEl.title = td.formatJson(changes[i].value);
@@ -208,6 +213,12 @@ td.loadChanges = function(changes) {
 		change.formated = true;
 	}
 	td.updateChangeList();
+};
+
+td.createOriVar = function(oriVar) {
+	var el = JAK.mel('div', {'className': 'nd-titled nd-ori-var'});
+	el.innerHTML = '<span class="nd-title"><strong class="nd-inner">' + td.htmlEncode(oriVar) + '</strong></span> $';
+	return el;
 };
 
 td.findVarEl = function(el, path, add) {
@@ -510,6 +521,7 @@ td.updateChangeList = function(el) {
 				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
 				+ JSON.stringify(change.data.value) + '</span>';
 
+		if (change.data.oriVar) change.appendChild(change.data.oriVar);
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;

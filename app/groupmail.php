@@ -17,10 +17,11 @@ define('TEMP', '/temp');
 
 function __autoload($className) {
 	if (file_exists(CLASSES . "/$className.php")) require_once(CLASSES . "/$className.php");
-	elseif (file_exists(LIBS . "/$className/$className.php")) require_once(LIBS . "/$className/$className.php");
+	elseif (file_exists(LIBS . '/' . $className . "/$className.php")) require_once(LIBS . '/' . $className . "/$className.php");
 }
 
-if (DEBUG) TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0);
+if (DEBUG) TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0,
+	array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP'));
 
 //TimeDebug::$idPrefix = 'test';
 //App::dump(TimeDebug::$request);

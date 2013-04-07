@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: opravit neprepinani posledni editovane pro velke objekty
 // TODO: udelat titulkum v change listu vlastni pojmenovani podle rodice
 // TODO: posouvani titulku i s pripinovanymy podtitulky!
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
@@ -204,7 +203,6 @@ td.loadChanges = function(changes) {
 
 		if (changes[i].oriVar) {
 			changes[i].oriVar = td.createOriVar(changes[i].oriVar);
-			console.debug(changes[i].oriVar);
 			td.setTitles(changes[i].oriVar);
 		}
 
@@ -761,19 +759,24 @@ td.saveVarChange = function(arrayAdd) {
 	}
 
 	if (change = varEl.change) {
-		if (change.data.value === value && change.valid === valid && change.formated === formated && change.data.add === add) return true;
-		change.data.value = value;
-		change.data.add = add;
+		if (!(change.valid === valid && change.formated === formated && change.data.add === add &&
+				JSON.stringify(change.data.value) === JSON.stringify(value))) {
+			change.valid = valid;
+			change.formated = formated;
+			change.data.add = add;
+			change.data.value = value;
+		}
 	} else {
 		varEl = td.duplicateNode(varEl);
 		change = td.createChange({'path': revPath.reverse().join(','), 'value': value, 'add': add}, el, varEl, logRow);
+		change.valid = valid;
+		change.formated = formated;
 	}
 
-	change.valid = valid;
-	change.formated = formated;
-	varEl.title = areaVal;
-
-	td.updateChangeList(change);
+	if (varEl.title !== areaVal) {
+		varEl.title = areaVal;
+		td.updateChangeList(change);
+	}
 	return true;
 };
 

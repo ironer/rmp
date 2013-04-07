@@ -310,7 +310,7 @@ td.changeVar = function(e) {
 td.changeAction = function(e) {
 	e = e || window.event;
 
-	if (!td.local || e.altKey || e.ctrlKey || e.metaKey) return true;
+	if (!td.local || e.ctrlKey || e.metaKey) return true;
 
 	var el = JAK.Events.getTarget(e);
 
@@ -326,16 +326,17 @@ td.changeAction = function(e) {
 
 	if (e.button === JAK.Browser.mouse.right) {
 		if (el.id === 'tdDeleteChange') {
+			if (!e.altKey) return true;
 			this.deleteMe = true;
 
 			td.updateChangeList();
 			td.tdChangeList.removeChild(this);
 			return false;
-		}
+		} else if (e.altKey) return true;
 
 		if (this.logRow) td.showLog(true, this.logRow);
 		if (this.varEl) td.consoleOpen(this.varEl, td.editVarChange);
-	} else if (e.button === JAK.Browser.mouse.left) {
+	} else if (e.button === JAK.Browser.mouse.left && !e.altKey) {
 		if (JAK.DOM.hasClass(el, 'nd-ori-var')) return false;
 		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
@@ -528,7 +529,7 @@ td.updateChangeList = function(el) {
 				+ JSON.stringify(change.data.value) + '</span>';
 
 		if (change.data.oriVar) { change.appendChild(change.data.oriVar); change.style.paddingRight = '16px'; }
-		else change.removeAttr('style');
+		else change.removeAttribute('style');
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;

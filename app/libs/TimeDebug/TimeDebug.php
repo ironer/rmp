@@ -193,7 +193,7 @@ class TimeDebug {
 				'Left Click' => 'naskrolovat na vybranou zmenu',
 				'Right Click' => 'otevrit modal konzoli pro upravu',
 				'LC na krizek' => 'vypnout automaticke prepinani logu',
-				'RC na krizek' => 'smazat vybranou zmenu',
+				'Alt + RC na krizek' => 'smazat vybranou zmenu',
 				'Shift + LC' => 'prijmout opravu / formatovat JSON'
 			)
 		);

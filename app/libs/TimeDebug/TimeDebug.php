@@ -326,8 +326,8 @@ class TimeDebug {
 			try {
 				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add'], $hash);
 				$change['res'] = $applied[0];
-				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . $hash . '_0" class="nd-title' . ($applied[0] % 2 ? ' nd-changed' : '')
-						. '"><strong class="nd-inner"><pre class="nd">' . $applied[1] . '</pre></strong></span>';
+				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . $hash . '_0" class="nd-title"><strong class="nd-inner"><pre class="nd">'
+						. $applied[1] . '</pre></strong></span>';
 			} catch(Exception $e) {
 				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne na hodnotu '
 						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';

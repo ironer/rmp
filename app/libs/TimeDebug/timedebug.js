@@ -4,9 +4,8 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
-// TODO: array titulek a podtitulky = cervene, string = modry, zmeny = zelene, identity = zlute
 // TODO: mezernik pro prepinani viditelnych stavu
+// TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
 // TODO: ulozit serii testu v TimeDebugu
@@ -204,7 +203,7 @@ td.loadChanges = function(changes) {
 
 		if (changes[i].add === 2) changes[i].value = JSON.parse(changes[i].value);
 
-		if (changes[i].oriVar) changes[i].oriVar = td.createOriVar(changes[i].oriVar);
+		if (changes[i].oriVar) changes[i].oriVar = td.createOriVar(changes[i].oriVar, changes[i].res % 2);
 
 		if (varEl) {
 			varEl = td.duplicateNode(varEl);
@@ -218,8 +217,8 @@ td.loadChanges = function(changes) {
 	td.updateChangeList();
 };
 
-td.createOriVar = function(oriVar) {
-	var el = JAK.mel('div', {'className': 'nd-titled nd-ori-var', 'title': ' '});
+td.createOriVar = function(oriVar, changed) {
+	var el = JAK.mel('div', {'className': 'nd-titled nd-ori-var' + (changed ? ' nd-changed' : ''), 'title': ' '});
 	el.innerHTML = oriVar + '$';
 	return el;
 };
@@ -365,13 +364,13 @@ td.changeAction = function(e) {
 			td.showLog(true, this.logRow);
 
 			if (td.tdFullWidth) {
-				if (this.varEl) hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 150]);
+				if (this.varEl) hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 200]);
 			} else {
-				if (this.varEl) hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 50]);
-				hashes.push([td.logWrapper, 'loganchor', td.logContainer, 50]);
+				if (this.varEl) hashes.push([td.tdInnerWrapper, 'tdanchor', td.tdContainer, 100]);
+				hashes.push([td.logWrapper, 'loganchor', td.logContainer, 100]);
 			}
 		} else {
-			if (this.varEl) hashes.push([td.logWrapper, 'tdanchor', td.logContainer, 50]);
+			if (this.varEl) hashes.push([td.logWrapper, 'tdanchor', td.logContainer, 100]);
 		}
 
 		td.setLocationHashes(true, hashes);
@@ -1555,7 +1554,7 @@ td.readKeyDown = function(e) {
 			if (tdNext === td.logRowActiveId) return true;
 			td.showDump(tdNext);
 			if (!td.tdFullWidth) {
-				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 50]]);
+				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 100]]);
 			}
 			return false;
 		} else if (e.keyCode == 40 && !td.tdConsole && td.logRowActiveId < td.indexes.length) {
@@ -1564,7 +1563,7 @@ td.readKeyDown = function(e) {
 			if (tdNext === td.logRowActiveId) return true;
 			td.showDump(tdNext);
 			if (!td.tdFullWidth) {
-				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 50]]);
+				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 100]]);
 			}
 			return false;
 		} else if (e.keyCode == 37 && td.titleActive) {

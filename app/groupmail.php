@@ -25,7 +25,7 @@ if (DEBUG) TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0,
 
 //App::dump(TimeDebug::$request);
 
-$app = new App('GM');
+$app = new App('GM', array(array(1,2,3,4),'zluva',TRUE));
 
 if (!empty($_GET['mail'])) {
 	return $app->route('mailrouter')->getModel()->process();

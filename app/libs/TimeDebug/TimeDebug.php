@@ -326,8 +326,8 @@ class TimeDebug {
 			try {
 				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add'], $hash);
 				$change['res'] = $applied[0];
-				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . $hash . '_0" class="nd-title"><strong class="nd-inner"><pre class="nd">'
-						. $applied[1] . '</pre></strong></span>';
+				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . $hash . '_0" class="nd-title' . ($applied[0] % 2 ? ' nd-changed' : '')
+						. '"><strong class="nd-inner"><pre class="nd">' . $applied[1] . '</pre></strong></span>';
 			} catch(Exception $e) {
 				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne na hodnotu '
 						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';
@@ -382,30 +382,27 @@ class TimeDebug {
 			if ($add) {
 				if ($overwrite) {
 					echo ' Upraveno';
-					$retVal = array(4);
+					$retVal = array(5);
 				} else {
 					echo ' Doplneno';
 					$retVal = array(3);
 				}
 
 				echo ' pole ' . json_encode($oriVar) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
-				if ($oriVar === $var) $retVal[0] += 2;
-				else {
-					$idPrefix = self::$idPrefix;
-					self::$idPrefix = $hash;
-					$retVal[1] = self::dumpSmallVar($oriVar);
-					self::$idPrefix = $idPrefix;
-				}
+				if ($oriVar === $var) ++$retVal[0];
 			} elseif ($changed) {
 				echo ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
-				$idPrefix = self::$idPrefix;
-				self::$idPrefix = $hash;
-				$retVal = array(1, self::dumpSmallVar($oriVar));
-				self::$idPrefix = $idPrefix;
+				$retVal = array(1);
 			} else {
 				echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
 				$retVal = array(2);
 			}
+
+			$idPrefix = self::$idPrefix;
+			self::$idPrefix = $hash;
+			$retVal[1] = self::dumpSmallVar($oriVar);
+			self::$idPrefix = $idPrefix;
+
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);
 			$index = $varPath[1]['key'];

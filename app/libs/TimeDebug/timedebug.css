@@ -44,8 +44,9 @@ pre.nd {
 	display: none;
 	z-index: 100;
 	background: #def;
-	border-top: 8px solid #def;
+	border-top: 8px solid #079;
 	border-bottom: 8px solid #def;
+	border-radius: 5px;
 	top: 0;
 	left: 0;
 	-moz-box-shadow: 3px 2px 8px #888;
@@ -60,12 +61,12 @@ pre.nd {
 }
 .nd-array .nd-title {
 	background: #fed;
-	border-top: 8px solid #fed;
+	border-top: 8px solid #a33;
 	border-bottom: 8px solid #fed;
 }
 .nd-title .nd-title {
 	background: #dfe;
-	border-top: 8px solid #dfe;
+	border-top: 8px solid #097;
 	border-bottom: 8px solid #dfe;
 }
 .nd-inner {
@@ -263,11 +264,11 @@ pre.nd {
 	background: #33e;
 }
 .nd-restype4:after {
-	background: #f09;
-}
-.nd-restype5:after {
 	background: #33e;
 	content: "i";
+}
+.nd-restype5:after {
+	background: #f09;
 }
 .nd-restype6:after {
 	background: #f09;
@@ -322,7 +323,7 @@ pre.nd {
 }
 .nd-help .nd-title {
 	background: #ffe;
-	border-top: 8px solid #ffe;
+	border-top: 8px solid #d90;
 	border-bottom: 8px solid #ffe;
 }
 .nd-help a {
@@ -370,6 +371,11 @@ pre.nd {
 }
 .nd-ori-var .nd-title {
 	text-align: left;
+}
+.nd-title.nd-changed, .nd-title.nd-changed .nd-title {
+	background: #dfe;
+	border-top: 8px solid #097;
+	border-bottom: 8px solid #dfe;
 }
 #tdContainer {
 	position: absolute;

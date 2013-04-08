@@ -4,11 +4,11 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: posouvani titulku i s pripinovanymy podtitulky!
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
 // TODO: ulozit serii testu v TimeDebugu
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
+// TODO: nastavit acitivechilds pro rodicovske titulky ?
 
 var td = {};
 
@@ -131,6 +131,7 @@ td.init = function(logId) {
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-view-dump')) {
 				td.dumps.push(logNodes[i]);
 				logNodes[i].objects = [];
+				td.setTitles(logNodes[i]);
 				elements = logNodes[i].childNodes;
 				for (k = elements.length; k-- > 0;) {
 					if (elements[k].nodeType == 1 && (tdIndex = elements[k].getAttribute('data-tdindex')) !== false) {
@@ -166,7 +167,6 @@ td.init = function(logId) {
 			+ '</strong></span>*</span>';
 	document.body.appendChild(td.help);
 	td.help.onmousedown = td.logAction;
-	td.setTitles(td.help);
 	td.helpSpaceX = td.help.clientWidth + JAK.DOM.scrollbarWidth();
 	JAK.gel('menuTitle').appendChild(td.tdChangeList);
 	if (td.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', td, 'sendChanges');
@@ -180,6 +180,7 @@ td.init = function(logId) {
 	window.onmousewheel = document.onmousewheel = td.mouseWheel;
 
 	if (td.response) td.loadChanges(td.response);
+	td.setTitles(td.help);
 };
 
 td.loadChanges = function(changes) {
@@ -200,10 +201,7 @@ td.loadChanges = function(changes) {
 
 		if (changes[i].add === 2) changes[i].value = JSON.parse(changes[i].value);
 
-		if (changes[i].oriVar) {
-			changes[i].oriVar = td.createOriVar(changes[i].oriVar);
-			td.setTitles(changes[i].oriVar);
-		}
+		if (changes[i].oriVar) changes[i].oriVar = td.createOriVar(changes[i].oriVar);
 
 		if (varEl) {
 			varEl = td.duplicateNode(varEl);
@@ -1150,7 +1148,6 @@ td.showDump = function(id) {
 			td.tdView.activeChilds = [];
 		}
 		td.tdView.id = 'tdView';
-		td.setTitles(td.tdView);
 		td.tdResizeWrapper();
 	}
 

@@ -39,7 +39,10 @@ pre.nd {
 .nd-titled:hover {
 	background: #9f3;
 }
-.nd-title {
+.nd-titled:hover>.nd-title {
+	border-bottom: 8px solid #333;
+}
+.nd-title, .nd-titled>.nd-title:hover {
 	position: absolute;
 	display: none;
 	z-index: 100;
@@ -49,8 +52,6 @@ pre.nd {
 	border-radius: 5px;
 	top: 0;
 	left: 0;
-	-moz-box-shadow: 3px 2px 8px #888;
-	-webkit-box-shadow: 3px 2px 8px #888;
 	box-shadow: 3px 2px 8px #888;
 	padding: 0;
 	text-indent: 0;
@@ -59,12 +60,12 @@ pre.nd {
 	outline: 0;
 	min-width: 70px;
 }
-.nd-array .nd-title {
+.nd-array .nd-title, .nd-array>.nd-title:hover {
 	background: #fed;
 	border-top: 8px solid #a33;
 	border-bottom: 8px solid #fed;
 }
-.nd-title .nd-title {
+.nd-title .nd-title, .nd-title .nd-titled>.nd-title:hover {
 	background: #dfe;
 	border-top: 8px solid #097;
 	border-bottom: 8px solid #dfe;
@@ -134,7 +135,7 @@ pre.nd {
 	padding-bottom: 2px;
 	text-indent: -15em;
 }
-.nd-row, .nd-menu {
+.nd-row, .nd-menu, .nd-change-data {
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
 	-khtml-user-select: none;
@@ -321,7 +322,7 @@ pre.nd {
 .nd-private {
 	color: #00e;
 }
-.nd-help .nd-title {
+.nd-help .nd-title, .nd-help .nd-titled>.nd-title:hover {
 	background: #ffe;
 	border-top: 8px solid #d90;
 	border-bottom: 8px solid #ffe;
@@ -372,7 +373,7 @@ pre.nd {
 .nd-ori-var .nd-title {
 	text-align: left;
 }
-.nd-title.nd-changed, .nd-title.nd-changed .nd-title {
+.nd-title.nd-changed, .nd-titled>.nd-title.nd-changed:hover, .nd-title.nd-changed .nd-title, .nd-title.nd-changed .nd-titled>.nd-title:hover {
 	background: #dfe;
 	border-top: 8px solid #097;
 	border-bottom: 8px solid #dfe;
@@ -550,8 +551,6 @@ span.nd-var-change {
 	background: #269;
 	border: 1px solid #38b;
 	outline: 0;
-	-moz-box-shadow: 3px 2px 8px #888;
-	-webkit-box-shadow: 3px 2px 8px #888;
 	box-shadow: 3px 2px 8px #888;
 }
 #tdConsoleArea::-moz-selection { color: #dff;  background: #147; }

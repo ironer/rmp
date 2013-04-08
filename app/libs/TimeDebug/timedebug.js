@@ -4,6 +4,9 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
+// TODO: array titulek a podtitulky = cervene, string = modry, zmeny = zelene, identity = zlute
+// TODO: mezernik pro prepinani viditelnych stavu
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
 // TODO: ulozit serii testu v TimeDebugu
@@ -314,25 +317,28 @@ td.changeAction = function(e) {
 		return true;
 	}
 
-	JAK.Events.stopEvent(e);
-	JAK.Events.cancelDef(e);
-
 	var hashes = [];
 
 	if (e.button === JAK.Browser.mouse.right) {
+		JAK.Events.stopEvent(e);
+		JAK.Events.cancelDef(e);
+
 		if (el.id === 'tdDeleteChange') {
-			if (!e.altKey) return true;
+			if (!e.altKey) return false;
 			this.deleteMe = true;
 
 			td.updateChangeList();
 			td.tdChangeList.removeChild(this);
 			return false;
-		} else if (e.altKey) return true;
+		} else if (e.altKey) return false;
 
 		if (this.logRow) td.showLog(true, this.logRow);
 		if (this.varEl) td.consoleOpen(this.varEl, td.editVarChange);
 	} else if (e.button === JAK.Browser.mouse.left && !e.altKey) {
-		if (JAK.DOM.hasClass(el, 'nd-ori-var')) return false;
+		JAK.Events.stopEvent(e);
+		JAK.Events.cancelDef(e);
+
+		if (JAK.DOM.hasClass(el, 'nd-ori-var')) return true;
 		if (el.id === 'tdDeleteChange') {
 			el.showLogRow = !el.showLogRow;
 			td.checkDeleteChange();
@@ -353,7 +359,7 @@ td.changeAction = function(e) {
 				this.formated = (this.title === td.formatJson(this.data.value));
 				td.updateChangeList(this);
 			}
-			return false;
+			return true;
 		}
 		if (this.logRow) {
 			td.showLog(true, this.logRow);

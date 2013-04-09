@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: nastavit acitiveChilds pro help !
 // TODO: mezernik pro prepinani viditelnych stavu
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
@@ -1252,7 +1251,7 @@ td.getParents = function(el) {
 	var tag, parents = [];
 
 	while ((tag = (el = el.parentNode).tagName.toLowerCase()) !== 'body') {
-		if (tag == 'strong' && el.className == 'nd-inner') parents.push(el = el.parentNode);
+		if (tag === 'span' && JAK.DOM.hasClass(el, 'nd-title')) parents.push(el);
 	}
 	return parents;
 };

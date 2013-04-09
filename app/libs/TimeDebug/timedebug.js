@@ -416,7 +416,7 @@ td.formatJson = function(json) {
 td.padJson = function(nested) {
 	var retVal = '';
 	for (var i = nested['['] + nested['{']; i-- > 0;) {
-		retVal += '    ';
+		retVal += '\t';
 	}
 	return retVal;
 };
@@ -1592,6 +1592,13 @@ td.readKeyDown = function(e) {
 				document.body.removeChild(td.hide[1]);
 			}
 			td.hide[0] = ++td.hide[0] % 3;
+			return false;
+		} else if (e.keyCode == 9 && td.tdConsole) {
+			JAK.Events.cancelDef(e);
+			JAK.Events.stopEvent(e);
+			var area = td.tdConsole.area, start = area.selectionStart;
+			if (area.selectedText) td.unselectConsole();
+			td.areaWrite(area, area.value.slice(0, start) + '\t' + area.value.slice(start), start + 1);
 			return false;
 		}
 	}

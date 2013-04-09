@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: mezernik pro prepinani viditelnych stavu
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -27,7 +26,7 @@ td.dumps = [];
 td.indexes = [];
 td.response = null;
 td.hash2Id = {};
-td.hide = false;
+td.hide = [0, null];
 
 td.tdContainer = JAK.mel('div', {id: 'tdContainer'});
 td.tdOuterWrapper = JAK.mel('div', {id: 'tdOuterWrapper'});
@@ -1175,7 +1174,9 @@ td.setTitles = function(container) {
 td.showTitle = function(e) {
 	e = e || window.event;
 
-	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null) return false;
+	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null || td.hide[0] === 2) {
+		return false;
+	}
 	var tdTitleRows, tdParents;
 
 	JAK.Events.stopEvent(e);
@@ -1577,10 +1578,22 @@ td.readKeyDown = function(e) {
 		} else if (e.keyCode == 13 && td.tdConsole) {
 			JAK.Events.stopEvent(e);
 		}
-//		else if (e.keyCode == 32 && !td.tdConsole) {
-//			if (td.hide === false && (td.hide = true)) for (i = td.visibleTitles.length; i-- > 0;) td.visibleTitles.style.display = 'none';
-//			else if (td.hide === true) //
-//		}
+		else if (e.keyCode == 32 && !td.tdConsole) {
+			if (td.hide[0] === 0) {
+				td.hide[1] = JAK.mel('div', {'id': 'tdTitleMask'});
+				document.body.appendChild(td.hide[1]);
+			} else if (td.hide[0] === 1) {
+				for (i = td.visibleTitles.length; i-- > 0;) td.visibleTitles[i].style.display = 'none';
+				document.body.removeChild(td.hide[1]);
+				td.hide[1] = JAK.mel('div', {'id': 'tdNoTitles', 'innerHTML': 'Titulky vypnuty.'});
+				document.body.appendChild(td.hide[1]);
+			} else {
+				for (i = td.visibleTitles.length; i-- > 0;) td.visibleTitles[i].style.display = 'block';
+				document.body.removeChild(td.hide[1]);
+			}
+			td.hide[0] = ++td.hide[0] % 3;
+			return false;
+		}
 	}
 	return true;
 };

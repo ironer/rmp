@@ -4,13 +4,14 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: nastavit acitiveChilds pro help !
 // TODO: mezernik pro prepinani viditelnych stavu
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
 // TODO: ulozit serii testu v TimeDebugu
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
-// TODO: nastavit acitivechilds pro rodicovske titulky ?
+
 
 var td = {};
 
@@ -27,13 +28,12 @@ td.dumps = [];
 td.indexes = [];
 td.response = null;
 td.hash2Id = {};
+td.hide = false;
 
 td.tdContainer = JAK.mel('div', {id: 'tdContainer'});
 td.tdOuterWrapper = JAK.mel('div', {id: 'tdOuterWrapper'});
 td.tdInnerWrapper = JAK.mel('div', {id: 'tdInnerWrapper'});
 td.tdView = JAK.mel('pre', {id: 'tdView'});
-td.tdView.activeChilds = [];
-td.tdListeners = [];
 td.tdFullWidth = false;
 td.tdWidth = 400;
 
@@ -116,14 +116,14 @@ td.init = function(logId) {
 	for (var i = 0, j = logNodes.length, k; i < j; ++i) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
-				td.hash2Id[logNodes[i].attrHash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
+				td.hash2Id[logNodes[i].hash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
 				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
 				logNodes[i].onmousedown = td.changeVar;
 				td.setTitles(logNodes[i]);
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-log')) {
 				td.logRows.push(logNodes[i]);
 				logNodes[i].logId = td.logRows.length;
-				td.hash2Id[logNodes[i].attrHash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
+				td.hash2Id[logNodes[i].hash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
 				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
 				logNodes[i].attrTitle = logNodes[i].getAttribute('data-title');
 				logNodes[i].onclick = td.logClick;
@@ -735,7 +735,7 @@ td.saveVarChange = function(arrayAdd) {
 	if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
 		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
-		revPath.push(el.attrHash, 'dump');
+		revPath.push(el.hash, 'dump');
 	} else {
 		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
 		else if (JAK.DOM.hasClass(el, 'nd-array')) {
@@ -753,9 +753,9 @@ td.saveVarChange = function(arrayAdd) {
 			if (key[0] === '3' || key[0] === '4') privateVar = true;
 		}
 		if (JAK.DOM.hasClass(el, 'nd-dump')) {
-			revPath.push(el.attrHash, 'dump');
+			revPath.push(el.hash, 'dump');
 		} else {
-			revPath.push(el.tdIndex, td.logRowActive.attrHash, 'log');
+			revPath.push(el.tdIndex, td.logRowActive.hash, 'log');
 			logRow = td.logRowActive;
 		}
 	}
@@ -1137,12 +1137,6 @@ td.showDump = function(id) {
 	document.title = '[' + td.logRowActive.attrRuntime + ' ms] ' + td.logRowActive.id + '::' + td.logRowActive.attrTitle;
 
 	if (td.indexes[td.logRowActiveId - 1] !== td.indexes[id - 1]) {
-
-		if (td.tdListeners.length) {
-			JAK.Events.removeListeners(td.tdListeners);
-			td.tdListeners.length = 0;
-		}
-
 		(td.tdView.oriId && (td.tdView.id = td.tdView.oriId)) || td.tdInnerWrapper.removeChild(td.tdView);
 
 		td.tdView = td.dumps[td.indexes[id - 1]];
@@ -1150,7 +1144,6 @@ td.showDump = function(id) {
 		if (!td.tdView.oriId) {
 			td.tdInnerWrapper.appendChild(td.tdView);
 			td.tdView.oriId = td.tdView.id;
-			td.tdView.activeChilds = [];
 		}
 		td.tdView.id = 'tdView';
 		td.tdResizeWrapper();
@@ -1163,27 +1156,20 @@ td.showDump = function(id) {
 };
 
 td.setTitles = function(container) {
-	var titleSpan, titleStrong, titleStrongs, listeners = [];
+	var titleSpan, titleStrong, titleStrongs;
 
 	titleStrongs = container.getElementsByTagName('strong');
 	for (var i = titleStrongs.length; i-- > 0;) {
-		if ((titleStrong = titleStrongs[i]).className == 'nd-inner') {
+		if (JAK.DOM.hasClass(titleStrong = titleStrongs[i], 'nd-inner')) {
 			titleSpan = titleStrong.parentNode.parentNode;
 			titleSpan.tdTitle = titleStrong.parentNode;
 			titleSpan.tdTitle.tdInner = titleStrong;
 
-			listeners.push(JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, td.showTitle),
-					JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, td.hideTimer),
-					JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle)
-			);
-
-			if (!container.titleListener) JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
+			JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, td.showTitle);
+			JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, td.hideTimer);
+			JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle);
+			JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
 		}
-	}
-
-	if (container === td.tdView) {
-		td.tdListeners = td.tdListeners.concat(listeners);
-		if (!container.titleListener) container.titleListener = true;
 	}
 };
 
@@ -1253,7 +1239,10 @@ td.showTitle = function(e) {
 td.removeFromParents = function(el) {
 	for (var i = el.parents.length, j; i-- > 0;) {
 		for (j = el.parents[i].activeChilds.length; j-- > 0;) {
-			if (el.parents[i].activeChilds[j] === el) el.parents[i].activeChilds.splice(j, 1);
+			if (el.parents[i].activeChilds[j] === el) {
+				el.parents[i].activeChilds.splice(j, 1);
+				break;
+			}
 		}
 	}
 };
@@ -1262,12 +1251,8 @@ td.getParents = function(el) {
 	if (!el) return [];
 	var tag, parents = [];
 
-	while ((tag = (el = el.parentNode).tagName.toLowerCase()) != 'body') {
+	while ((tag = (el = el.parentNode).tagName.toLowerCase()) !== 'body') {
 		if (tag == 'strong' && el.className == 'nd-inner') parents.push(el = el.parentNode);
-		else if (el.id === 'tdView') {
-			parents.push(el);
-			break;
-		}
 	}
 	return parents;
 };
@@ -1544,7 +1529,7 @@ td.readConsoleKeyPress = function(e) {
 td.readKeyDown = function(e) {
 	e = e || window.event;
 
-	var tdNext;
+	var i, tdNext;
 
 	if (e.shiftKey) {
 		if (e.keyCode == 13 && td.tdConsole) return td.tdConsole.callback();
@@ -1581,7 +1566,7 @@ td.readKeyDown = function(e) {
 				window.clearTimeout(td.titleHideTimeout);
 				td.titleHideTimeout = null;
 			}
-			for (var i = td.visibleTitles.length; i-- > 0;) {
+			for (i = td.visibleTitles.length; i-- > 0;) {
 				td.visibleTitles[i].style.display = 'none';
 				td.visibleTitles[i].pined = false;
 				td.visibleTitles[i].resized = false;
@@ -1593,6 +1578,10 @@ td.readKeyDown = function(e) {
 		} else if (e.keyCode == 13 && td.tdConsole) {
 			JAK.Events.stopEvent(e);
 		}
+//		else if (e.keyCode == 32 && !td.tdConsole) {
+//			if (td.hide === false && (td.hide = true)) for (i = td.visibleTitles.length; i-- > 0;) td.visibleTitles.style.display = 'none';
+//			else if (td.hide === true) //
+//		}
 	}
 	return true;
 };
@@ -1788,12 +1777,4 @@ td.areaWrite = function(el, text, start, end) {
 	el.selectionStart = start;
 	el.selectionEnd = end;
 	el.scrollTop = top;
-};
-
-td.fire = function(text) {
-	if (!--this.counter) {
-		this.counter = 1000;
-		console.clear();
-	}
-	console.debug(text);
 };

@@ -10,6 +10,7 @@ class App {
 
 	public $id;
 	public $stop = FALSE;
+	public $test = 'asd sd sad a asd asd asd asd asd as das as asd asd as dasd as asd asd asd asd asd asd asd asd asd asd asdas as asd asd asd asd asd asd asd asd asd as asd asd asd as as asd asd asd asd asd as asd as';
 
 	private $request;
 	private $get = array();

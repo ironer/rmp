@@ -1154,6 +1154,45 @@ td.showDump = function(id) {
 	return true;
 };
 
+//td.getTitles = function(titles) {
+//	var i, retArray = [];
+//	for (i = titles.length; i-- > 0;) {
+//		retArray.push(td.getTitlePath(titles[i]));
+//	}
+//	return retArray.reverse();
+//};
+//
+//td.getTitlePath = function(el) {
+//	var revPath;
+//	if (JAK.DOM.hasClass(el, 'nd-top')) {
+//		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
+//		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
+//		revPath.push(el.hash, 'dump');
+//	} else {
+//		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
+//		else if (JAK.DOM.hasClass(el, 'nd-array')) {
+//			revPath.push(key);
+//			if (JAK.DOM.hasClass(el.parentNode, 'nd-toggle')) el = el.parentNode;
+//		} else return false;
+//
+//		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
+//			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
+//				revPath.push((i ? '#' : '*') + key);
+//				privateVar = false;
+//			} else {
+//				revPath.push(key);
+//			}
+//			if (key[0] === '3' || key[0] === '4') privateVar = true;
+//		}
+//		if (JAK.DOM.hasClass(el, 'nd-dump')) {
+//			revPath.push(el.hash, 'dump');
+//		} else {
+//			revPath.push(el.tdIndex, td.logRowActive.hash, 'log');
+//			logRow = td.logRowActive;
+//		}
+//	}
+//};
+
 td.setTitles = function(container) {
 	var titleSpan, titleStrong, titleStrongs;
 

@@ -18,7 +18,10 @@ class TimeDebug {
 			APP_RECURSION = 'apprecursion', // force { RECURSION } on all nested objects with given self::$recClass
 			PARENT_KEY = 'parentkey', // sets parent key for children's div to attribute 'data-pk' for arrays and objects
 			DUMP_ID = 'dumpid', // id for .nd 'pre' in HTML form
-			TDVIEW_INDEX = 'tdindex'; // data-tdindex of .nd 'pre' in tdView
+			TDVIEW_INDEX = 'tdindex', // data-tdindex of .nd 'pre' in tdView
+			TITLE_CLASS = 'titleclass', // class for dumped titles (defaults to 'nd-title-log', '...-dump', '...-method', '...-help')
+			TITLE_DATA = 'titledata'; // data for data-pk for titles
+
 
 	private static $initialized = FALSE;
 	private static $advancedLog;
@@ -304,10 +307,10 @@ class TimeDebug {
 
 				if (isset(self::$request['dumps'][$dumpHash])) self::updateVar($var, self::$request['dumps'][$dumpHash], $dumpHash);
 
-				$options = array(self::DUMP_ID => $dumpId);
+				$options = array(self::DUMP_ID => $dumpId, self::TITLE_CLASS => 'nd-title-dump');
 			} else {
 				$dumpHash = '';
-				$options = array();
+				$options = array(self::TITLE_CLASS => 'nd-title-dump');
 			}
 
 			echo self::toHtml($var, $options, $locationHtml, $dumpHash);
@@ -433,15 +436,16 @@ class TimeDebug {
 	}
 
 
-	private static function dumpSmallVar(&$var = NULL) {
-		return self::dumpVar($var, array(
+	private static function dumpSmallVar(&$var = NULL, array $options = NULL) {
+		$options = (array) $options + array(
 			self::APP_RECURSION => FALSE,
 			self::DEPTH => 2,
 			self::COLLAPSE => FALSE,
 			self::COLLAPSE_COUNT => 5,
 			self::TRUNCATE => 30,
 			self::NO_BREAK => FALSE
-		));
+		);
+		return self::dumpVar($var, $options);
 	}
 
 
@@ -533,17 +537,21 @@ class TimeDebug {
 				else if ($id) {
 					$args = array();
 					if (!empty($backtrace[$id]['args'])) {
-						foreach($backtrace[$id]['args'] as $arg) {
-							if(self::$advancedLog && is_array($arg) && $titleId = self::incCounter() && $cnt = count($arg)) {
-								$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . $titleId
-										. '" class="nd-title"><strong class="nd-inner"><pre class="nd">'
-										. self::dumpSmallVar($arg) . '</pre></strong></span>array</span> (' . $cnt . ')';
+						for ($i = 0, $j = count($backtrace[$id]['args']); $i < $j; ++$i) {
+							$arg = $backtrace[$id]['args'][$i];
+							if(self::$advancedLog && is_array($arg) && $cnt = count($arg)) {
+								$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . self::incCounter()
+										. '" class="nd-title td-title-method" data-pk="' . $i . '"><strong class="nd-inner"><pre class="nd">'
+										. self::dumpSmallVar($arg, array(self::TITLE_CLASS => 'nd-title-method'))
+										. '</pre></strong></span>array</span> (' . $cnt . ')';
 							} else {
 								$args[] = self::dumpVar($arg, array(
 									self::APP_RECURSION => FALSE,
 									self::DEPTH => -1,
 									self::TRUNCATE => 10,
-									self::NO_BREAK => TRUE
+									self::NO_BREAK => TRUE,
+									self::TITLE_CLASS => 'nd-title-method',
+									self::TITLE_DATA => $i
 								));
 							}
 						}
@@ -599,16 +607,22 @@ class TimeDebug {
 
 
 	private static function dumpString(&$var, $options, $level) {
-		$titleId = self::incCounter();
-
 		if ($options[self::TRUNCATE] && ($varLen = strlen($var)) > $options[self::TRUNCATE]) {
+			if (!isset($options[self::PARENT_KEY])) $arrKey = FALSE;
+			elseif ($options[self::PARENT_KEY][0] === '#') $arrKey = substr($options[self::PARENT_KEY], 1);
+			else $arrKey = $options[self::PARENT_KEY];
+
 			$retVal = '"' . self::encodeString(substr($var, 0, min($options[self::TRUNCATE], 512)), TRUE)
 					. '&hellip;"</span> (' . $varLen . ')';
-			$retTitle = self::$advancedLog ? '<span id="t' . self::$idPrefix . '_' . $titleId
-					. '" class="nd-title nd-color"><strong class="nd-inner"><i>'
-					. str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
+
+			if ($arrKey === FALSE) $data = isset($options[self::TITLE_DATA]) ? ' data-pk="' . $options[self::TITLE_DATA] . '"' : '';
+			else $data = ' data-pk="' . $arrKey . '"';
+			$retTitle = self::$advancedLog ? '<span id="t' . self::$idPrefix . '_' . self::incCounter()
+					. '" class="nd-title nd-color ' . (isset($options[self::TITLE_CLASS]) ? $options[self::TITLE_CLASS] : 'nd-title-log') . '"' . $data
+					. '><strong class="nd-inner"><i>' . str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 1024)), TRUE))
 					. ($varLen > 1024 ? '&hellip; &lt; TRUNCATED to 1kB &gt;' : '') . '</i></strong></span>' : '';
+
 			$retClass = self::$advancedLog ? ' nd-titled' : '';
 		} else {
 			$retTitle = '';

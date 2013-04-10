@@ -115,15 +115,15 @@ td.init = function(logId) {
 		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
 				td.hash2Id[logNodes[i].hash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
-				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
+				logNodes[i].runtime = logNodes[i].getAttribute('data-runtime');
 				logNodes[i].onmousedown = td.changeVar;
 				td.setTitles(logNodes[i]);
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-log')) {
 				td.logRows.push(logNodes[i]);
 				logNodes[i].logId = td.logRows.length;
 				td.hash2Id[logNodes[i].hash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
-				logNodes[i].attrRuntime = logNodes[i].getAttribute('data-runtime');
-				logNodes[i].attrTitle = logNodes[i].getAttribute('data-title');
+				logNodes[i].runtime = logNodes[i].getAttribute('data-runtime');
+				logNodes[i].logTitle = logNodes[i].getAttribute('data-title');
 				logNodes[i].onclick = td.logClick;
 				td.setTitles(logNodes[i]);
 				elements = logNodes[i].getElementsByTagName('a');
@@ -806,7 +806,7 @@ td.createChange = function(data, container, varEl, logRow) {
 
 	if (logRow) {
 		change.logRow = logRow;
-		change.runtime = logRow.attrRuntime;
+		change.runtime = logRow.runtime;
 		change.listeners.push(JAK.Events.addListener(change, 'mouseover', change.logRow, td.showLog));
 		key = change.logRow.id.split('_');
 
@@ -826,7 +826,7 @@ td.createChange = function(data, container, varEl, logRow) {
 			change.sortVals = change.varEl;
 		}
 	} else if (container) {
-		change.runtime = container.attrRuntime;
+		change.runtime = container.runtime;
 		key = container.id.split('_');
 
 		if (varEl) {
@@ -1132,7 +1132,7 @@ td.showDump = function(id) {
 	td.logRowActive.parentNode.insertBefore(td.logAnchor, td.logRowActive);
 	if (td.hoveredChange && td.hoveredChange.logRow === td.logRowActive) td.activateChange(true, td.hoveredChange);
 
-	document.title = '[' + td.logRowActive.attrRuntime + ' ms] ' + td.logRowActive.id + '::' + td.logRowActive.attrTitle;
+	document.title = '[' + td.logRowActive.runtime + ' ms] ' + td.logRowActive.id + '::' + td.logRowActive.logTitle;
 
 	if (td.indexes[td.logRowActiveId - 1] !== td.indexes[id - 1]) {
 		(td.tdView.oriId && (td.tdView.id = td.tdView.oriId)) || td.tdInnerWrapper.removeChild(td.tdView);
@@ -1268,7 +1268,7 @@ td.getMaxZIndex = function() {
 td.titleAction = function(e) {
 	e = e || window.event;
 
-	if (!this.pined || e.button !== JAK.Browser.mouse.left) return true;
+	if (!this.pinned || e.button !== JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
 
@@ -1428,8 +1428,9 @@ td.hideTitle = function(el) {
 		td.titleHideTimeout = null;
 	}
 
-	if (el && el.pined) {
-		el.pined = false;
+	if (el && el.pinned) {
+		el.pinned = false;
+		JAK.DOM.removeClass(el, 'nd-pinned');
 	} else if ((el = td.titleActive) !== null) {
 		td.titleActive = null;
 	} else return false;
@@ -1465,9 +1466,11 @@ td.pinTitle = function(e) {
 
 	if (td.titleActive === null) {
 		td.titleActive = el.tdTitle;
-		td.titleActive.pined = false;
+		td.titleActive.pinned = false;
+		JAK.DOM.removeClass(td.titleActive, 'nd-pinned');
 	} else {
-		td.titleActive.pined = true;
+		td.titleActive.pinned = true;
+		JAK.DOM.addClass(td.titleActive, 'nd-pinned');
 		td.titleActive = null;
 	}
 	return false;
@@ -1568,7 +1571,8 @@ td.readKeyDown = function(e) {
 			}
 			for (i = td.visibleTitles.length; i-- > 0;) {
 				td.visibleTitles[i].style.display = 'none';
-				td.visibleTitles[i].pined = false;
+				td.visibleTitles[i].pinned = false;
+				JAK.DOM.removeClass(td.visibleTitles[i], 'nd-pinned');
 				td.visibleTitles[i].resized = false;
 			}
 			td.visibleTitles.length = 0;

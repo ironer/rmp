@@ -26,7 +26,6 @@ td.dumps = [];
 td.indexes = [];
 td.response = null;
 td.hash2Id = {};
-td.hide = [0, null];
 
 td.tdContainer = JAK.mel('div', {id: 'tdContainer'});
 td.tdOuterWrapper = JAK.mel('div', {id: 'tdOuterWrapper'});
@@ -42,6 +41,8 @@ td.helpHtml = '';
 td.visibleTitles = [];
 td.titleActive = null;
 td.titleHideTimeout = null;
+td.hide = [0, JAK.mel('div', {'id': 'tdTitleMask'}), JAK.mel('pre', {'id': 'tdNoTitles', 'innerHTML': 'Titulky vypnuty'})];
+
 td.viewSize = JAK.DOM.getDocSize();
 td.spaceX = 0;
 td.spaceY = 0;
@@ -1450,7 +1451,7 @@ td.pinTitle = function(e) {
 	e = e || window.event;
 	JAK.Events.stopEvent(e);
 
-	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left) return false;
+	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left || td.hide[0] === 2) return false;
 
 	if (td.titleHideTimeout) {
 		window.clearTimeout(td.titleHideTimeout);
@@ -1584,16 +1585,14 @@ td.readKeyDown = function(e) {
 		}
 		else if (e.keyCode == 32 && !td.tdConsole) {
 			if (td.hide[0] === 0) {
-				td.hide[1] = JAK.mel('div', {'id': 'tdTitleMask'});
 				document.body.appendChild(td.hide[1]);
 			} else if (td.hide[0] === 1) {
 				for (i = td.visibleTitles.length; i-- > 0;) td.visibleTitles[i].style.display = 'none';
 				document.body.removeChild(td.hide[1]);
-				td.hide[1] = JAK.mel('div', {'id': 'tdNoTitles', 'innerHTML': 'Titulky vypnuty.'});
-				document.body.appendChild(td.hide[1]);
+				document.body.appendChild(td.hide[2]);
 			} else {
 				for (i = td.visibleTitles.length; i-- > 0;) td.visibleTitles[i].style.display = 'block';
-				document.body.removeChild(td.hide[1]);
+				document.body.removeChild(td.hide[2]);
 			}
 			td.hide[0] = ++td.hide[0] % 3;
 			return false;

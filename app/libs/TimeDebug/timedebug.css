@@ -381,11 +381,12 @@ pre.nd {
 	z-index: 1;
 	opacity: 0.8;
 	filter: alpha(opacity = 80);
-	color: #900;
 	font-weight: bold;
 	font-size: 20px;
 	padding: 5px 10px;
-	background: #faa;
+	margin: 0;
+	background: #500;
+	color: #fbb;
 }
 #tdTitleMask {
 	top: 0;

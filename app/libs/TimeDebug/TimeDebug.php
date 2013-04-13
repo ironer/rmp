@@ -16,7 +16,9 @@ class TimeDebug {
 			INIT_START_TIME = 'starttime', // microtime of application start for calculations (defaults to microtime(TRUE))
 			INIT_START_MEMORY = 'startmemory', // starting amount of used memory for calculation of used resources (defaults to 0)
 			INIT_PATH_CONSTANTS = 'pathconstants', // array of constants containing absolute paths (e.g. CLASSES with value '/web/myapp/classes')
-			INIT_GET = 'get', // option for init() with get variables for passing during debugging (defaults to $_GET)
+			INIT_GET = 'get', // option for init() with get variables for passing during debugging (defaults to &$_GET)
+			INIT_POST = 'post', // option for init() with post variables for passing during debugging (defaults to &$_POST)
+			INIT_MAX_URI_LENGTH = 'urilength', // maximum allowed length of URI for sending data, otherwise pre posting is used
 
 			DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 8)
 			TRUNCATE = 'truncate', // how truncate long strings? (defaults to 70)
@@ -39,7 +41,7 @@ class TimeDebug {
 	private static $startMem;
 	private static $lastRuntime;
 	private static $lastMemory;
-	public static $pathConsts = array();
+	private static $pathConsts = array();
 
 	public static $recClass = 'App';
 
@@ -49,8 +51,10 @@ class TimeDebug {
 
 	private static $timeDebug = array();
 	private static $timeDebugMD5 = array();
-	public static $get = array();
-	public static $request = array();
+	private static $cache = '';
+	private static $get = array();
+	private static $post = array();
+	private static $request = array();
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
 
@@ -103,8 +107,18 @@ class TimeDebug {
 		return TRUE;
 	}
 
-	public static function init(array $options = NULL) {
+	public static function init($cache = '', array $options = NULL) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
+		if (!is_dir($cache)) throw new Exception("Adresar '$cache' pro odkladani dat neexistuje.");
+		if (!is_writable($cache)) throw new Exception("Do adresare '$cache' pro odkladani dat nelze zapisovat.");
+
+		self::$cache = $cache . '/timedebug/';
+		if (is_dir(self::$cache)) {
+			if (!is_writable(self::$cache)) throw new Exception("Do adresare '" . self::$cache . "' nelze zapisovat.");
+		} else {
+			mkdir(self::$cache);
+			chmod(self::$cache, 0777);
+		}
 
 		$options = (array) $options + array(
 			self::INIT_ADVANCED_LOG => FALSE,
@@ -113,8 +127,27 @@ class TimeDebug {
 			self::INIT_START_TIME => microtime(TRUE),
 			self::INIT_START_MEMORY => 0,
 			self::INIT_PATH_CONSTANTS => array(),
-			self::INIT_GET => &$_GET
+			self::INIT_GET => &$_GET,
+			self::INIT_POST => &$_POST,
+			self::INIT_MAX_URI_LENGTH => 1000
 		);
+
+		if (isset($options[self::INIT_POST]['tdrequest'])) {
+			if (!file_exists(self::$cache . ($reqMd5 = md5($_GET['tdrequest'])))) {
+				file_put_contents(self::$cache . $reqMd5, Base62Shrink::decompress($_GET['tdrequest']));
+			}
+			echo $reqMd5;
+			die;
+		} elseif (isset($options[self::INIT_GET]['tdhash'])) {
+			if (!file_exists($fileChanges = self::$cache . $options[self::INIT_GET]['tdhash'])) {
+				throw new Exception("Soubor obsahujici zmeny '$fileChanges' nelze najit v adresari pro odkladani dat.");
+			}
+			self::$request = json_decode(file_get_contents($fileChanges), TRUE);
+			unset($options[self::INIT_GET]['tdhash']);
+		} elseif (isset($options[self::INIT_GET]['tdrequest'])) {
+			self::$request = json_decode(Base62Shrink::decompress($options[self::INIT_GET]['tdrequest']), TRUE);
+			unset($options[self::INIT_GET]['tdrequest']);
+		}
 
 		header('Content-type: text/html; charset=utf-8');
 		header("Cache-control: private");
@@ -122,8 +155,7 @@ class TimeDebug {
 		readfile(__DIR__ . '/timedebug.css');
 		echo "\n</style></head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logWrapper\">\n<div id=\"logView\">\n";
 
-		if (isset($options[self::INIT_GET]['tdrequest'])) {
-			self::$request = json_decode(Base62Shrink::decompress($_GET['tdrequest']), TRUE);
+		if (self::$request) {
 			self::$request['count'] = count(self::$request);
 			self::$request['dumps'] = array();
 			self::$request['logs'] = array();
@@ -156,7 +188,6 @@ class TimeDebug {
 					} else self::$request['logs'][$path[1]] = array($path[2] => array($i));
 				}
 			}
-			unset($options[self::INIT_GET]['tdrequest']);
 		}
 
 		self::$advancedLog = !!($options[self::INIT_ADVANCED_LOG]);
@@ -168,6 +199,7 @@ class TimeDebug {
 			self::$pathConsts['#^' . preg_quote(substr(constant($const), strlen(self::$root)), '#') . '#'] = $const;
 		}
 		self::$get = &$options[self::INIT_GET];
+		self::$post = &$options[self::INIT_POST];
 		self::$initialized = TRUE;
 
 		if (self::$advancedLog) register_shutdown_function(array(__CLASS__, '_closeDebug'));
@@ -231,6 +263,7 @@ class TimeDebug {
 		echo "\ntd.local = " . (self::$local ? 'true' : 'false') . ";\n"
 				. "td.indexes = " . json_encode(self::$timeDebug) . ";\n"
 				. "td.get = " . json_encode(self::getGet()) . ";\n"
+				. "td.post = " . json_encode(self::$post, JSON_FORCE_OBJECT) . ";\n"
 				. "td.response = " . json_encode(self::getResponse()) . ";\n"
 				. "td.helpHtml = " . (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
 				. "td.init(1);\n</script>\n";

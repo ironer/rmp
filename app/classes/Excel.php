@@ -42,7 +42,7 @@ class Excel {
 		self::tableHeader($columns, $encoding);
 		self::tableFooter($columns, $encoding);
 
-		//die();
+		if (!DEBUG) die();
 	}
 
 

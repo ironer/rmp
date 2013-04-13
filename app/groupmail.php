@@ -21,13 +21,16 @@ function __autoload($className) {
 }
 
 if (DEBUG) {
-	TimeDebug::init(array(
-		'advancedlog' => ADVANCEDLOG,
-		'local' => LOCAL,
-		'root' => ROOT,
-		'starttime' => NOW,
-		'pathconstants' => array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP')
-	));
+	TimeDebug::init(CACHE,
+		array(
+			'advancedlog' => ADVANCEDLOG,
+			'local' => LOCAL,
+			'root' => ROOT,
+			'starttime' => NOW,
+			'pathconstants' => array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP'),
+			'urilength' => 1000,
+		)
+	);
 }
 
 //App::dump(TimeDebug::$request);

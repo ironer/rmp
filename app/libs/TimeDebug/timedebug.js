@@ -17,6 +17,7 @@ var td = {};
 
 td.local = false;
 td.get = '';
+td.post = {};
 
 td.logView = JAK.gel('logView');
 td.logWrapper = td.logView.parentNode;
@@ -1324,7 +1325,7 @@ td.setMaxZIndex = function(el) {
 //	}
 	el.style.zIndex = td.zIndexMax++;
 
-	console.debug(td.zIndexMax);
+//	console.debug(td.zIndexMax);
 
 	if (td.zIndexMax > td.visibleTitles.length + 1000) {
 		td.visibleTitles.sort(function(a,b) { return parseInt(a.style.zIndex) - parseInt(b.style.zIndex); });
@@ -1344,7 +1345,7 @@ td.hoverTitle = function(e) {
 	JAK.Events.stopEvent(e);
 
 	if (this.style.zIndex < td.zIndexMax) {
-		console.debug('Sebe ' + this.style.zIndex + ' na ' + td.zIndexMax);
+//		console.debug('Sebe ' + this.style.zIndex + ' na ' + td.zIndexMax);
 		td.setMaxZIndex(this);
 	}
 };
@@ -1513,7 +1514,7 @@ td.hideTitle = function(el) {
 
 	if ((index = td.visibleTitles.indexOf(el)) !== -1) td.visibleTitles.splice(index, 1);
 	if (el.style.zIndex == td.zIndexMax) {
-		console.debug('Max po skryti: ' + (td.zIndexMax = td.getMaxZIndex()));
+//		console.debug('Max po skryti: ' + (td.zIndexMax = td.getMaxZIndex()));
 	}
 	if (el.parents) td.removeFromParents(el);
 	if (el.activeChilds && el.activeChilds.length) {
@@ -1749,10 +1750,47 @@ td.sendChanges = function(e) {
 	}
 
 	newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
-	if (len) newLoc.push((td.get ? td.get + '&' : '') + 'tdrequest=' + b62s.base8To62(b62s.compress(JSON.stringify(request))));
-	else if (td.get) newLoc.push(td.get);
+	//if (td.post) {
+		if (td.get) newLoc.push(td.get);
 
-	window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
+//		Konstruktoru Requestu se předávají dva parametry
+//
+//		type - typ reqestu, tedy xml, text, jsonp a binary. Typ je určen konstantou, tedy JAK.Request.XML, JAK.Request.TEXT, JAK.Request.JSONP, JAK.Request.BINARY.
+//				options - volitelný konfigurační objekt. Je možno nastavit:
+//				asyc - zda dotaz bude proveden asynchroně [true]
+//		timeout - doba v milisekundách do kdy musi dojit odpověď ze serveru, pokud 0, čeká se dokud spojení neuzavře prohlížeč [0]
+//		method - typ požadavku: get, post. [get]
+//
+//		Instance má tyto metody:
+//
+//				send - metodou odesíláme request. Metoda přejímá jeden povinný parametr a tím je URL. Druhým nepovinným parametrem jsou data, která pokud je method=post, jsou poslána v těle requestu.
+//				setCallback - metodě se předávají dva parametry (objekt, metoda). Metoda objektu je zavolána při navrácení dat ze serveru. Tuto metodu je nutné volat před zavoláním metody send.
+//				abort - metoda ukončí dotaz na server
+//		setHeaders - metoda přebírá konfigurační objekt s hlavičkami, které budou použity při dotazu na server
+
+		var ajax = {'url': newLoc.join('?')};
+		ajax.req = function() {
+			var rq = new JAK.Request(JAK.Request.TEXT, {method: "post"});
+			rq.setCallback(ajax, "_resp");
+			rq.send(ajax.url, {'tdrequest': b62s.base8To62(b62s.compress(JSON.stringify(request)))});
+		}
+
+		ajax._resp = function(txt, status) {
+			if (status == 200) {
+				alert(txt);
+			} else {
+				alert("Něco je špatně!");
+			}
+		}
+
+		ajax.req();
+//	} else {
+//		if (len) newLoc.push((td.get ? td.get + '&' : '') + 'tdrequest=' + b62s.base8To62(b62s.compress(JSON.stringify(request))));
+//		else if (td.get) newLoc.push(td.get);
+//
+//		window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
+//	}
+
 	return false;
 };
 

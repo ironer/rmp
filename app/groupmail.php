@@ -29,11 +29,13 @@ $app = new App('GM', array(array(1,2,3,4),'zlu asd asd asd asd asd asd asd asd a
 
 if (!empty($_GET['mail'])) {
 	return $app->route('mailrouter')->getModel()->process();
-}  elseif (!empty($_GET['imap'])) {
+} elseif (!empty($_GET['imap'])) {
 	return $app->route('imaprouter')->getModel()->process();
-}  elseif (!empty($_GET['read'])) {
+} elseif (!empty($_GET['read'])) {
 	return $app->route('readrouter')->getModel()->process();
-}  else {
+} elseif (!empty($_GET['xls'])) {
+	return $app->route('xlsrouter')->getModel()->process();
+} else {
 	return $app->route()->getModel()->process();
 }
 

@@ -26,6 +26,10 @@ pre.nd {
 	border: medium none;
 	padding: 0;
 }
+pre.nd-location {
+	font-size: 12px;
+	margin: 0 0 10px 0;
+}
 .nd-array, .nd-object, .nd-active .nd-array.nd-titled:hover {
 	color: #c22;
 }
@@ -45,7 +49,7 @@ pre.nd {
 .nd-title, .nd-titled>.nd-title:hover {
 	position: absolute;
 	display: none;
-	z-index: 100;
+	z-index: 99;
 	border-top: 8px solid #079;
 	background: #def;
 	border-bottom: 8px solid #def;

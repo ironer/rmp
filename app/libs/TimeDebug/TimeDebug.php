@@ -291,16 +291,21 @@ class TimeDebug {
 
 		$callbackIndex = (func_num_args() == 0) ? 1 : 0;
 		$backtrace = debug_backtrace(FALSE);
-		echo '<hr>';
 
 		list($file, $line, $code, $place) = self::findLocation();
 		$relative = substr($file, strlen(self::$root));
 
-		$locationHtml = ($file ? '<small>in <' . (self::$local ? 'a href="editor://open/?file='
+		echo '<hr>' . ($file ? '<pre class="nd-location"><b>Dump</b> in <' . (self::$local ? 'a href="editor://open/?file='
 		. rawurlencode($file) . "&amp;line=$line\"" : 'span') . " class=\"nd-editor\"><i>"
-		. htmlspecialchars($relative) . "</i> <b>@$line</b></a> $code</small>" : '');
+		. htmlspecialchars($relative) . "</i> <b>@$line</b></a> $code</pre>" : '');
 
-		foreach ($backtrace[$callbackIndex]["args"] as &$var) {
+		$j = 0;
+		if (isset($backtrace[$callbackIndex]["args"][0])) {
+			$j = count($backtrace[$callbackIndex]["args"]);
+		} else echo '<hr>';
+
+		for ($i = 0; $i < $j; ++$i) {
+			$var = &$backtrace[$callbackIndex]["args"][$i];
 			if (self::$advancedLog) {
 				$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
 				$dumpHash = self::getPathHash("$relative|d|$place");
@@ -313,7 +318,7 @@ class TimeDebug {
 				$options = array(self::TITLE_CLASS => 'nd-title-dump');
 			}
 
-			echo self::toHtml($var, $options, $locationHtml, $dumpHash);
+			echo self::toHtml($var, $options, $dumpHash);
 			echo '<hr>';
 		} unset($var);
 	}
@@ -329,8 +334,8 @@ class TimeDebug {
 			try {
 				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add'], $hash);
 				$change['res'] = $applied[0];
-				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . $hash . '_0" class="nd-title"><strong class="nd-inner"><pre class="nd">'
-						. $applied[1] . '</pre></strong></span>';
+				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . self::$idPrefix . '_' . self::incCounter()
+						. '" class="nd-title nd-title-help"><strong class="nd-inner"><pre class="nd">' . $applied[1] . '</pre></strong></span>';
 			} catch(Exception $e) {
 				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne na hodnotu '
 						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';
@@ -401,11 +406,7 @@ class TimeDebug {
 				$retVal = array(2);
 			}
 
-			$idPrefix = self::$idPrefix;
-			self::$idPrefix = $hash;
-			$retVal[1] = self::dumpSmallVar($oriVar);
-			self::$idPrefix = $idPrefix;
-
+			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_CLASS => 'nd-title-help'));
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);
 			$index = $varPath[1]['key'];
@@ -484,7 +485,7 @@ class TimeDebug {
 	}
 
 
-	private static function toHtml($var, array $options = NULL, $appendHtml = '', $hash = '') {
+	private static function toHtml($var, array $options = NULL, $hash = '') {
 		return '<pre' . ($hash ? ' data-hash="' . $hash . '"' : '')
 				. (!empty($options[self::DUMP_ID]) ? ' data-runtime="' . number_format(1000*(microtime(TRUE)-self::$startTime),2,'.','')
 				. '" id="' . $options[self::DUMP_ID] . '" class="nd nd-dump"': ' class="nd"')
@@ -496,7 +497,7 @@ class TimeDebug {
 					self::COLLAPSE_COUNT => 7,
 					self::NO_BREAK => FALSE,
 					self::APP_RECURSION => is_object($var) && (get_class($var) != self::$recClass)
-				)) . "$appendHtml</pre>";
+				)) . "</pre>";
 	}
 
 

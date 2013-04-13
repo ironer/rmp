@@ -16,6 +16,7 @@
 var td = {};
 
 td.local = false;
+td.get = '';
 
 td.logView = JAK.gel('logView');
 td.logWrapper = td.logView.parentNode;
@@ -157,7 +158,7 @@ td.init = function(logId) {
 	td.help.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
 			+ '<hr><div class="nd-menu">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 			+ (td.local ? '<span id="tdMenuSend"><b>odeslat</b></span>&nbsp;&nbsp;&nbsp;&nbsp;' : '')
-			+ '<span onclick="td.restore()">obnovit</span>&nbsp;&nbsp;&nbsp;&nbsp;'
+			+ '<span id="tdMenuRestore">obnovit</span>&nbsp;&nbsp;&nbsp;&nbsp;'
 			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title"><strong class="nd-inner">'
 			+ td.helpHtml
 			+ '</strong></span>napoveda</span>'
@@ -173,6 +174,7 @@ td.init = function(logId) {
 	td.helpSpaceX = td.help.clientWidth + JAK.DOM.scrollbarWidth();
 	JAK.gel('menuTitle').appendChild(td.tdChangeList);
 	if (td.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', td, 'sendChanges');
+	JAK.Events.addListener(JAK.gel('tdMenuRestore'), 'click', td, 'restore');
 
 	td.showDump(logId);
 	window.onresize = td.windowResize;
@@ -386,7 +388,7 @@ td.formatJson = function(json) {
 	var nested = {'[': 0, '{': 0};
 	var ends = {']': '[', '}': '{'};
 
-	for (var i = 0, j = text.length; i < j; i++) {
+	for (var i = 0, j = text.length; i < j; ++i) {
 		if (escaped) escaped = false;
 		else if (text[i] === '\\') escaped = true;
 		else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
@@ -626,7 +628,7 @@ td.jsonFixObjects = function(text) {
 	var retVal = '', nested = 0, arrayLevels = [], escaped = false, ch;
 	var quotes = {"'": false, '"': false};
 
-	for (var i = 0, j = text.length; i < j; i++) {
+	for (var i = 0, j = text.length; i < j; ++i) {
 		ch = text[i];
 		if (escaped) escaped = false;
 		else if (text[i] === '\\') escaped = true;
@@ -671,7 +673,7 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 	var i, j, k;
 
 	if (rev) {
-		for (i = 0, j = text.length; i < j; i++) {
+		for (i = 0, j = text.length; i < j; ++i) {
 			if (i === index) {
 				var indexLevel = td.sumNested(nested);
 				for (k = found.length; k-- > 0;) {
@@ -689,7 +691,7 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 			}
 		}
 	} else {
-		for (i = 0, j = text.length; i < j; i++) {
+		for (i = 0, j = text.length; i < j; ++i) {
 			if (escaped) escaped = false;
 			else if (text[i] === '\\') escaped = true;
 			else if (quotes.hasOwnProperty(text[i])) quotes[text[i]] = !quotes[text[i]];
@@ -1727,28 +1729,30 @@ td.htmlEncode = function(text) {
 	return retVal;
 };
 
-td.restore = function() {
-	location.href = location.protocol + '//' + location.host + location.pathname;
+td.restore = function(e) {
+	e = e || window.event;
+
+	var newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
+	if (td.get) newLoc.push(td.get);
+
+	window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
+	return false;
 };
 
 td.sendChanges = function(e) {
 	e = e || window.event;
+	var i, len = td.changes.length, change, request = [], newLoc;
 
-	var change, request = [];
-	for (var i = 0, j = td.changes.length; i < j; ++i) {
+	for (i = 0; i < len; ++i) {
 		change = td.changes[i].data;
 		request.push([change.path, change.add === 2 ? JSON.stringify(change.value) : change.value, td.changes[i].data.add]);
 	}
 
-	if (!request.length) return false;
+	newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
+	if (len) newLoc.push((td.get ? td.get + '&' : '') + 'tdrequest=' + b62s.base8To62(b62s.compress(JSON.stringify(request))));
+	else if (td.get) newLoc.push(td.get);
 
-	var req = JAK.mel('form', {'action': location.protocol + '//' + location.host + location.pathname, method:'get'}, {'display': 'none'});
-	if (e.shiftKey) req.target = '_blank';
-
-	req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': b62s.base8To62(b62s.compress(JSON.stringify(request)))}));
-	td.logView.appendChild(req);
-	req.submit();
-
+	window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
 	return false;
 };
 

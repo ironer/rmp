@@ -10,7 +10,15 @@
 
 class TimeDebug {
 
-	const DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 8)
+	const INIT_ADVANCED_LOG = 'advancedlog', // option for init() to trigger advanced logging (defaults to FALSE)
+			INIT_LOCAL = 'local', // option for init() to trigger local server features (defaults to FALSE)
+			INIT_ROOT = 'root', // absolute path to the root of web aplication (for path shortening to relative, defaults to '')
+			INIT_START_TIME = 'starttime', // microtime of application start for calculations (defaults to microtime(TRUE))
+			INIT_START_MEMORY = 'startmemory', // starting amount of used memory for calculation of used resources (defaults to 0)
+			INIT_PATH_CONSTANTS = 'pathconstants', // array of constants containing absolute paths (e.g. CLASSES with value '/web/myapp/classes')
+			INIT_GET = 'get', // option for init() with get variables for passing during debugging (defaults to $_GET)
+
+			DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 8)
 			TRUNCATE = 'truncate', // how truncate long strings? (defaults to 70)
 			COLLAPSE = 'collapse', // always collapse? (defaults to false)
 			COLLAPSE_COUNT = 'collapsecount', // how big array/object are collapsed? (defaults to 7)
@@ -41,6 +49,7 @@ class TimeDebug {
 
 	private static $timeDebug = array();
 	private static $timeDebugMD5 = array();
+	public static $get = array();
 	public static $request = array();
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
@@ -94,9 +103,18 @@ class TimeDebug {
 		return TRUE;
 	}
 
-
-	public static function init($advancedLog = FALSE, $local = FALSE, $root = '', $startTime = 0, $startMem = 0, $pathConsts = array()) {
+	public static function init(array $options = NULL) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
+
+		$options = (array) $options + array(
+			self::INIT_ADVANCED_LOG => FALSE,
+			self::INIT_LOCAL => FALSE,
+			self::INIT_ROOT => '',
+			self::INIT_START_TIME => microtime(TRUE),
+			self::INIT_START_MEMORY => 0,
+			self::INIT_PATH_CONSTANTS => array(),
+			self::INIT_GET => &$_GET
+		);
 
 		header('Content-type: text/html; charset=utf-8');
 		header("Cache-control: private");
@@ -104,7 +122,7 @@ class TimeDebug {
 		readfile(__DIR__ . '/timedebug.css');
 		echo "\n</style></head>\n<body>\n<div id=\"logContainer\">\n<div id=\"logWrapper\">\n<div id=\"logView\">\n";
 
-		if (isset($_GET['tdrequest'])) {
+		if (isset($options[self::INIT_GET]['tdrequest'])) {
 			self::$request = json_decode(Base62Shrink::decompress($_GET['tdrequest']), TRUE);
 			self::$request['count'] = count(self::$request);
 			self::$request['dumps'] = array();
@@ -138,15 +156,18 @@ class TimeDebug {
 					} else self::$request['logs'][$path[1]] = array($path[2] => array($i));
 				}
 			}
-			unset($_GET['tdrequest']);
+			unset($options[self::INIT_GET]['tdrequest']);
 		}
 
-		self::$advancedLog = !!($advancedLog);
-		self::$local = !!($local);
-		self::$root = $root;
-		self::$lastRuntime = self::$startTime = $startTime ?: microtime(TRUE);
-		self::$lastMemory = self::$startMem = $startMem;
-		foreach ($pathConsts as $const) self::$pathConsts['#^' . preg_quote(substr(constant($const), strlen(self::$root)), '#') . '#'] = $const;
+		self::$advancedLog = !!($options[self::INIT_ADVANCED_LOG]);
+		self::$local = !!($options[self::INIT_LOCAL]);
+		self::$root = $options[self::INIT_ROOT];
+		self::$lastRuntime = self::$startTime = $options[self::INIT_START_TIME];
+		self::$lastMemory = self::$startMem = $options[self::INIT_START_MEMORY];
+		foreach ($options[self::INIT_PATH_CONSTANTS] as $const) {
+			self::$pathConsts['#^' . preg_quote(substr(constant($const), strlen(self::$root)), '#') . '#'] = $const;
+		}
+		self::$get = &$options[self::INIT_GET];
 		self::$initialized = TRUE;
 
 		if (self::$advancedLog) register_shutdown_function(array(__CLASS__, '_closeDebug'));
@@ -209,6 +230,7 @@ class TimeDebug {
 		readfile(__DIR__ . '/timedebug.js');
 		echo "\ntd.local = " . (self::$local ? 'true' : 'false') . ";\n"
 				. "td.indexes = " . json_encode(self::$timeDebug) . ";\n"
+				. "td.get = " . json_encode(self::getGet()) . ";\n"
 				. "td.response = " . json_encode(self::getResponse()) . ";\n"
 				. "td.helpHtml = " . (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
 				. "td.init(1);\n</script>\n";
@@ -447,6 +469,13 @@ class TimeDebug {
 			self::NO_BREAK => FALSE
 		);
 		return self::dumpVar($var, $options);
+	}
+
+
+	private static function getGet() {
+		$retArray = array();
+		foreach (self::$get as $key => $value) $retArray[] = $key . '=' . urlencode($value);
+		return implode('&', $retArray);
 	}
 
 

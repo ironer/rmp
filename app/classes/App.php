@@ -36,7 +36,7 @@ class App {
 		$this->id = $id;
 		$this->request = urldecode(substr($_SERVER['REQUEST_URI'], $i = strlen(WEBPATH) + 1,
 			(($j = strpos($_SERVER['REQUEST_URI'], '?')) === FALSE ? strlen($_SERVER['REQUEST_URI']) : $j - $i)));
-		// TODO: osetrit a vyprazdnit $_GET a $_POST
+		// TODO: osetrit $_GET a $_POST
 		$this->get = $_GET;
 		$this->post = $_POST;
 		App::$currentApp = $this;

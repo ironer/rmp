@@ -20,8 +20,15 @@ function __autoload($className) {
 	elseif (file_exists(LIBS . '/' . $className . "/$className.php")) require_once(LIBS . '/' . $className . "/$className.php");
 }
 
-if (DEBUG) TimeDebug::init(ADVANCEDLOG, LOCAL, ROOT, NOW, 0,
-	array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP'));
+if (DEBUG) {
+	TimeDebug::init(array(
+		'advancedlog' => ADVANCEDLOG,
+		'local' => LOCAL,
+		'root' => ROOT,
+		'starttime' => NOW,
+		'pathconstants' => array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP')
+	));
+}
 
 //App::dump(TimeDebug::$request);
 

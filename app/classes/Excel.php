@@ -34,7 +34,7 @@ class Excel {
 		else $data = array(array());
 
 		if (($i = count($columns)) > ($j = count($data[0]))) array_splice($columns, $j);
-		elseif ($i < $j) while ($i < $j) $columns[$i] = array('header' => $resColumns[$i] ?: 'Sloupec ' . ++$i);
+		elseif ($i < $j) for (; $i < $j; ++$i) $columns[$i] = array('header' => $resColumns[$i] ?: 'Sloupec ' . ($i + 1));
 
 		if (DEBUG) App::dump($columns, $table);
 		else self::head($filename, $encoding);
@@ -42,7 +42,7 @@ class Excel {
 		self::tableHeader($columns, $encoding);
 		self::tableFooter($columns, $encoding);
 
-		die();
+		//die();
 	}
 
 

@@ -18,6 +18,7 @@ var td = {};
 td.local = false;
 td.get = '';
 td.post = {};
+td.maxUrlLength = 1000;
 
 td.logView = JAK.gel('logView');
 td.logWrapper = td.logView.parentNode;
@@ -1339,7 +1340,7 @@ td.hoverTitle = function(e) {
 	e = e || window.event;
 	if (td.hide[0] === 2) return true;
 
-	var el = JAK.Events.getTarget(e);
+//	var el = JAK.Events.getTarget(e);
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
@@ -1348,6 +1349,7 @@ td.hoverTitle = function(e) {
 //		console.debug('Sebe ' + this.style.zIndex + ' na ' + td.zIndexMax);
 		td.setMaxZIndex(this);
 	}
+	return false;
 };
 
 td.titleAction = function(e) {
@@ -1742,54 +1744,60 @@ td.restore = function(e) {
 
 td.sendChanges = function(e) {
 	e = e || window.event;
-	var i, len = td.changes.length, change, request = [], newLoc;
+	var i, j, len = td.changes.length, change, changesArray = [], changesBase62, newLoc;
+	if (!len) return false;
 
 	for (i = 0; i < len; ++i) {
 		change = td.changes[i].data;
-		request.push([change.path, change.add === 2 ? JSON.stringify(change.value) : change.value, td.changes[i].data.add]);
+		changesArray.push([change.path, change.add === 2 ? JSON.stringify(change.value) : change.value, change.add]);
 	}
+	changesBase62 = b62s.base8To62(b62s.compress(JSON.stringify(changesArray)));
 
-	newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
-	//if (td.post) {
-		if (td.get) newLoc.push(td.get);
+	newLoc = {
+		'url': window.location.protocol + '//' + window.location.host + window.location.pathname,
+		'sendGet': (td.get ? '?' + td.get + '&' : '?') + 'tdrequest=' + changesBase62,
+		'postGet': td.get ? '?' + td.get : '',
+		'hashGet': (td.get ? '?' + td.get + '&' : '?') + 'tdhash='
+	};
 
-//		Konstruktoru Requestu se předávají dva parametry
-//
-//		type - typ reqestu, tedy xml, text, jsonp a binary. Typ je určen konstantou, tedy JAK.Request.XML, JAK.Request.TEXT, JAK.Request.JSONP, JAK.Request.BINARY.
-//				options - volitelný konfigurační objekt. Je možno nastavit:
-//				asyc - zda dotaz bude proveden asynchroně [true]
-//		timeout - doba v milisekundách do kdy musi dojit odpověď ze serveru, pokud 0, čeká se dokud spojení neuzavře prohlížeč [0]
-//		method - typ požadavku: get, post. [get]
-//
-//		Instance má tyto metody:
-//
-//				send - metodou odesíláme request. Metoda přejímá jeden povinný parametr a tím je URL. Druhým nepovinným parametrem jsou data, která pokud je method=post, jsou poslána v těle requestu.
-//				setCallback - metodě se předávají dva parametry (objekt, metoda). Metoda objektu je zavolána při navrácení dat ze serveru. Tuto metodu je nutné volat před zavoláním metody send.
-//				abort - metoda ukončí dotaz na server
-//		setHeaders - metoda přebírá konfigurační objekt s hlavičkami, které budou použity při dotazu na server
+	if (td.post.length || e.ctrlKey || e.metaKey) {
+		var req = JAK.mel('form', {'action': newLoc.url + newLoc.postGet, method:'post'}, {'display': 'none'});
+		if (e.shiftKey) req.target = '_blank';
 
-		var ajax = {'url': newLoc.join('?')};
+		for (i = 0, j = td.post.length; i < j; ++i) {
+			req.appendChild(JAK.mel('textarea', {'name': td.post[i][0], 'value': td.post[i][1]}));
+		}
+		req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': changesBase62}));
+
+		td.logView.appendChild(req);
+		req.submit();
+	} else if ((url = newLoc.url + newLoc.sendGet).length <= td.maxUrlLength) {
+		window.open(url, e.shiftKey ? '_blank' : '_self');
+	} else {
+		var ajax = {'url': newLoc.url + newLoc.postGet, 'hashUrl': newLoc.url + newLoc.hashGet, 'target': e.shiftKey ? '_blank' : '_self'};
 		ajax.req = function() {
 			var rq = new JAK.Request(JAK.Request.TEXT, {method: "post"});
 			rq.setCallback(ajax, "_resp");
-			rq.send(ajax.url, {'tdrequest': b62s.base8To62(b62s.compress(JSON.stringify(request)))});
-		}
+			rq.send(ajax.url, {'tdcache': changesBase62});
+		};
 
-		ajax._resp = function(txt, status) {
-			if (status == 200) {
-				alert(txt);
+		ajax._resp = function(reply, status) {
+			var error = 'Zvolte "odeslat" se stisknutou klavesou Ctrl/Cmd pro vynuceni odeslani zmen POSTem.\n\n';
+			if (status == 200 && reply) {
+				if (reply[0] == '0') error += 'Chyba cache na serveru:\n\n' + reply.slice(1);
+				else {
+					window.open(this.hashUrl + reply.slice(1), this.target);
+					return true;
+				}
 			} else {
-				alert("Něco je špatně!");
+				error += 'Seznam zmen je prilis dlouhy pro odeslani GETem a cachovani POSTem pres AJAX nebylo uspesne.';
 			}
-		}
+			alert(error);
+			return false;
+		};
 
 		ajax.req();
-//	} else {
-//		if (len) newLoc.push((td.get ? td.get + '&' : '') + 'tdrequest=' + b62s.base8To62(b62s.compress(JSON.stringify(request))));
-//		else if (td.get) newLoc.push(td.get);
-//
-//		window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
-//	}
+	}
 
 	return false;
 };

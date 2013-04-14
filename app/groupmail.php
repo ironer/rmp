@@ -28,7 +28,7 @@ if (DEBUG) {
 			'root' => ROOT,
 			'starttime' => NOW,
 			'pathconstants' => array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP'),
-			'urilength' => 1000,
+			'urllength' => 4000,
 		)
 	);
 }

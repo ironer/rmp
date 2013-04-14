@@ -18,7 +18,7 @@ class TimeDebug {
 			INIT_PATH_CONSTANTS = 'pathconstants', // array of constants containing absolute paths (e.g. CLASSES with value '/web/myapp/classes')
 			INIT_GET = 'get', // option for init() with get variables for passing during debugging (defaults to &$_GET)
 			INIT_POST = 'post', // option for init() with post variables for passing during debugging (defaults to &$_POST)
-			INIT_MAX_URI_LENGTH = 'urilength', // maximum allowed length of URI for sending data, otherwise pre posting is used
+			INIT_MAX_URL_LENGTH = 'urllength', // maximum allowed length of URL for sending data, otherwise pre posting is used
 
 			DEPTH = 'depth', // how many nested levels of array/object properties display (defaults to 8)
 			TRUNCATE = 'truncate', // how truncate long strings? (defaults to 70)
@@ -51,10 +51,13 @@ class TimeDebug {
 
 	private static $timeDebug = array();
 	private static $timeDebugMD5 = array();
+
 	private static $cache = '';
 	private static $get = array();
 	private static $post = array();
+	private static $maxUrlLength = 0;
 	private static $request = array();
+	private static $varCounter = 0;
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');
 
@@ -109,17 +112,6 @@ class TimeDebug {
 
 	public static function init($cache = '', array $options = NULL) {
 		if (self::$initialized) throw new Exception("Trida TimeDebug uz byla inicializovana drive.");
-		if (!is_dir($cache)) throw new Exception("Adresar '$cache' pro odkladani dat neexistuje.");
-		if (!is_writable($cache)) throw new Exception("Do adresare '$cache' pro odkladani dat nelze zapisovat.");
-
-		self::$cache = $cache . '/timedebug/';
-		if (is_dir(self::$cache)) {
-			if (!is_writable(self::$cache)) throw new Exception("Do adresare '" . self::$cache . "' nelze zapisovat.");
-		} else {
-			mkdir(self::$cache);
-			chmod(self::$cache, 0777);
-		}
-
 		$options = (array) $options + array(
 			self::INIT_ADVANCED_LOG => FALSE,
 			self::INIT_LOCAL => FALSE,
@@ -129,24 +121,58 @@ class TimeDebug {
 			self::INIT_PATH_CONSTANTS => array(),
 			self::INIT_GET => &$_GET,
 			self::INIT_POST => &$_POST,
-			self::INIT_MAX_URI_LENGTH => 1000
+			self::INIT_MAX_URL_LENGTH => 1000
 		);
 
-		if (isset($options[self::INIT_POST]['tdrequest'])) {
-			if (!file_exists(self::$cache . ($reqMd5 = md5($_GET['tdrequest'])))) {
-				file_put_contents(self::$cache . $reqMd5, Base62Shrink::decompress($_GET['tdrequest']));
+		self::$advancedLog = !!($options[self::INIT_ADVANCED_LOG]);
+		self::$local = !!($options[self::INIT_LOCAL]);
+		self::$root = $options[self::INIT_ROOT];
+		self::$lastRuntime = self::$startTime = $options[self::INIT_START_TIME];
+		self::$lastMemory = self::$startMem = $options[self::INIT_START_MEMORY];
+		foreach ($options[self::INIT_PATH_CONSTANTS] as $const) {
+			self::$pathConsts['#^' . preg_quote(substr(constant($const), strlen(self::$root)), '#') . '#'] = $const;
+		}
+		self::$get = &$options[self::INIT_GET];
+		self::$post = &$options[self::INIT_POST];
+		self::$maxUrlLength = max(intval($options[self::INIT_MAX_URL_LENGTH]), 0);
+		self::$initialized = TRUE;
+
+		if (isset($options[self::INIT_POST]['tdcache'])) $throwError = function($text) { echo 0 . $text; die; };
+		else {
+			$throwError = function($text) { throw new Exception($text); };
+			if (self::$advancedLog) register_shutdown_function(array(__CLASS__, '_closeDebug'));
+		}
+
+		if (!is_dir($cache)) $throwError("Adresar '" . substr($cache, strlen(self::$root)) . "' pro odkladani dat neexistuje.");
+		if (!is_writable($cache)) $throwError("Do adresare '" . substr($cache, strlen(self::$root)) . "' pro odkladani dat nelze zapisovat.");
+
+		self::$cache = $cache . '/timedebug/';
+		if (is_dir(self::$cache)) {
+			if (!is_writable(self::$cache)) $throwError("Do adresare '" . substr(self::$cache, strlen(self::$root), -1) . "' nelze zapisovat.");
+		} else {
+			mkdir(self::$cache);
+			chmod(self::$cache, 0777);
+		}
+
+		if (isset($options[self::INIT_POST]['tdcache'])) {
+			if (!file_exists(self::$cache . ($reqMd5 = md5($options[self::INIT_POST]['tdcache'])))) {
+				file_put_contents(self::$cache . $reqMd5, Base62Shrink::decompress($options[self::INIT_POST]['tdcache']));
 			}
-			echo $reqMd5;
+			echo 1 . $reqMd5;
 			die;
 		} elseif (isset($options[self::INIT_GET]['tdhash'])) {
 			if (!file_exists($fileChanges = self::$cache . $options[self::INIT_GET]['tdhash'])) {
-				throw new Exception("Soubor obsahujici zmeny '$fileChanges' nelze najit v adresari pro odkladani dat.");
+				throw new Exception("Soubor obsahujici zmeny '" . substr($fileChanges, strlen(self::$root))
+						. "' nelze najit v cache.");
 			}
 			self::$request = json_decode(file_get_contents($fileChanges), TRUE);
 			unset($options[self::INIT_GET]['tdhash']);
 		} elseif (isset($options[self::INIT_GET]['tdrequest'])) {
 			self::$request = json_decode(Base62Shrink::decompress($options[self::INIT_GET]['tdrequest']), TRUE);
 			unset($options[self::INIT_GET]['tdrequest']);
+		} elseif (isset($options[self::INIT_POST]['tdrequest'])) {
+			self::$request = json_decode(Base62Shrink::decompress($options[self::INIT_POST]['tdrequest']), TRUE);
+			unset($options[self::INIT_POST]['tdrequest']);
 		}
 
 		header('Content-type: text/html; charset=utf-8');
@@ -189,20 +215,6 @@ class TimeDebug {
 				}
 			}
 		}
-
-		self::$advancedLog = !!($options[self::INIT_ADVANCED_LOG]);
-		self::$local = !!($options[self::INIT_LOCAL]);
-		self::$root = $options[self::INIT_ROOT];
-		self::$lastRuntime = self::$startTime = $options[self::INIT_START_TIME];
-		self::$lastMemory = self::$startMem = $options[self::INIT_START_MEMORY];
-		foreach ($options[self::INIT_PATH_CONSTANTS] as $const) {
-			self::$pathConsts['#^' . preg_quote(substr(constant($const), strlen(self::$root)), '#') . '#'] = $const;
-		}
-		self::$get = &$options[self::INIT_GET];
-		self::$post = &$options[self::INIT_POST];
-		self::$initialized = TRUE;
-
-		if (self::$advancedLog) register_shutdown_function(array(__CLASS__, '_closeDebug'));
 	}
 
 
@@ -262,8 +274,9 @@ class TimeDebug {
 		readfile(__DIR__ . '/timedebug.js');
 		echo "\ntd.local = " . (self::$local ? 'true' : 'false') . ";\n"
 				. "td.indexes = " . json_encode(self::$timeDebug) . ";\n"
-				. "td.get = " . json_encode(self::getGet()) . ";\n"
-				. "td.post = " . json_encode(self::$post, JSON_FORCE_OBJECT) . ";\n"
+				. "td.get = " . json_encode(self::getGetText()) . ";\n"
+				. "td.post = " . json_encode(self::getPostArray()) . ";\n"
+				. "td.maxUrlLength = " . intval(self::$maxUrlLength) . ";\n"
 				. "td.response = " . json_encode(self::getResponse()) . ";\n"
 				. "td.helpHtml = " . (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
 				. "td.init(1);\n</script>\n";
@@ -378,7 +391,6 @@ class TimeDebug {
 		} unset($var);
 	}
 
-	private static $varCounter = 0;
 
 	private static function updateVar(&$var = NULL, array &$changes = NULL, $hash = '') {
 		if (!$hash) $hash = md5(self::$idPrefix);
@@ -505,10 +517,17 @@ class TimeDebug {
 	}
 
 
-	private static function getGet() {
+	private static function getGetText() {
 		$retArray = array();
 		foreach (self::$get as $key => $value) $retArray[] = $key . '=' . urlencode($value);
 		return implode('&', $retArray);
+	}
+
+
+	private static function getPostArray() {
+		$retArray = array();
+		foreach (self::$post as $key => $value) $retArray[] = array($key, $value);
+		return $retArray;
 	}
 
 

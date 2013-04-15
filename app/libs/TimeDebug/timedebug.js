@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat hoverovani titulku pri najeti na rodice nebo na ne samotne
 // TODO: napsat data-pk pro string v titulku pro helpove titulky
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
@@ -1248,9 +1247,6 @@ td.showTitle = function(e) {
 	}
 
 	if (td.titleActive === null && this.tdTitle.style.display != 'block') {
-		td.visibleTitles.push(this.tdTitle);
-		JAK.DOM.setStyle(this.tdTitle, {'display': 'block', 'zIndex': ++td.zIndexMax});
-
 		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
 			if ((tdParents = td.getParents(this)).length) this.tdTitle.parents = tdParents;
 			this.tdTitle.style.position = 'fixed';
@@ -1280,8 +1276,11 @@ td.showTitle = function(e) {
 				} else tdParents[k].activeChilds = [this.tdTitle];
 			}
 		}
+		td.visibleTitles.push(this.tdTitle);
+		this.tdTitle.style.display = 'block';
+		td.keepMaxZIndex(this.tdTitle);
 		td.titleActive = this.tdTitle;
-	} else if (JAK.DOM.hasClass(el, 'nd-titled') && this.tdTitle < td.zIndexMax) td.keepMaxZIndex(this.tdTitle);
+	} else if (JAK.DOM.hasClass(el, 'nd-titled') && this.tdTitle.style.zIndex < td.zIndexMax) td.keepMaxZIndex(this.tdTitle);
 
 	if (td.titleActive === null) return false;
 
@@ -1360,7 +1359,6 @@ td.hoverTitle = function(e) {
 		if (maxChildZIndex == td.zIndexMax) return true;
 	}
 
-	console.debug('Sebe ' + this.style.zIndex + ' na ' + td.zIndexMax);
 	td.keepMaxZIndex(this);
 
 	return false;
@@ -1529,9 +1527,7 @@ td.hideTitle = function(el) {
 	} else return false;
 
 	if ((index = td.visibleTitles.indexOf(el)) !== -1) td.visibleTitles.splice(index, 1);
-	if (el.style.zIndex == td.zIndexMax) {
-		console.debug('Max po skryti: ' + td.getMaxZIndex());
-	}
+	if (el.style.zIndex == td.zIndexMax) td.getMaxZIndex();
 	if (el.parents) td.removeFromParents(el);
 	if (el.activeChilds && el.activeChilds.length) {
 		for (index = el.activeChilds.length; index-- > 0;) td.hideTitle(el.activeChilds[index]);

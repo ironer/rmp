@@ -885,7 +885,10 @@ td.checkDeleteChange = function() {
 };
 
 td.activateChange = function(e, change) {
-	td.hoveredChange = e === true ? change : this;
+	if (e === true) td.hoveredChange = change;
+	else if (td.actionData.element !== null) return false;
+	else td.hoveredChange = this;
+
 	if (td.hoveredChange.varEl) {
 		td.tdHashEl = td.hoveredChange.varEl;
 		td.tdHashEl.parentNode.insertBefore(td.tdAnchor, td.tdHashEl);
@@ -894,10 +897,14 @@ td.activateChange = function(e, change) {
 	if (td.hoveredChange.resEl) JAK.DOM.addClass(td.hoveredChange.resEl, 'nd-hovered');
 
 	td.hoveredChange.appendChild(td.checkDeleteChange());
+	return true;
 };
 
 td.deactivateChange = function(e, change) {
-	change = e === true ? change : this;
+	if (e !== true) {
+		if (td.actionData.element !== null) return false;
+		change = this;
+	}
 
 	if (change.varEl) {
 		if (change.varEl === td.tdHashEl) td.tdHashEl = null;
@@ -905,18 +912,23 @@ td.deactivateChange = function(e, change) {
 	}
 	if (change.resEl) JAK.DOM.removeClass(change.resEl, 'nd-hovered');
 	if (this === td.hoveredChange) td.hoveredChange = null;
+	return true;
 };
 
 td.hoverChange = function() {
+	if (td.actionData.element !== null) return false;
 	JAK.DOM.addClass(this.change, 'nd-hovered');
 	if (this.res && this.change.varEl) JAK.DOM.addClass(this.change.varEl, 'nd-hovered');
 	else if (this.change.resEl) JAK.DOM.addClass(this.change.resEl, 'nd-hovered');
+	return true;
 };
 
 td.unhoverChange = function() {
+	if (td.actionData.element !== null) return false;
 	JAK.DOM.removeClass(this.change, 'nd-hovered');
 	if (this.res && this.change.varEl) JAK.DOM.removeClass(this.change.varEl, 'nd-hovered');
 	else if (this.change.resEl) JAK.DOM.removeClass(this.change.resEl, 'nd-hovered');
+	return true;
 };
 
 td.consoleHover = function(areaClass) {
@@ -1210,8 +1222,9 @@ td.setTitles = function(container) {
 			JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, td.showTitle);
 			JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, td.hideTimer);
 			JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle);
-			JAK.Events.addListener(titleSpan.tdTitle, 'mouseover', titleSpan.tdTitle, td.hoverTitle);
+			JAK.Events.addListener(titleSpan.tdTitle, 'mousemove', titleSpan.tdTitle, td.hoverTitle);
 			JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
+			// TODO: opravit, kdyz prijedu z ciziho titulku na nd-titled v jinem rodicovksem titulku
 		}
 	}
 };
@@ -1222,9 +1235,10 @@ td.showTitle = function(e) {
 	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null || td.hide[0] === 2) {
 		return false;
 	}
-	var tdTitleRows, tdParents;
+	var tdTitleRows, tdParents, el = JAK.Events.getTarget(e);
 
 	JAK.Events.stopEvent(e);
+	JAK.Events.cancelDef(e);
 
 	if (td.titleActive && td.titleActive !== this.tdTitle) {
 		td.hideTitle();
@@ -1234,8 +1248,8 @@ td.showTitle = function(e) {
 	}
 
 	if (td.titleActive === null && this.tdTitle.style.display != 'block') {
-		this.tdTitle.style.display = 'block';
 		td.visibleTitles.push(this.tdTitle);
+		JAK.DOM.setStyle(this.tdTitle, {'display': 'block', 'zIndex': ++td.zIndexMax});
 
 		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
 			if ((tdParents = td.getParents(this)).length) this.tdTitle.parents = tdParents;
@@ -1267,10 +1281,9 @@ td.showTitle = function(e) {
 			}
 		}
 		td.titleActive = this.tdTitle;
-	}
+	} else if (JAK.DOM.hasClass(el, 'nd-titled') && this.tdTitle < td.zIndexMax) td.keepMaxZIndex(this.tdTitle);
 
-	td.setMaxZIndex(this.tdTitle);
-	if (td.titleActive === null) return true;
+	if (td.titleActive === null) return false;
 
 	td.titleActive.style.left = (td.titleActive.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
 	td.titleActive.style.top = (td.titleActive.tdTop = (e.pageY || e.clientY) - 5) + 'px';
@@ -1305,28 +1318,22 @@ td.getMaxZIndex = function() {
 	for (var retVal = 100, i = td.visibleTitles.length; i-- > 0;) {
 		retVal = Math.max(retVal, td.visibleTitles[i].style.zIndex);
 	}
-	return retVal;
+	return td.zIndexMax = retVal;
 };
 
-td.setMaxZIndex = function(el) {
-	var i, j;
-	if (el.style.zIndex === td.zIndexMax) return false;
-//	if (el.style.zIndex > td.zIndexMax) td.zIndexMax = td.getMaxZIndex();
-//	if (el.style.zIndex == td.zIndexMax) return false;
-//	if (!el.parents || el.parents[0].style.zIndex == td.zIndexMax) {
-//		el.style.zIndex = ++td.zIndexMax;
-//	} else {
-//		var parZI = [];
-//		for (i = 0, j = el.parents.length; i < j; ++i) {
-//			parZI.push(el.parents[i].id + ' - zIndex: ' + el.parents[i].style.zIndex);
-//		}
-//		parZI.unshift('zIndexMax : ' + td.zIndexMax);
-//		console.debug(parZI.join('\n'));
-//
-//	}
-	el.style.zIndex = td.zIndexMax++;
+td.keepMaxZIndex = function(el) {
+	var i, j, maxChildZIndex = 0;
+	if (el.style.zIndex == td.zIndexMax) return false;
 
-//	console.debug(td.zIndexMax);
+	if (el.activeChilds) {
+		for (i = el.activeChilds.length; i-- > 0;) maxChildZIndex = Math.max(el.activeChilds[i].style.zIndex, maxChildZIndex);
+		if (maxChildZIndex == td.zIndexMax) return false;
+	}
+
+	if (el.parents && el.parents[0].style.zIndex != td.zIndexMax) {
+		for (i = el.parents.length; i-- > 0;) el.parents[i].style.zIndex = ++td.zIndexMax;
+	}
+	el.style.zIndex = ++td.zIndexMax;
 
 	if (td.zIndexMax > td.visibleTitles.length + 1000) {
 		td.visibleTitles.sort(function(a,b) { return parseInt(a.style.zIndex) - parseInt(b.style.zIndex); });
@@ -1338,17 +1345,24 @@ td.setMaxZIndex = function(el) {
 
 td.hoverTitle = function(e) {
 	e = e || window.event;
-	if (td.hide[0] === 2) return true;
+	if (td.hide[0] === 2 || td.actionData.element !== null) return true;
 
-//	var el = JAK.Events.getTarget(e);
+	var el = JAK.Events.getTarget(e);
+
+	if (this.style.zIndex == td.zIndexMax || JAK.DOM.hasClass(el, 'nd-titled') || td.titleHideTimeout !== null) return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	if (this.style.zIndex < td.zIndexMax) {
-//		console.debug('Sebe ' + this.style.zIndex + ' na ' + td.zIndexMax);
-		td.setMaxZIndex(this);
+	if (this.activeChilds) {
+		var i, maxChildZIndex = 0;
+		for (i = this.activeChilds.length; i-- > 0;) maxChildZIndex = Math.max(this.activeChilds[i].style.zIndex, maxChildZIndex);
+		if (maxChildZIndex == td.zIndexMax) return true;
 	}
+
+	console.debug('Sebe ' + this.style.zIndex + ' na ' + td.zIndexMax);
+	td.keepMaxZIndex(this);
+
 	return false;
 };
 
@@ -1359,7 +1373,7 @@ td.titleAction = function(e) {
 
 	JAK.Events.stopEvent(e);
 
-	td.setMaxZIndex(this);
+	if (this.style.zIndex < td.zIndexMax) td.keepMaxZIndex(this);
 
 	if (e.altKey) {
 		if (!e.ctrlKey && !e.metaKey) {
@@ -1496,7 +1510,7 @@ td.titleAutosize = function(el) {
 
 td.hideTimer = function() {
 	if (td.titleHideTimeout) window.clearTimeout(td.titleHideTimeout);
-	td.titleHideTimeout = window.setTimeout(td.hideTitle, 300);
+	if (!this.tdTitle.pinned && td.actionData.element === null) td.titleHideTimeout = window.setTimeout(td.hideTitle, 300);
 };
 
 td.hideTitle = function(el) {
@@ -1516,7 +1530,7 @@ td.hideTitle = function(el) {
 
 	if ((index = td.visibleTitles.indexOf(el)) !== -1) td.visibleTitles.splice(index, 1);
 	if (el.style.zIndex == td.zIndexMax) {
-//		console.debug('Max po skryti: ' + (td.zIndexMax = td.getMaxZIndex()));
+		console.debug('Max po skryti: ' + td.getMaxZIndex());
 	}
 	if (el.parents) td.removeFromParents(el);
 	if (el.activeChilds && el.activeChilds.length) {
@@ -1558,11 +1572,10 @@ td.pinTitle = function(e) {
 };
 
 td.showLog = function(e, el) {
-	if (e === true) {
-		td.showDump(el.logId);
-	} else if (td.deleteChange.showLogRow === true) {
-		td.showDump(this.logId);
-	}
+	if (e === true) td.showDump(el.logId);
+	else if (td.actionData.element !== null) return false;
+	else if (td.deleteChange.showLogRow === true) td.showDump(this.logId);
+	return true;
 };
 
 td.logClick = function(e) {
@@ -1744,7 +1757,7 @@ td.restore = function(e) {
 
 td.sendChanges = function(e) {
 	e = e || window.event;
-	var i, j, len = td.changes.length, change, changesArray = [], changesBase62, newLoc;
+	var i, j, len = td.changes.length, change, changesArray = [], changesBase62, newLoc, url;
 	if (!len) return false;
 
 	for (i = 0; i < len; ++i) {

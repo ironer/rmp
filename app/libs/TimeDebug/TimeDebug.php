@@ -241,9 +241,16 @@ class TimeDebug {
 				'Alt + LC' => 'zmena velikosti oken',
 				'Shift + LC' => 'maximalizovany rezim'
 			),
+			'OVLADANI MENU (pouze local)' => array(
+				'Shift + "odeslat"' => 'odeslat zmeny do noveho okna',
+				'Ctrl/Cmd + "odeslat"' => 'vynutit odeslani POSTem'
+			),
 			'EDITACE PROMENNYCH (pouze local)' => array(
 				'Right Click' => 'otevrit modal konzoli pro zadani',
 				'RC na masku' => 'zavrit konzoli, pokud je beze zmen'
+			),
+			'ROZSIROVANI POLI (pouze local)' => array(
+				'Alt + Right Click' => 'otevrit konzoli pro zadani',
 			),
 			'OVLADANI KONZOLE (pouze local)' => array(
 				'klavesa Enter' => 'v konzoli dalsi radek',

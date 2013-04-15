@@ -276,8 +276,8 @@ td.mouseWheel = function(e) {
 
 	var delta = 0;
 
-	if (e.wheelDelta) delta = (e.wheelDelta / 120 > 0 ? -1 : 16);
-	else if (e.detail) delta = (e.detail / 3 < 0 ? -1 : 16);
+	if (e.wheelDelta) delta = (e.wheelDelta > 0 ? -1 : 16);
+	else if (e.detail) delta = (e.detail < 0 ? -1 : 16);
 
 	el.scrollTop = Math.max(0, 16 * parseInt((el.scrollTop + delta) / 16));
 	return false;
@@ -1643,7 +1643,7 @@ td.readKeyDown = function(e) {
 				return false;
 		} else if (e.keyCode == 27) {
 			if (td.tdConsole) return td.consoleClose();
-			if (!(td.visibleTitles.length - (td.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni?')) {
+			if (!(td.visibleTitles.length - (td.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni titulku?')) {
 				return true;
 			}
 			if (td.titleHideTimeout) {

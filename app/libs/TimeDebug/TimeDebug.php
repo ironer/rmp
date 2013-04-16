@@ -319,8 +319,7 @@ class TimeDebug {
 				if (isset($object->id)) $path[] = $object->id;
 			}
 
-			$textOut = ($path ? '<span class="nd-path">' . ($path = htmlspecialchars(implode('/', array_reverse($path)))) . '</span> ' : '')
-					. $text;
+			$textOut = ($path ? '<span class="nd-path">' . ($path = htmlspecialchars(implode('/', array_reverse($path)))) . '</span> ' : '') . $text;
 		}
 
 		if (self::$advancedLog && isset($objects)) {

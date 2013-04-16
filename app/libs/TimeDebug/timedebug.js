@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: napsat data-pk pro string v titulku pro helpove titulky
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -1247,6 +1246,8 @@ td.showTitle = function(e) {
 	}
 
 	if (td.titleActive === null && this.tdTitle.style.display != 'block') {
+		this.tdTitle.style.display = 'block';
+
 		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
 			if ((tdParents = td.getParents(this)).length) this.tdTitle.parents = tdParents;
 			this.tdTitle.style.position = 'fixed';
@@ -1276,8 +1277,8 @@ td.showTitle = function(e) {
 				} else tdParents[k].activeChilds = [this.tdTitle];
 			}
 		}
+
 		td.visibleTitles.push(this.tdTitle);
-		this.tdTitle.style.display = 'block';
 		td.keepMaxZIndex(this.tdTitle);
 		td.titleActive = this.tdTitle;
 	} else if (JAK.DOM.hasClass(el, 'nd-titled') && this.tdTitle.style.zIndex < td.zIndexMax) td.keepMaxZIndex(this.tdTitle);

@@ -57,12 +57,15 @@ pre.nd-location {
 	top: 0;
 	left: 0;
 	box-shadow: 3px 2px 8px #555;
-	padding: 0;
+	padding: 4px 0 0;
 	text-indent: 0;
 	overflow-x: hidden;
 	overflow-y: auto;
 	outline: 0;
 	min-width: 70px;
+}
+#menuTitle {
+	padding: 0;
 }
 .nd-array .nd-title, .nd-array .nd-title:hover {
 	border-top: 8px solid #a33;

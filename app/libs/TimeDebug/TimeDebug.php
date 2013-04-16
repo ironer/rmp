@@ -479,7 +479,7 @@ class TimeDebug {
 				$retVal = array(2);
 			}
 
-			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_CLASS => 'nd-title-help'));
+			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_CLASS => 'nd-title-help', self::DUMP_ID => TRUE));
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);
 			$index = $varPath[1]['key'];

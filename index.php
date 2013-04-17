@@ -22,7 +22,7 @@ try {
 $a = array(array('test'));
 App::dump($a);
 $b = 'test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test';
-App::dump($b);
+App::dump($a, $b);
 
 
 if (DEBUG) {

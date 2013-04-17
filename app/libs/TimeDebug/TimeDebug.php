@@ -29,7 +29,7 @@ class TimeDebug {
 			PARENT_KEY = 'parentkey', // sets parent key for children's div to attribute 'data-pk' for arrays and objects
 			DUMP_ID = 'dumpid', // id for .nd 'pre' in HTML form
 			TDVIEW_INDEX = 'tdindex', // data-tdindex of .nd 'pre' in tdView
-			TITLE_CLASS = 'titleclass', // class for dumped titles (defaults to 'nd-title-log', '...-dump', '...-method', '...-help')
+			TITLE_TYPE = 'titletype', // data for data-tt for titles (1: help, 2: method, defaults to 3: log, 4: method)
 			TITLE_DATA = 'titledata'; // data for data-pk for titles
 
 
@@ -299,6 +299,7 @@ class TimeDebug {
 
 	public static function lg($text = '', $object = NULL, $reset = FALSE) {
 		if (!self::$initialized) throw new Exception("Trida TimeDebug nebyla inicializovana statickou metodou 'init'.");
+		$retChanges = '';
 
 		list($file, $line, $code, $place) = self::findLocation(TRUE);
 		$relative = substr($file, strlen(self::$root));
@@ -328,7 +329,7 @@ class TimeDebug {
 
 			$dumpVars = array(); $i = 0;
 			foreach($objects as $curObj) {
-				if (isset(self::$request['logs'][$logHash][$i])) self::updateVar($curObj, self::$request['logs'][$logHash][$i], $logHash);
+				if (isset(self::$request['logs'][$logHash][$i])) $retChanges .= self::updateVar($curObj, self::$request['logs'][$logHash][$i], $logHash);
 				$dumpVars[] = self::toHtml($curObj, array(self::TDVIEW_INDEX => $i++));
 			}
 			$dump = implode('<hr>', $dumpVars);
@@ -354,7 +355,7 @@ class TimeDebug {
 			echo "<span class=\"nd-editor\"><i>" . htmlspecialchars($relative) . "</i> <b>@$line</b></span>";
 		}
 
-		echo ($code ? " $code" : '') . '</small>]</pre>';
+		echo ($code ? " $code" : '') . '</small>]</pre>' . $retChanges;
 	}
 
 
@@ -384,12 +385,12 @@ class TimeDebug {
 				$dumpId = 'd' . self::$idPrefix . '_' . self::incCounter('dumps');
 				$dumpHash = self::getPathHash("$relative|d|$place");
 
-				if (isset(self::$request['dumps'][$dumpHash])) self::updateVar($var, self::$request['dumps'][$dumpHash], $dumpHash);
+				if (isset(self::$request['dumps'][$dumpHash])) echo self::updateVar($var, self::$request['dumps'][$dumpHash], $dumpHash);
 
-				$options = array(self::DUMP_ID => $dumpId, self::TITLE_CLASS => 'nd-title-dump');
+				$options = array(self::DUMP_ID => $dumpId, self::TITLE_TYPE => 4);
 			} else {
 				$dumpHash = '';
-				$options = array(self::TITLE_CLASS => 'nd-title-dump');
+				$options = array(self::TITLE_TYPE => 4);
 			}
 
 			echo self::toHtml($var, $options, $dumpHash);
@@ -400,6 +401,7 @@ class TimeDebug {
 
 	private static function updateVar(&$var = NULL, array &$changes = NULL, $hash = '') {
 		if (!$hash) $hash = md5(self::$idPrefix);
+		$retText = '';
 
 		for ($i = 0, $j = count($changes); $i < $j; ++$i) {
 			$change = &self::$request[$changes[$i]];
@@ -407,15 +409,18 @@ class TimeDebug {
 			try {
 				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add'], $hash);
 				$change['res'] = $applied[0];
-				if (isset($applied[1])) $change['oriVar'] = '<span id="t' . self::$idPrefix . '_' . self::incCounter()
+				$change['oriVar'] = '<span id="t' . self::$idPrefix . '_' . self::incCounter()
 						. '" class="nd-title nd-title-help"><strong class="nd-inner"><pre class="nd">' . $applied[1] . '</pre></strong></span>';
+				$retText .= $applied[2];
 			} catch(Exception $e) {
-				echo '<pre id="' . $change['resId'] . '" class="nd-result nd-error"> Chyba pri modifikaci promenne na hodnotu '
-						. json_encode($change['value']) . ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </pre>';
+				$retText .= '<pre id="' . $change['resId'] . '" class="nd-result nd-error"><div class="nd-rollover"><div class="nd-indenter">'
+						. ' Chyba pri modifikaci promenne na hodnotu ' . json_encode($change['value'])
+						. ' (' . gettype($change['value']) . '): ' . $e->getMessage() . ' </div></div></pre>';
 				$change['res'] = $e->getCode();
 			}
 			unset($change['varPath']);
 		}
+		return $retText;
 	}
 
 
@@ -425,6 +430,7 @@ class TimeDebug {
 
 		$changeType = $varPath[0]['type'];
 		$priv = isset($varPath[0]['priv']) ? $varPath[0]['priv'] : 0;
+		$retText = '';
 
 		if ($priv) {
 			$fields = (array) $var;
@@ -434,7 +440,7 @@ class TimeDebug {
 
 		if ($changeType >= 7)  {
 			if ($add && !is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole pro pridani prvku.', 9);
-			echo '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result ';
+			$retText .= '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result ';
 
 			$oriVar = $var;
 			$values = $add === 2 ? json_decode($value) : (is_array($value) ? $value : array($value));
@@ -449,37 +455,40 @@ class TimeDebug {
 						$var[$key] = $val;
 					}
 				}
-				if ($overwrite) echo 'nd-array-overwrite">';
-				else echo 'nd-array-add">';
+				if ($overwrite) $retText .= 'nd-array-overwrite">';
+				else $retText .= 'nd-array-add">';
 			} elseif($var !== $value) {
 				$var = $value;
-				echo 'nd-ok">';
+				$retText .= 'nd-ok">';
 				$changed = TRUE;
-			} else echo 'nd-equal">';
+			} else $retText .= 'nd-equal">';
 
-			if ($changeType === 7) echo ' Chranena property "' . $varPath[0]['key'] . '":';
-			elseif ($changeType === 8) echo ' Klic/property "' . $varPath[0]['key'] . '":';
+			$retText .= '<div class="nd-rollover"><div class="nd-indenter">';
+
+			if ($changeType === 7) $retText .= ' Chranena property "' . $varPath[0]['key'] . '":';
+			elseif ($changeType === 8) $retText .= ' Klic/property "' . $varPath[0]['key'] . '":';
 
 			if ($add) {
 				if ($overwrite) {
-					echo ' Upraveno';
+					$retText .= ' Upraveno';
 					$retVal = array(5);
 				} else {
-					echo ' Doplneno';
+					$retText .= ' Doplneno';
 					$retVal = array(3);
 				}
 
-				echo ' pole ' . json_encode($oriVar) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. </pre>';
+				$retText .= ' pole ' . json_encode($oriVar) . ' polem ' . ($add === 2 ? $value : json_encode($values)) . '. ';
 				if ($oriVar === $var) ++$retVal[0];
 			} elseif ($changed) {
-				echo ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+				$retText .= ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). ';
 				$retVal = array(1);
 			} else {
-				echo ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). </pre>';
+				$retText .= ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). ';
 				$retVal = array(2);
 			}
 
-			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_CLASS => 'nd-title-help', self::DUMP_ID => TRUE));
+			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_TYPE => 1, self::DUMP_ID => TRUE));
+			$retVal[2] = $retText . '</div></div></pre>';
 		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);
 			$index = $varPath[1]['key'];
@@ -629,8 +638,8 @@ class TimeDebug {
 							$arg = $backtrace[$id]['args'][$i];
 							if(self::$advancedLog && is_array($arg) && $cnt = count($arg)) {
 								$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . self::incCounter()
-										. '" class="nd-title td-title-method" data-pk="' . $i . '"><strong class="nd-inner"><pre class="nd">'
-										. self::dumpSmallVar($arg, array(self::TITLE_CLASS => 'nd-title-method'))
+										. '" class="nd-title nd-title-method" data-pk="' . $i . '"><strong class="nd-inner"><pre class="nd">'
+										. self::dumpSmallVar($arg, array(self::TITLE_TYPE => 2))
 										. '</pre></strong></span>array</span> (' . $cnt . ')';
 							} else {
 								$args[] = self::dumpVar($arg, array(
@@ -638,7 +647,7 @@ class TimeDebug {
 									self::DEPTH => -1,
 									self::TRUNCATE => 10,
 									self::NO_BREAK => TRUE,
-									self::TITLE_CLASS => 'nd-title-method',
+									self::TITLE_TYPE => 2,
 									self::TITLE_DATA => $i
 								));
 							}
@@ -706,7 +715,7 @@ class TimeDebug {
 			if ($arrKey === FALSE) $data = isset($options[self::TITLE_DATA]) ? ' data-pk="' . $options[self::TITLE_DATA] . '"' : '';
 			else $data = ' data-pk="' . $arrKey . '"';
 			$retTitle = self::$advancedLog ? '<span id="t' . self::$idPrefix . '_' . self::incCounter()
-					. '" class="nd-title nd-color ' . (isset($options[self::TITLE_CLASS]) ? $options[self::TITLE_CLASS] : 'nd-title-log') . '"' . $data
+					. '" class="nd-title nd-color" data-tt="' . (isset($options[self::TITLE_TYPE]) ? $options[self::TITLE_TYPE] : 3) . '"' . $data
 					. '><strong class="nd-inner"><i>' . str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 1024)), TRUE))
 					. ($varLen > 1024 ? '&hellip; &lt; TRUNCATED to 1kB &gt;' : '') . '</i></strong></span>' : '';

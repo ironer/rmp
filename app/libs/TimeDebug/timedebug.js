@@ -37,9 +37,9 @@ td.tdView = JAK.mel('pre', {id: 'tdView'});
 td.tdFullWidth = false;
 td.tdWidth = 400;
 
-td.help = JAK.cel('div', 'nd-help');
-td.helpSpaceX = 0;
-td.helpHtml = '';
+td.control = JAK.cel('div', 'nd-control');
+td.controlSpaceX = 0;
+td.help = '';
 
 td.visibleTitles = [];
 td.titleActive = null;
@@ -109,7 +109,7 @@ td.consoleSelects = {"]": "[", "}": "{"};
 
 td.init = function(logId) {
 	JAK.DOM.addClass(document.body.parentNode, 'nd-td' + (td.local ? ' nd-local' : ''));
-	document.body.style.marginLeft = td.tdContainer.style.width = td.help.style.left = td.tdWidth + 'px';
+	document.body.style.marginLeft = td.tdContainer.style.width = td.control.style.left = td.tdWidth + 'px';
 	td.viewSize = JAK.DOM.getDocSize();
 
 	var elements, tdIndex;
@@ -155,12 +155,12 @@ td.init = function(logId) {
 	td.tdContainer.appendChild(td.tdOuterWrapper);
 	document.body.insertBefore(td.tdContainer, document.body.childNodes[0]);
 
-	td.help.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
+	td.control.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
 			+ '<hr><div class="nd-menu">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 			+ (td.local ? '<span id="tdMenuSend"><b>odeslat</b></span>&nbsp;&nbsp;&nbsp;&nbsp;' : '')
 			+ '<span id="tdMenuRestore">obnovit</span>&nbsp;&nbsp;&nbsp;&nbsp;'
 			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title"><strong class="nd-inner">'
-			+ td.helpHtml
+			+ td.help
 			+ '</strong></span>napoveda</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>export</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>import</span>'
@@ -169,9 +169,9 @@ td.init = function(logId) {
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;<span>smazat</span>'
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
-	document.body.appendChild(td.help);
-	td.help.onmousedown = td.logAction;
-	td.helpSpaceX = td.help.clientWidth + JAK.DOM.scrollbarWidth();
+	document.body.appendChild(td.control);
+	td.control.onmousedown = td.logAction;
+	td.controlSpaceX = td.control.clientWidth + JAK.DOM.scrollbarWidth();
 	JAK.gel('menuTitle').appendChild(td.tdChangeList);
 	if (td.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', td, 'sendChanges');
 	JAK.Events.addListener(JAK.gel('tdMenuRestore'), 'click', td, 'restore');
@@ -185,7 +185,7 @@ td.init = function(logId) {
 	window.onmousewheel = document.onmousewheel = td.mouseWheel;
 
 	if (td.response) td.loadChanges(td.response);
-	td.setTitles(td.help);
+	td.setTitles(td.control);
 };
 
 td.loadChanges = function(changes) {
@@ -899,10 +899,7 @@ td.activateChange = function(e, change) {
 };
 
 td.deactivateChange = function(e, change) {
-	if (e !== true) {
-		if (td.actionData.element !== null) return false;
-		change = this;
-	}
+	if (e !== true) change = this;
 
 	if (change.varEl) {
 		if (change.varEl === td.tdHashEl) td.tdHashEl = null;
@@ -923,7 +920,6 @@ td.hoverChange = function() {
 };
 
 td.unhoverChange = function() {
-	if (td.actionData.element !== null) return false;
 	JAK.DOM.removeClass(this.change, 'nd-hovered');
 	if (this.res) {
 		if (this.change.varEl) JAK.DOM.removeClass(this.change.varEl, 'nd-hovered');
@@ -1060,7 +1056,7 @@ td.logAction = function(e) {
 
 	JAK.Events.stopEvent(e);
 	JAK.Events.cancelDef(e);
-	var el = td.help;
+	var el = td.control;
 
 	if (e.altKey) {
 		td.actionData.startX = e.screenX;
@@ -1080,14 +1076,14 @@ td.logAction = function(e) {
 			td.tdFullWidth = false;
 			JAK.DOM.removeClass(document.body.parentNode, 'nd-fullscreen');
 
-			document.body.style.marginLeft = td.tdContainer.style.width = td.help.style.left = td.tdWidth + 'px';
+			document.body.style.marginLeft = td.tdContainer.style.width = td.control.style.left = td.tdWidth + 'px';
 			td.logContainer.style.width = 'auto';
 			td.logRowActive.removeAttribute('style');
 		} else {
 			td.tdFullWidth = true;
 			JAK.DOM.addClass(document.body.parentNode, 'nd-fullscreen');
 
-			document.body.style.marginLeft = td.help.style.left = 0;
+			document.body.style.marginLeft = td.control.style.left = 0;
 			td.tdContainer.style.width = '100%';
 			td.logContainer.style.width = td.tdContainer.clientWidth + 'px';
 			td.logRowActive.style.width = (td.tdContainer.clientWidth - 48) + 'px';
@@ -1104,7 +1100,7 @@ td.logResizing = function(e) {
 	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
-		td.tdWidth = Math.max(0, Math.min(td.viewSize.width - td.helpSpaceX,
+		td.tdWidth = Math.max(0, Math.min(td.viewSize.width - td.controlSpaceX,
 				td.actionData.width + e.screenX - td.actionData.startX));
 
 		document.body.style.marginLeft = td.tdContainer.style.width = el.style.left = td.tdWidth + 'px';
@@ -1181,7 +1177,7 @@ td.showDump = function(id) {
 td.getTitlePath = function(el) {
 	var revPath, titled = el.parentNode;
 
-	var titleType = ['nd-title-help', 'nd-title-method', 'nd-title-log', 'nd-title-dump'].indexOf();
+	var titleType = titled;
 
 	if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
@@ -1585,7 +1581,6 @@ td.logClick = function(e) {
 	var id = parseInt(this.logId);
 
 	if (e.altKey) {
-		if (td.tdConsole && td.keyChanges.indexOf(e.keyCode)) {}
 	} else if (e.ctrlKey || e.metaKey) {
 		td.logRowsChosen[id - 1] = !td.logRowsChosen[id - 1];
 		if (td.logRowsChosen[id - 1]) JAK.DOM.addClass(td.logRows[id - 1], 'nd-chosen');

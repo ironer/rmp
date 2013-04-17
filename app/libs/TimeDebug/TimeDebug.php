@@ -29,7 +29,7 @@ class TimeDebug {
 			PARENT_KEY = 'parentkey', // sets parent key for children's div to attribute 'data-pk' for arrays and objects
 			DUMP_ID = 'dumpid', // id for .nd 'pre' in HTML form
 			TDVIEW_INDEX = 'tdindex', // data-tdindex of .nd 'pre' in tdView
-			TITLE_TYPE = 'titletype', // data for data-tt for titles (1: help, 2: method, defaults to 3: log, 4: method)
+			TITLE_TYPE = 'titletype', // data for data-tt for titles (1: change, 2: method, defaults to 3: log, 4: method)
 			TITLE_DATA = 'titledata'; // data for data-pk for titles
 
 
@@ -285,7 +285,7 @@ class TimeDebug {
 				. "td.post = " . json_encode(self::getPostArray()) . ";\n"
 				. "td.maxUrlLength = " . intval(self::$maxUrlLength) . ";\n"
 				. "td.response = " . json_encode(self::getResponse()) . ";\n"
-				. "td.helpHtml = " . (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
+				. "td.help = " . (!empty($tdHelp) ? json_encode(trim(self::toHtml($tdHelp))): "''") . ";\n"
 				. "td.init(1);\n</script>\n";
 	}
 
@@ -410,7 +410,7 @@ class TimeDebug {
 				$applied = self::applyChange($var, $change['varPath'], $change['value'], $change['resId'], $change['add'], $hash);
 				$change['res'] = $applied[0];
 				$change['oriVar'] = '<span id="t' . self::$idPrefix . '_' . self::incCounter()
-						. '" class="nd-title nd-title-help"><strong class="nd-inner"><pre class="nd">' . $applied[1] . '</pre></strong></span>';
+						. '" class="nd-title" data-tt="1"><strong class="nd-inner"><pre class="nd">' . $applied[1] . '</pre></strong></span>';
 				$retText .= $applied[2];
 			} catch(Exception $e) {
 				$retText .= '<pre id="' . $change['resId'] . '" class="nd-result nd-error"><div class="nd-rollover"><div class="nd-indenter">'
@@ -638,9 +638,8 @@ class TimeDebug {
 							$arg = $backtrace[$id]['args'][$i];
 							if(self::$advancedLog && is_array($arg) && $cnt = count($arg)) {
 								$args[] = '<span class="nd-array nd-titled"><span id="t' . self::$idPrefix . '_' . self::incCounter()
-										. '" class="nd-title nd-title-method" data-pk="' . $i . '"><strong class="nd-inner"><pre class="nd">'
-										. self::dumpSmallVar($arg, array(self::TITLE_TYPE => 2))
-										. '</pre></strong></span>array</span> (' . $cnt . ')';
+										. '" class="nd-title" data-pk="' . $i . '" data-tt="2"><strong class="nd-inner"><pre class="nd">'
+										. self::dumpSmallVar($arg, array(self::TITLE_TYPE => 2)) . '</pre></strong></span>array</span> (' . $cnt . ')';
 							} else {
 								$args[] = self::dumpVar($arg, array(
 									self::APP_RECURSION => FALSE,
@@ -715,8 +714,8 @@ class TimeDebug {
 			if ($arrKey === FALSE) $data = isset($options[self::TITLE_DATA]) ? ' data-pk="' . $options[self::TITLE_DATA] . '"' : '';
 			else $data = ' data-pk="' . $arrKey . '"';
 			$retTitle = self::$advancedLog ? '<span id="t' . self::$idPrefix . '_' . self::incCounter()
-					. '" class="nd-title nd-color" data-tt="' . (isset($options[self::TITLE_TYPE]) ? $options[self::TITLE_TYPE] : 3) . '"' . $data
-					. '><strong class="nd-inner"><i>' . str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
+					. '" class="nd-title nd-color"' . $data . ' data-tt="' . (isset($options[self::TITLE_TYPE]) ? $options[self::TITLE_TYPE] : 3)
+					. '"><strong class="nd-inner"><i>' . str_replace(array('\\r', '\\n', '\\t'), array('<b>\\r</b>', '<b>\\n</b></i><i>', '<b>\\t</b>'),
 						self::encodeString(substr($var, 0, max($options[self::TRUNCATE], 1024)), TRUE))
 					. ($varLen > 1024 ? '&hellip; &lt; TRUNCATED to 1kB &gt;' : '') . '</i></strong></span>' : '';
 

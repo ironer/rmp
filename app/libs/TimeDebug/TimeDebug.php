@@ -191,7 +191,7 @@ class TimeDebug {
 				self::$request[$i]['add'] = self::$request[$i][2];
 				unset(self::$request[$i][0], self::$request[$i][1], self::$request[$i][2]);
 				$path = explode(',', self::$request[$i]['path']);
-				if ($path[0] == 'dump') {
+				if ($path[0] === 'dump') {
 					self::$request[$i]['varPath'] = array_slice($path, 2);
 					if (!self::prepareVarPath($i)) {
 						echo '<pre class="nd-error"> Chyba pozadavku na zmenu v dumpu ' . $path[1] . ': '
@@ -200,7 +200,7 @@ class TimeDebug {
 					}
 					if (isset(self::$request['dumps'][$path[1]])) self::$request['dumps'][$path[1]][] = $i;
 					else self::$request['dumps'][$path[1]] = array($i);
-				} elseif ($path[0] == 'log') {
+				} elseif ($path[0] === 'log') {
 					self::$request[$i]['varPath'] = array_slice($path, 3);
 					if (!self::prepareVarPath($i)) {
 						echo '<pre class="nd-error"> Chyba pozadavku na zmenu v logu ' . $path[1] . '(' . $path[2] . '): '
@@ -364,7 +364,7 @@ class TimeDebug {
 		if (!self::$initialized) throw new Exception("Trida TimeDebug nebyla inicializovana statickou metodou 'init'.");
 		if (func_num_args() > 10) throw new Exception("Staticka metoda 'dump' muze prijmout nejvyse 10 argumentu.");
 
-		$callbackIndex = (func_num_args() == 0) ? 1 : 0;
+		$callbackIndex = (func_num_args() === 0) ? 1 : 0;
 		$backtrace = debug_backtrace(FALSE);
 
 		list($file, $line, $code, $place) = self::findLocation();
@@ -592,7 +592,7 @@ class TimeDebug {
 					self::COLLAPSE => FALSE,
 					self::COLLAPSE_COUNT => 7,
 					self::NO_BREAK => FALSE,
-					self::APP_RECURSION => is_object($var) && (get_class($var) != self::$recClass)
+					self::APP_RECURSION => is_object($var) && (get_class($var) !== self::$recClass)
 				)) . "</pre>";
 	}
 

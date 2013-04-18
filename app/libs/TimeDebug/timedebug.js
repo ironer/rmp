@@ -51,7 +51,7 @@ td.spaceX = 0;
 td.spaceY = 0;
 td.zIndexMax = 100;
 
-td.actionData = { element: null, listeners: [] };
+td.actionData = {'element': null, 'listeners': []};
 
 td.tdConsole = null;
 td.consoleConfig = {'x': 600, 'y': 340};
@@ -116,7 +116,7 @@ td.init = function(logId) {
 	var logNodes = td.logView.childNodes;
 
 	for (var i = 0, j = logNodes.length, k; i < j; ++i) {
-		if (logNodes[i].nodeType == 1 && logNodes[i].tagName.toLowerCase() == 'pre') {
+		if (logNodes[i].nodeType === 1 && logNodes[i].tagName.toLowerCase() === 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
 				td.hash2Id[logNodes[i].hash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
 				logNodes[i].runtime = logNodes[i].getAttribute('data-runtime');
@@ -138,7 +138,7 @@ td.init = function(logId) {
 				td.setTitles(logNodes[i]);
 				elements = logNodes[i].childNodes;
 				for (k = elements.length; k-- > 0;) {
-					if (elements[k].nodeType == 1 && (tdIndex = elements[k].getAttribute('data-tdindex')) !== false) {
+					if (elements[k].nodeType === 1 && (tdIndex = elements[k].getAttribute('data-tdindex')) !== false) {
 						tdIndex = parseInt(tdIndex);
 						logNodes[i].objects[tdIndex] = elements[k];
 						elements[k].tdIndex = tdIndex;
@@ -188,32 +188,32 @@ td.init = function(logId) {
 	td.setTitles(td.control);
 };
 
-td.loadChanges = function(changes) {
+td.loadChanges = function(changesData) {
 	var path, log, container, varEl, change;
-	for (var i = 0, j = changes.length; i < j; ++i) {
-		path = changes[i].path.split(',');
+	for (var i = 0, j = changesData.length; i < j; ++i) {
+		path = changesData[i].path.split(',');
 		log = container = varEl = null;
 
-		if (changes[i].res === 0 || changes[i].res === 7) {
+		if (changesData[i].res === 0 || changesData[i].res === 7) {
 		} else if (path[0] === 'log') {
 			log = JAK.gel(td.hash2Id[path[1]]);
 			container = td.dumps[td.indexes[log.logId - 1]].objects[parseInt(path[2])];
-			varEl = td.findVarEl(container, path.slice(3), changes[i].add);
+			varEl = td.findVarEl(container, path.slice(3), changesData[i].add);
 		} else {
 			container = JAK.gel(td.hash2Id[path[1]]);
-			varEl = td.findVarEl(container, path.slice(2), changes[i].add);
+			varEl = td.findVarEl(container, path.slice(2), changesData[i].add);
 		}
 
-		if (changes[i].add === 2) changes[i].value = JSON.parse(changes[i].value);
+		if (changesData[i].add === 2) changesData[i].value = JSON.parse(changesData[i].value);
 
-		if (changes[i].oriVar) changes[i].oriVar = td.createOriVar(changes[i].oriVar, changes[i].res % 2);
+		if (changesData[i].oriVar) changesData[i].oriVar = td.createOriVar(changesData[i].oriVar, changesData[i].res % 2);
 
 		if (varEl) {
 			varEl = td.duplicateNode(varEl);
-			varEl.title = td.formatJson(changes[i].value);
+			varEl.title = td.formatJson(changesData[i].value);
 		}
 
-		change = td.createChange(changes[i], container, varEl, log);
+		change = td.createChange(changesData[i], container, varEl, log);
 		change.valid = true;
 		change.formated = true;
 	}
@@ -238,21 +238,21 @@ td.findVarEl = function(el, path, add) {
 		if (add) {
 			for (j = el.childNodes.length; i < j; ++i) {
 				child = el.childNodes[i];
-				if (child.nodeType == 1) {
+				if (child.nodeType === 1) {
 					if (JAK.DOM.hasClass(child, 'nd-toggle')) child = child.firstChild;
 					if (child.className === 'nd-array' && child.getAttribute('data-pk') === path[0]) return child;
 				}
 			}
 		} else {
 			for (j = el.childNodes.length; i < j; ++i) {
-				if (el.childNodes[i].nodeType == 1 && el.childNodes[i].className === 'nd-key' && el.childNodes[i].innerHTML === path[0].slice(1)) {
+				if (el.childNodes[i].nodeType === 1 && el.childNodes[i].className === 'nd-key' && el.childNodes[i].innerHTML === path[0].slice(1)) {
 					return el.childNodes[i];
 				}
 			}
 		}
 	} else {
 		for (j = el.childNodes.length; i < j; ++i) {
-			if (el.childNodes[i].nodeType == 1 && el.childNodes[i].getAttribute('data-pk') === path[0]) {
+			if (el.childNodes[i].nodeType === 1 && el.childNodes[i].getAttribute('data-pk') === path[0]) {
 				return td.findVarEl(el.childNodes[i], path.slice(1), add);
 			}
 		}
@@ -451,9 +451,9 @@ td.printPath = function(change) {
 	var path = change.data.path.split(',');
 	var i, j = path.length, k, close = '', key, retKey, retVal = '', elStart = '', elEnd = '';
 
-	if (path[0] == 'log') {
+	if (path[0] === 'log') {
 		retVal = '<b>' + td.hash2Id[path[1]] + '</b>(' + path[i = 2] + ') ';
-	} else if (path[0] == 'dump') {
+	} else if (path[0] === 'dump') {
 		retVal = '<b>' + td.hash2Id[path[i = 1]] + '</b> ';
 	} else return '';
 
@@ -485,10 +485,10 @@ td.printPath = function(change) {
 		}
 	}
 
-	if (k == 9) retVal += '<i>(' + retKey + ')</i>';
+	if (k === 9) retVal += '<i>(' + retKey + ')</i>';
 	else retVal += !close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close;
 
-	if (change.data.add) retVal += change.valid && typeof change.data.value == 'object' ? ' +=' : '[] =';
+	if (change.data.add) retVal += change.valid && typeof change.data.value === 'object' ? ' +=' : '[] =';
 	else retVal += ' =';
 
 	return retVal;
@@ -511,7 +511,7 @@ td.updateChangeList = function(el) {
 		change = td.changes[i];
 		if (change.deleteMe === true) {
 			change.style.display = 'none';
-			if (change.logRow && change.logRow.changedVarEls && (j = change.logRow.changedVarEls.indexOf(change.varEl)) != -1) {
+			if (change.logRow && change.logRow.changedVarEls && (j = change.logRow.changedVarEls.indexOf(change.varEl)) !== -1) {
 				change.logRow.changedVarEls.splice(j, 1);
 			}
 			if (change.listeners.length) JAK.Events.removeListeners(change.listeners);
@@ -524,7 +524,7 @@ td.updateChangeList = function(el) {
 			continue;
 		}
 
-		change.innerHTML = '<span' + (typeof change.data.res != 'undefined' ? ' class="nd-res nd-restype' + change.data.res + '">' : '>')
+		change.innerHTML = '<span' + (typeof change.data.res !== 'undefined' ? ' class="nd-res nd-restype' + change.data.res + '">' : '>')
 				+ '[' + change.runtime + ']</span> ' + td.printPath(change) + ' <span class="nd-'
 				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
 				+ JSON.stringify(change.data.value) + '</span>';
@@ -542,11 +542,11 @@ td.updateChangeList = function(el) {
 
 	el = td.tdChangeList.parentNode;
 
-	if (typeof el.menuWidth == 'undefined' && el.oriWidth) {
+	if (typeof el.menuWidth === 'undefined' && el.oriWidth) {
 		el.menuWidth = el.oriWidth;
 		el.menuHeight = el.oriHeight;
 	}
-	if (el.oriWidth && el.style.display != 'none') {
+	if (el.oriWidth && el.style.display !== 'none') {
 		el.style.width = 'auto';
 		el.oriWidth = Math.max(el.menuWidth, td.tdChangeList.clientWidth);
 		el.oriHeight = el.menuHeight + (el.changesHeight = td.tdChangeList.clientHeight);
@@ -735,7 +735,7 @@ td.saveVarChange = function(arrayAdd) {
 
 	if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
-		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
+		while ((el = el.parentNode) && el.tagName.toLowerCase() !== 'pre') {}
 		revPath.push(el.hash, 'dump');
 	} else {
 		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
@@ -744,7 +744,7 @@ td.saveVarChange = function(arrayAdd) {
 			if (JAK.DOM.hasClass(el.parentNode, 'nd-toggle')) el = el.parentNode;
 		} else return false;
 
-		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
+		while ((el = el.parentNode) && el.tagName.toLowerCase() === 'div' && null !== (key = el.getAttribute('data-pk'))) {
 			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
 				revPath.push((i ? '#' : '*') + key);
 				privateVar = false;
@@ -796,7 +796,7 @@ td.createChange = function(data, container, varEl, logRow) {
 	varEl = varEl || null;
 	logRow = logRow || false;
 
-	var change = JAK.mel('pre', {'className': 'nd-change-data'}), changeEls, i, j, k, key = [], resEl;
+	var change = JAK.mel('pre', {'className': 'nd-change'}), changeEls, i, j, k, key = [], resEl;
 	change.data = data;
 	td.changes.push(change);
 
@@ -814,13 +814,13 @@ td.createChange = function(data, container, varEl, logRow) {
 		key = change.logRow.id.split('_');
 
 		if (container && varEl) {
-			if (typeof logRow.changedVarEls == 'undefined') logRow.changedVarEls = [varEl];
+			if (typeof logRow.changedVarEls === 'undefined') logRow.changedVarEls = [varEl];
 			else logRow.changedVarEls.push(varEl);
 
 			JAK.DOM.addClass(varEl, 'nd-var-change');
 			changeEls = JAK.DOM.getElementsByClass('nd-var-change', container.parentNode);
 			for (i = 0, j = changeEls.length, k = 0; i < j; ++i) {
-				if (change.logRow.changedVarEls.indexOf(changeEls[i]) != -1) {
+				if (change.logRow.changedVarEls.indexOf(changeEls[i]) !== -1) {
 					changeEls[i].parentPrefix = key[0];
 					changeEls[i].parentIndex = key[1];
 					changeEls[i].changeIndex = k++;
@@ -956,7 +956,7 @@ td.consoleAction = function(e) {
 			} else td.consoleHover('nd-area-error');
 		} else if (!e.shiftKey && e.altKey) {
 			var cc = td.consoleConfig;
-			if (typeof cc.oriX != 'undefined') {
+			if (typeof cc.oriX !== 'undefined') {
 				cc.x = cc.oriX;
 				cc.y = cc.oriY;
 			}
@@ -1015,7 +1015,7 @@ td.catchMask = function(e) {
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 
-	if (e.button === JAK.Browser.mouse.right && this.title == td.tdConsole.area.value) td.consoleClose();
+	if (e.button === JAK.Browser.mouse.right && this.title === td.tdConsole.area.value) td.consoleClose();
 	else td.tdConsole.area.focus();
 
 	return false;
@@ -1035,7 +1035,7 @@ td.consoleClose = function() {
 	}
 
 	var cc = td.consoleConfig;
-	if (typeof cc.oriX == 'undefined') {
+	if (typeof cc.oriX === 'undefined') {
 		cc.oriX = cc.x;
 		cc.oriY = cc.y;
 	}
@@ -1133,7 +1133,7 @@ td.hideVarChanges = function(varEls) {
 };
 
 td.showDump = function(id) {
-	if (td.logRowActiveId == (id = id || 0)) return false;
+	if (td.logRowActiveId === (id = id || 0)) return false;
 	if (td.logRowActive) {
 		JAK.DOM.removeClass(td.logRowActive, 'nd-active');
 		td.logRowActive.removeAttribute('style');
@@ -1166,7 +1166,7 @@ td.showDump = function(id) {
 	return true;
 };
 
-//td.getTitles = function(titles) {
+//td.getTitlesData = function(titles) {
 //	var i, retArray = [];
 //	for (i = titles.length; i-- > 0;) {
 //		retArray.push(td.getTitlePath(titles[i]));
@@ -1174,15 +1174,18 @@ td.showDump = function(id) {
 //	return retArray.reverse();
 //};
 //
+
 td.getTitlePath = function(el) {
-	var revPath, titled = el.parentNode;
+	var revPath, parent = el.parentNode, titleType = parseInt(el.getAttribute('data-tt')) || el.id;
 
-	var titleType = titled;
-
-	if (JAK.DOM.hasClass(el, 'nd-top')) {
-		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
-		while ((el = el.parentNode) && el.tagName.toLowerCase() != 'pre') {}
-		revPath.push(el.hash, 'dump');
+	if (JAK.DOM.hasClass(parent, 'nd-top')) {
+		revPath.push('9' + parent.className.split(' ')[0].split('-')[1]);
+		while (parent = parent.parentNode) {
+			if (titleType === 4 && parent.tagName.toLowerCase() === 'pre') revPath.push(parent.hash, 4);
+			else if (titleType === 1 && JAK.DOM.hasClass(parent, 'nd-change')) revPath.push(el.hash, 4);
+			else continue;
+			break;
+		}
 	} else {
 		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
 		else if (JAK.DOM.hasClass(el, 'nd-array')) {
@@ -1190,7 +1193,7 @@ td.getTitlePath = function(el) {
 			if (JAK.DOM.hasClass(el.parentNode, 'nd-toggle')) el = el.parentNode;
 		} else return false;
 
-		while ((el = el.parentNode) && el.tagName.toLowerCase() == 'div' && null !== (key = el.getAttribute('data-pk'))) {
+		while ((el = el.parentNode) && el.tagName.toLowerCase() === 'div' && null !== (key = el.getAttribute('data-pk'))) {
 			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
 				revPath.push((i ? '#' : '*') + key);
 				privateVar = false;
@@ -1246,7 +1249,7 @@ td.showTitle = function(e) {
 		td.titleHideTimeout = null;
 	}
 
-	if (td.titleActive === null && this.tdTitle.style.display != 'block') {
+	if (td.titleActive === null && this.tdTitle.style.display !== 'block') {
 		this.tdTitle.style.display = 'block';
 
 		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
@@ -1256,7 +1259,7 @@ td.showTitle = function(e) {
 			this.tdTitle.oriHeight = this.tdTitle.clientHeight;
 			tdTitleRows = this.tdTitle.tdInner.childNodes;
 			for (var i = 0, j = tdTitleRows.length, c = 1; i < j; ++i) {
-				if (tdTitleRows[i].nodeType == 1 && tdTitleRows[i].tagName.toLowerCase() == 'i' && ++c % 2) {
+				if (tdTitleRows[i].nodeType === 1 && tdTitleRows[i].tagName.toLowerCase() === 'i' && ++c % 2) {
 					tdTitleRows[i].className = "nd-even";
 				}
 			}
@@ -1324,14 +1327,14 @@ td.getMaxZIndex = function() {
 
 td.keepMaxZIndex = function(el) {
 	var i, j, maxChildZIndex = 0;
-	if (el.style.zIndex == td.zIndexMax) return false;
+	if (el.style.zIndex === td.zIndexMax) return false;
 
 	if (el.activeChilds) {
 		for (i = el.activeChilds.length; i-- > 0;) maxChildZIndex = Math.max(el.activeChilds[i].style.zIndex, maxChildZIndex);
-		if (maxChildZIndex == td.zIndexMax) return false;
+		if (maxChildZIndex === td.zIndexMax) return false;
 	}
 
-	if (el.parents && el.parents[0].style.zIndex != td.zIndexMax) {
+	if (el.parents && el.parents[0].style.zIndex !== td.zIndexMax) {
 		for (i = el.parents.length; i-- > 0;) el.parents[i].style.zIndex = ++td.zIndexMax;
 	}
 	el.style.zIndex = ++td.zIndexMax;
@@ -1350,7 +1353,7 @@ td.hoverTitle = function(e) {
 
 	var el = JAK.Events.getTarget(e);
 
-	if (this.style.zIndex == td.zIndexMax || JAK.DOM.hasClass(el, 'nd-titled') || td.titleHideTimeout !== null) return true;
+	if (this.style.zIndex === td.zIndexMax || JAK.DOM.hasClass(el, 'nd-titled') || td.titleHideTimeout !== null) return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
@@ -1358,7 +1361,7 @@ td.hoverTitle = function(e) {
 	if (this.activeChilds) {
 		var i, maxChildZIndex = 0;
 		for (i = this.activeChilds.length; i-- > 0;) maxChildZIndex = Math.max(this.activeChilds[i].style.zIndex, maxChildZIndex);
-		if (maxChildZIndex == td.zIndexMax) return true;
+		if (maxChildZIndex === td.zIndexMax) return true;
 	}
 
 	td.keepMaxZIndex(this);
@@ -1418,7 +1421,7 @@ td.titleResizing = function(e) {
 		el.userWidth = el.tdWidth = Math.max(Math.min(td.viewSize.width - el.tdLeft - 20, td.actionData.width + e.screenX - td.actionData.startX), 16);
 		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(td.viewSize.height - el.tdTop - 35, td.actionData.height + e.screenY - td.actionData.startY), 16) / 16);
 
-		JAK.DOM.setStyle(el, { width:el.tdWidth + 'px', height:el.tdHeight + 'px' });
+		JAK.DOM.setStyle(el, {'width': el.tdWidth + 'px', 'height': el.tdHeight + 'px'});
 	} else {
 		td.endTitleAction();
 	}
@@ -1449,7 +1452,7 @@ td.titleDragging = function(e) {
 		el.tdLeft = Math.max(Math.min(td.viewSize.width - 36, td.actionData.offsetX + e.screenX - td.actionData.startX), 0);
 		el.tdTop = Math.max(Math.min(td.viewSize.height - 51, td.actionData.offsetY + e.screenY - td.actionData.startY), 0);
 
-		JAK.DOM.setStyle(el, { left:el.tdLeft + 'px', top:el.tdTop + 'px' });
+		JAK.DOM.setStyle(el, {'left': el.tdLeft + 'px', 'top': el.tdTop + 'px'});
 
 		td.titleAutosize(el);
 	} else {
@@ -1529,7 +1532,7 @@ td.hideTitle = function(el) {
 	} else return false;
 
 	if ((index = td.visibleTitles.indexOf(el)) !== -1) td.visibleTitles.splice(index, 1);
-	if (el.style.zIndex == td.zIndexMax) td.getMaxZIndex();
+	if (el.style.zIndex === td.zIndexMax) td.getMaxZIndex();
 	if (el.parents) td.removeFromParents(el);
 	if (el.activeChilds && el.activeChilds.length) {
 		for (index = el.activeChilds.length; index-- > 0;) td.hideTitle(el.activeChilds[index]);
@@ -1626,9 +1629,9 @@ td.readKeyDown = function(e) {
 	var i, tdNext;
 
 	if (e.shiftKey) {
-		if (e.keyCode == 13 && td.tdConsole) return td.tdConsole.callback();
+		if (e.keyCode === 13 && td.tdConsole) return td.tdConsole.callback();
 	} else if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-		if (e.keyCode == 38 && !td.tdConsole && td.logRowActiveId > 1) {
+		if (e.keyCode === 38 && !td.tdConsole && td.logRowActiveId > 1) {
 			tdNext = td.selected() ? td.getPrevious() : td.logRowActiveId - 1;
 			if (tdNext === td.logRowActiveId) return true;
 			td.showDump(tdNext);
@@ -1636,7 +1639,7 @@ td.readKeyDown = function(e) {
 				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 100]]);
 			}
 			return false;
-		} else if (e.keyCode == 40 && !td.tdConsole && td.logRowActiveId < td.indexes.length) {
+		} else if (e.keyCode === 40 && !td.tdConsole && td.logRowActiveId < td.indexes.length) {
 			td.logView.blur();
 			tdNext = td.selected() ? td.getNext() : td.logRowActiveId + 1;
 			if (tdNext === td.logRowActiveId) return true;
@@ -1645,13 +1648,13 @@ td.readKeyDown = function(e) {
 				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 100]]);
 			}
 			return false;
-		} else if (e.keyCode == 37 && td.titleActive) {
+		} else if (e.keyCode === 37 && td.titleActive) {
 				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop - 16) / 16);
 				return false;
-		} else if (e.keyCode == 39 && td.titleActive) {
+		} else if (e.keyCode === 39 && td.titleActive) {
 				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop + 16) / 16);
 				return false;
-		} else if (e.keyCode == 27) {
+		} else if (e.keyCode === 27) {
 			if (td.tdConsole) return td.consoleClose();
 			if (!(td.visibleTitles.length - (td.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni titulku?')) {
 				return true;
@@ -1670,10 +1673,10 @@ td.readKeyDown = function(e) {
 			td.zIndexMax = 100;
 			td.titleActive = null;
 			return false;
-		} else if (e.keyCode == 13 && td.tdConsole) {
+		} else if (e.keyCode === 13 && td.tdConsole) {
 			JAK.Events.stopEvent(e);
 		}
-		else if (e.keyCode == 32 && !td.tdConsole) {
+		else if (e.keyCode === 32 && !td.tdConsole) {
 			if (td.hide[0] === 0) {
 				document.body.appendChild(td.hide[1]);
 			} else if (td.hide[0] === 1) {
@@ -1686,7 +1689,7 @@ td.readKeyDown = function(e) {
 			}
 			td.hide[0] = ++td.hide[0] % 3;
 			return false;
-		} else if (e.keyCode == 9 && td.tdConsole) {
+		} else if (e.keyCode === 9 && td.tdConsole) {
 			JAK.Events.cancelDef(e);
 			JAK.Events.stopEvent(e);
 			var area = td.tdConsole.area, start = area.selectionStart;
@@ -1794,7 +1797,7 @@ td.sendChanges = function(e) {
 		ajax._resp = function(reply, status) {
 			var error = 'Zvolte "odeslat" se stisknutou klavesou Ctrl/Cmd pro vynuceni odeslani zmen POSTem.\n\n';
 			if (status == 200 && reply) {
-				if (reply[0] == '0') error += 'Chyba cache na serveru:\n\n' + reply.slice(1);
+				if (reply[0] === '0') error += 'Chyba cache na serveru:\n\n' + reply.slice(1);
 				else {
 					window.open(this.hashUrl + reply.slice(1), this.target);
 					return true;
@@ -1918,7 +1921,7 @@ td.wrapSelection = function(e, el, key) {
 	var swap = td.keyChanges[key];
 	var retVal = el.value.slice(0, start) + swap[0];
 
-	if (end - start > 1 && (key == "'" || key == '"') && ((el.value[start] == '"' && el.value[end - 1] == '"') || (el.value[start] == "'" && el.value[end - 1] == "'"))) {
+	if (end - start > 1 && (key === "'" || key === '"') && ((el.value[start] === '"' && el.value[end - 1] === '"') || (el.value[start] === "'" && el.value[end - 1] === "'"))) {
 		td.areaWrite(el, retVal + el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end), start + 1, end - 1);
 	} else td.areaWrite(el, retVal + el.value.slice(start, end) + swap[1] + el.value.slice(end), start + 1, end + 1);
 

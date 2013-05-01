@@ -155,11 +155,11 @@ td.init = function(logId) {
 	td.tdContainer.appendChild(td.tdOuterWrapper);
 	document.body.insertBefore(td.tdContainer, document.body.childNodes[0]);
 
-	td.control.innerHTML = '<span class="nd-titled"><span id="menuTitle" class="nd-title"><strong class="nd-inner">'
+	td.control.innerHTML = '<span class="nd-titled"><span id="controlTitle" class="nd-title" data-tt="5"><strong class="nd-inner">'
 			+ '<hr><div class="nd-menu">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'
 			+ (td.local ? '<span id="tdMenuSend"><b>odeslat</b></span>&nbsp;&nbsp;&nbsp;&nbsp;' : '')
 			+ '<span id="tdMenuRestore">obnovit</span>&nbsp;&nbsp;&nbsp;&nbsp;'
-			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title"><strong class="nd-inner">'
+			+ '<span class="nd-titled"><span id="helpTitle" class="nd-title" data-tt="6"><strong class="nd-inner">'
 			+ td.help
 			+ '</strong></span>napoveda</span>'
 			+ '     |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>export</span>'
@@ -170,17 +170,19 @@ td.init = function(logId) {
 			+ '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div><hr>'
 			+ '</strong></span>*</span>';
 	document.body.appendChild(td.control);
-	td.control.onmousedown = td.logAction;
-	td.controlSpaceX = td.control.clientWidth + JAK.DOM.scrollbarWidth();
-	JAK.gel('menuTitle').appendChild(td.tdChangeList);
-	if (td.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', td, 'sendChanges');
-	JAK.Events.addListener(JAK.gel('tdMenuRestore'), 'click', td, 'restore');
 
+	JAK.Events.addListener(td.control, 'mousedown', td, td.logAction);
+	td.controlSpaceX = td.control.clientWidth + JAK.DOM.scrollbarWidth();
+	JAK.gel('controlTitle').appendChild(td.tdChangeList);
+	if (td.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', td, td.sendChanges);
+
+	JAK.Events.addListener(JAK.gel('tdMenuRestore'), 'click', td, td.restore);
 	td.showDump(logId);
-	window.onresize = td.windowResize;
-	document.onkeydown = td.readKeyDown;
-	document.body.oncontextmenu = td.tdFalse;
-	td.tdInnerWrapper.onmousedown = td.changeVar;
+	JAK.Events.addListener(window, 'resize', td, td.windowResize);
+	JAK.Events.addListener(document, 'keydown', td, td.readKeyDown);
+	JAK.Events.addListener(document, 'contextmenu', td, td.tdStop);
+	JAK.Events.addListener(td.tdInnerWrapper, 'mousedown', td, td.changeVar);
+
 	if (window.addEventListener) window.addEventListener('DOMMouseScroll', td.mouseWheel, false);
 	window.onmousewheel = document.onmousewheel = td.mouseWheel;
 
@@ -261,14 +263,12 @@ td.findVarEl = function(el, path, add) {
 };
 
 td.mouseWheel = function(e) {
-	e = e || window.event;
 	var el = JAK.Events.getTarget(e);
-	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
+	if (el.tagName.toLowerCase() === 'b') el = el.parentNode;
 
 	if (td.titleActive === null && !JAK.DOM.hasClass(el, 'nd-titled')) return true;
 
-	JAK.Events.stopEvent(e);
-	JAK.Events.cancelDef(e);
+	td.tdStop(e);
 
 	el = td.titleActive || el.tdTitle;
 
@@ -282,15 +282,12 @@ td.mouseWheel = function(e) {
 };
 
 td.changeVar = function(e) {
-	e = e || window.event;
-
 	if (!td.local || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) return true;
 
 	var el = JAK.Events.getTarget(e);
-	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
+	if (el.tagName.toLowerCase() === 'b') el = el.parentNode;
 
-	JAK.Events.stopEvent(e);
-	JAK.Events.cancelDef(e);
+	td.tdStop(e);
 
 	if (e.altKey) {
 		if (JAK.DOM.hasClass(el, 'nd-array')) {
@@ -307,14 +304,10 @@ td.changeVar = function(e) {
 	return false;
 };
 
-td.changeAction = function(e) {
-	e = e || window.event;
-
+td.changeAction = function(e, el) {
 	if (!td.local || e.ctrlKey || e.metaKey) return true;
 
-	var el = JAK.Events.getTarget(e);
-
-	if (JAK.DOM.hasClass(el, 'nd-result') && e.button === JAK.Browser.mouse.left) {
+	if (JAK.DOM.hasClass(el, 'nd-indenter') && e.button === JAK.Browser.mouse.left) {
 		if (this.logRow) td.showLog(true, this.logRow);
 		return true;
 	}
@@ -322,8 +315,7 @@ td.changeAction = function(e) {
 	var hashes = [];
 
 	if (e.button === JAK.Browser.mouse.right) {
-		JAK.Events.stopEvent(e);
-		JAK.Events.cancelDef(e);
+		td.tdStop(e);
 
 		if (el.id === 'tdDeleteChange') {
 			if (!e.altKey) return false;
@@ -940,11 +932,8 @@ td.consoleHover = function(areaClass) {
 };
 
 td.consoleAction = function(e) {
-	e = e || window.event;
-
 	if (e.button === JAK.Browser.mouse.left && (e.ctrlKey || e.metaKey)) {
-		JAK.Events.cancelDef(e);
-		JAK.Events.stopEvent(e);
+		td.tdStop(e);
 
 		if (e.shiftKey && !e.altKey) {
 			var parsed = td.parseJson(this.value);
@@ -1010,10 +999,7 @@ td.textareaFocus = function() {
 };
 
 td.catchMask = function(e) {
-	e = e || window.event;
-
-	JAK.Events.cancelDef(e);
-	JAK.Events.stopEvent(e);
+	td.tdStop(e);
 
 	if (e.button === JAK.Browser.mouse.right && this.title === td.tdConsole.area.value) td.consoleClose();
 	else td.tdConsole.area.focus();
@@ -1050,12 +1036,9 @@ td.consoleClose = function() {
 };
 
 td.logAction = function(e) {
-	e = e || window.event;
-
 	if ((e.altKey ? e.shiftKey || td.tdFullWidth : !e.shiftKey) || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left) return true;
 
-	JAK.Events.stopEvent(e);
-	JAK.Events.cancelDef(e);
+	td.tdStop(e);
 	var el = td.control;
 
 	if (e.altKey) {
@@ -1064,10 +1047,10 @@ td.logAction = function(e) {
 		td.actionData.element = el;
 
 		td.actionData.listeners.push(
-				JAK.Events.addListener(document, 'mousemove', td, 'logResizing'),
-				JAK.Events.addListener(document, 'mouseup', td, 'endLogResize'),
-				JAK.Events.addListener(el, 'selectstart', td, 'tdStop'),
-				JAK.Events.addListener(el, 'dragstart', td, 'tdStop')
+				JAK.Events.addListener(document, 'mousemove', td, td.logResizing),
+				JAK.Events.addListener(document, 'mouseup', td, td.endLogResize),
+				JAK.Events.addListener(el, 'selectstart', td, td.tdStop),
+				JAK.Events.addListener(el, 'dragstart', td, td.tdStop)
 		);
 
 		document.body.focus();
@@ -1096,15 +1079,9 @@ td.logAction = function(e) {
 };
 
 td.logResizing = function(e) {
-	e = e || window.event;
-	var el = td.actionData.element;
-
 	if (e.button === JAK.Browser.mouse.left) {
-		td.tdWidth = Math.max(0, Math.min(td.viewSize.width - td.controlSpaceX,
-				td.actionData.width + e.screenX - td.actionData.startX));
-
-		document.body.style.marginLeft = td.tdContainer.style.width = el.style.left = td.tdWidth + 'px';
-
+		td.tdWidth = Math.max(0, Math.min(td.viewSize.width - td.controlSpaceX, td.actionData.width + e.screenX - td.actionData.startX));
+		document.body.style.marginLeft = td.tdContainer.style.width = td.actionData.element.style.left = td.tdWidth + 'px';
 		td.tdResizeWrapper();
 	} else {
 		td.endLogResize();
@@ -1175,40 +1152,48 @@ td.showDump = function(id) {
 //};
 //
 
-td.getTitlePath = function(el) {
-	var revPath, parent = el.parentNode, titleType = parseInt(el.getAttribute('data-tt')) || el.id;
+td.getTitlePath = function(e, el, a) {
+	var revPath = [], parent = el.parentNode, titleType = parseInt(el.getAttribute('data-tt'));
 
-	if (JAK.DOM.hasClass(parent, 'nd-top')) {
-		revPath.push('9' + parent.className.split(' ')[0].split('-')[1]);
-		while (parent = parent.parentNode) {
-			if (titleType === 4 && parent.tagName.toLowerCase() === 'pre') revPath.push(parent.hash, 4);
-			else if (titleType === 1 && JAK.DOM.hasClass(parent, 'nd-change')) revPath.push(el.hash, 4);
-			else continue;
-			break;
-		}
-	} else {
-		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
-		else if (JAK.DOM.hasClass(el, 'nd-array')) {
-			revPath.push(key);
-			if (JAK.DOM.hasClass(el.parentNode, 'nd-toggle')) el = el.parentNode;
-		} else return false;
-
-		while ((el = el.parentNode) && el.tagName.toLowerCase() === 'div' && null !== (key = el.getAttribute('data-pk'))) {
-			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
-				revPath.push((i ? '#' : '*') + key);
-				privateVar = false;
-			} else {
-				revPath.push(key);
-			}
-			if (key[0] === '3' || key[0] === '4') privateVar = true;
-		}
-		if (JAK.DOM.hasClass(el, 'nd-dump')) {
-			revPath.push(el.hash, 'dump');
-		} else {
-			revPath.push(el.tdIndex, td.logRowActive.hash, 'log');
-			logRow = td.logRowActive;
-		}
+	console.debug(e);
+	console.debug(el);
+	console.debug(a);
+	
+	if (titleType > 4) {
+		revPath.push(titleType);
 	}
+//	else if (JAK.DOM.hasClass(parent, 'nd-top')) {
+//		revPath.push('9' + parent.className.split(' ')[0].split('-')[1]);
+//		while (parent = parent.parentNode) {
+//			if (titleType === 4 && parent.tagName.toLowerCase() === 'pre') revPath.push(parent.hash, 4);
+//			else if (titleType === 1 && JAK.DOM.hasClass(parent, 'nd-change')) revPath.push(parent.logRow.hash, 1);
+//			else if (parent.tagName.toLowerCase() === 'body') return false;
+//			else continue;
+//			break;
+//		}
+//	} else {
+//
+//		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
+//
+//		else return false;
+//
+//		while ((el = el.parentNode) && el.tagName.toLowerCase() === 'div' && null !== (key = el.getAttribute('data-pk'))) {
+//			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
+//				revPath.push((i ? '#' : '*') + key);
+//				privateVar = false;
+//			} else {
+//				revPath.push(key);
+//			}
+//			if (key[0] === '3' || key[0] === '4') privateVar = true;
+//		}
+//		if (JAK.DOM.hasClass(el, 'nd-dump')) {
+//			revPath.push(el.hash, 'dump');
+//		} else {
+//			revPath.push(el.tdIndex, td.logRowActive.hash, 'log');
+//			logRow = td.logRowActive;
+//		}
+//	}
+	console.debug(revPath.reverse().join(','));
 };
 
 td.setTitles = function(container) {
@@ -1226,21 +1211,17 @@ td.setTitles = function(container) {
 			JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle);
 			JAK.Events.addListener(titleSpan.tdTitle, 'mousemove', titleSpan.tdTitle, td.hoverTitle);
 			JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
-			// TODO: opravit, kdyz prijedu z ciziho titulku na nd-titled v jinem rodicovksem titulku
+//			JAK.Events.addListener(titleSpan.tdTitle, 'dblclick', titleSpan.tdTitle, td.getTitlePath);
 		}
 	}
 };
 
 td.showTitle = function(e) {
-	e = e || window.event;
+	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null || td.hide[0] === 2) return false;
 
-	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null || td.hide[0] === 2) {
-		return false;
-	}
 	var tdTitleRows, tdParents, el = JAK.Events.getTarget(e);
 
-	JAK.Events.stopEvent(e);
-	JAK.Events.cancelDef(e);
+	td.tdStop(e);
 
 	if (td.titleActive && td.titleActive !== this.tdTitle) {
 		td.hideTitle();
@@ -1263,13 +1244,13 @@ td.showTitle = function(e) {
 					tdTitleRows[i].className = "nd-even";
 				}
 			}
-			if (this.tdTitle.id === 'menuTitle') {
+			if (this.tdTitle.id === 'controlTitle') {
 				this.tdTitle.menuWidth = this.tdTitle.oriWidth;
 				this.tdTitle.menuHeight = this.tdTitle.oriHeight;
 				td.tdChangeList.style.display = 'block';
 			}
 		}
-		if (this.tdTitle.id === 'menuTitle') {
+		if (this.tdTitle.id === 'controlTitle') {
 			this.tdTitle.style.width = 'auto';
 			this.tdTitle.oriWidth = Math.max(this.tdTitle.menuWidth, td.tdChangeList.clientWidth);
 			this.tdTitle.oriHeight = this.tdTitle.menuHeight + (this.tdTitle.changesHeight = td.tdChangeList.clientHeight);
@@ -1327,14 +1308,14 @@ td.getMaxZIndex = function() {
 
 td.keepMaxZIndex = function(el) {
 	var i, j, maxChildZIndex = 0;
-	if (el.style.zIndex === td.zIndexMax) return false;
+	if (parseInt(el.style.zIndex) === td.zIndexMax) return false;
 
 	if (el.activeChilds) {
 		for (i = el.activeChilds.length; i-- > 0;) maxChildZIndex = Math.max(el.activeChilds[i].style.zIndex, maxChildZIndex);
 		if (maxChildZIndex === td.zIndexMax) return false;
 	}
 
-	if (el.parents && el.parents[0].style.zIndex !== td.zIndexMax) {
+	if (el.parents && parseInt(el.parents[0].style.zIndex) !== td.zIndexMax) {
 		for (i = el.parents.length; i-- > 0;) el.parents[i].style.zIndex = ++td.zIndexMax;
 	}
 	el.style.zIndex = ++td.zIndexMax;
@@ -1353,7 +1334,7 @@ td.hoverTitle = function(e) {
 
 	var el = JAK.Events.getTarget(e);
 
-	if (this.style.zIndex === td.zIndexMax || JAK.DOM.hasClass(el, 'nd-titled') || td.titleHideTimeout !== null) return true;
+	if (parseInt(this.style.zIndex) === td.zIndexMax || JAK.DOM.hasClass(el, 'nd-titled') || td.titleHideTimeout !== null) return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
@@ -1370,8 +1351,6 @@ td.hoverTitle = function(e) {
 };
 
 td.titleAction = function(e) {
-	e = e || window.event;
-
 	if (!this.pinned || e.button !== JAK.Browser.mouse.left) return true;
 
 	JAK.Events.stopEvent(e);
@@ -1404,23 +1383,21 @@ td.startTitleResize = function(e, el) {
 	td.actionData.element = el;
 
 	td.actionData.listeners.push(
-			JAK.Events.addListener(document, 'mousemove', td, 'titleResizing'),
-			JAK.Events.addListener(document, 'mouseup', td, 'endTitleAction'),
-			JAK.Events.addListener(el, 'selectstart', td, 'tdStop'),
-			JAK.Events.addListener(el, 'dragstart', td, 'tdStop')
+			JAK.Events.addListener(document, 'mousemove', td, td.titleResizing),
+			JAK.Events.addListener(document, 'mouseup', td, td.endTitleAction),
+			JAK.Events.addListener(el, 'selectstart', td, td.tdStop),
+			JAK.Events.addListener(el, 'dragstart', td, td.tdStop)
 	);
 
 	document.body.focus();
 };
 
 td.titleResizing = function(e) {
-	e = e || window.event;
 	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
 		el.userWidth = el.tdWidth = Math.max(Math.min(td.viewSize.width - el.tdLeft - 20, td.actionData.width + e.screenX - td.actionData.startX), 16);
 		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(td.viewSize.height - el.tdTop - 35, td.actionData.height + e.screenY - td.actionData.startY), 16) / 16);
-
 		JAK.DOM.setStyle(el, {'width': el.tdWidth + 'px', 'height': el.tdHeight + 'px'});
 	} else {
 		td.endTitleAction();
@@ -1435,25 +1412,22 @@ td.startTitleDrag = function(e, el) {
 	td.actionData.element = el;
 
 	td.actionData.listeners.push(
-			JAK.Events.addListener(document, 'mousemove', td, 'titleDragging'),
-			JAK.Events.addListener(document, 'mouseup', td, 'endTitleAction'),
-			JAK.Events.addListener(el, 'selectstart', td, 'tdStop'),
-			JAK.Events.addListener(el, 'dragstart', td, 'tdStop')
+			JAK.Events.addListener(document, 'mousemove', td, td.titleDragging),
+			JAK.Events.addListener(document, 'mouseup', td, td.endTitleAction),
+			JAK.Events.addListener(el, 'selectstart', td, td.tdStop),
+			JAK.Events.addListener(el, 'dragstart', td, td.tdStop)
 	);
 
 	document.body.focus();
 };
 
 td.titleDragging = function(e) {
-	e = e || window.event;
 	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
 		el.tdLeft = Math.max(Math.min(td.viewSize.width - 36, td.actionData.offsetX + e.screenX - td.actionData.startX), 0);
 		el.tdTop = Math.max(Math.min(td.viewSize.height - 51, td.actionData.offsetY + e.screenY - td.actionData.startY), 0);
-
 		JAK.DOM.setStyle(el, {'left': el.tdLeft + 'px', 'top': el.tdTop + 'px'});
-
 		td.titleAutosize(el);
 	} else {
 		td.endTitleAction();
@@ -1470,12 +1444,7 @@ td.endTitleAction = function() {
 	}
 };
 
-td.tdFalse = function() {
-	return false;
-};
-
 td.tdStop = function(e) {
-	e = e || window.event;
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
 	return false;
@@ -1532,7 +1501,7 @@ td.hideTitle = function(el) {
 	} else return false;
 
 	if ((index = td.visibleTitles.indexOf(el)) !== -1) td.visibleTitles.splice(index, 1);
-	if (el.style.zIndex === td.zIndexMax) td.getMaxZIndex();
+	if (parseInt(el.style.zIndex) === td.zIndexMax) td.getMaxZIndex();
 	if (el.parents) td.removeFromParents(el);
 	if (el.activeChilds && el.activeChilds.length) {
 		for (index = el.activeChilds.length; index-- > 0;) td.hideTitle(el.activeChilds[index]);
@@ -1543,7 +1512,6 @@ td.hideTitle = function(el) {
 };
 
 td.pinTitle = function(e) {
-	e = e || window.event;
 	JAK.Events.stopEvent(e);
 
 	if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.left || td.hide[0] === 2) return false;
@@ -1554,7 +1522,7 @@ td.pinTitle = function(e) {
 	}
 
 	var el = JAK.Events.getTarget(e);
-	el = el.tagName.toLowerCase() === 'b' ? el.parentNode : el;
+	if (el.tagName.toLowerCase() === 'b') el = el.parentNode;
 
 	if (!JAK.DOM.hasClass(el, 'nd-titled')) return false;
 
@@ -1580,7 +1548,6 @@ td.showLog = function(e, el) {
 };
 
 td.logClick = function(e) {
-	e = e || window.event;
 	var id = parseInt(this.logId);
 
 	if (e.altKey) {
@@ -1607,7 +1574,6 @@ td.logClick = function(e) {
 };
 
 td.readConsoleKeyPress = function(e) {
-	e = e || window.event;
 	var key = String.fromCharCode(e.which);
 
 	if (this.selectedText) td.unselectConsole();
@@ -1624,8 +1590,6 @@ td.readConsoleKeyPress = function(e) {
 };
 
 td.readKeyDown = function(e) {
-	e = e || window.event;
-
 	var i, tdNext;
 
 	if (e.shiftKey) {
@@ -1746,8 +1710,6 @@ td.htmlEncode = function(text) {
 };
 
 td.restore = function(e) {
-	e = e || window.event;
-
 	var newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
 	if (td.get) newLoc.push(td.get);
 
@@ -1756,7 +1718,6 @@ td.restore = function(e) {
 };
 
 td.sendChanges = function(e) {
-	e = e || window.event;
 	var i, j, len = td.changes.length, change, changesArray = [], changesBase62, newLoc, url;
 	if (!len) return false;
 
@@ -1880,7 +1841,7 @@ td.selectBlock = function(e, el) {
 	return false;
 };
 
-td.selectConsole  = function(e, el, key) {
+td.selectConsole = function(e, el, key) {
 	var end = el.selectionEnd;
 	var text = el.value.slice(0, end) + key + el.value.slice(end);
 	var start = td.findNearestChar(text, td.consoleSelects[key], end, true, {'"': false});

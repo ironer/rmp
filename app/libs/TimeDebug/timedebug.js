@@ -176,7 +176,7 @@ td.init = function(logId) {
 	JAK.gel('controlTitle').appendChild(td.tdChangeList);
 	if (td.local) JAK.Events.addListener(JAK.gel('tdMenuSend'), 'click', td, td.sendChanges);
 
-	JAK.Events.addListener(JAK.gel('tdMenuRestore'), 'click', td, td.restore);
+	JAK.Events.addListener(JAK.gel('tdMenuRestore'), 'click', td, td.reloadPage);
 	td.showDump(logId);
 	JAK.Events.addListener(window, 'resize', td, td.windowResize);
 	JAK.Events.addListener(document, 'keydown', td, td.readKeyDown);
@@ -1596,7 +1596,7 @@ td.readKeyDown = function(e) {
 		if (e.keyCode === 13 && td.tdConsole) return td.tdConsole.callback();
 	} else if (!e.altKey && !e.ctrlKey && !e.metaKey) {
 		if (e.keyCode === 38 && !td.tdConsole && td.logRowActiveId > 1) {
-			tdNext = td.selected() ? td.getPrevious() : td.logRowActiveId - 1;
+			tdNext = td.logRowsSelected() ? td.getPreviousLogRow() : td.logRowActiveId - 1;
 			if (tdNext === td.logRowActiveId) return true;
 			td.showDump(tdNext);
 			if (!td.tdFullWidth) {
@@ -1605,7 +1605,7 @@ td.readKeyDown = function(e) {
 			return false;
 		} else if (e.keyCode === 40 && !td.tdConsole && td.logRowActiveId < td.indexes.length) {
 			td.logView.blur();
-			tdNext = td.selected() ? td.getNext() : td.logRowActiveId + 1;
+			tdNext = td.logRowsSelected() ? td.getNextLogRow() : td.logRowActiveId + 1;
 			if (tdNext === td.logRowActiveId) return true;
 			td.showDump(tdNext);
 			if (!td.tdFullWidth) {
@@ -1683,21 +1683,21 @@ td.tdResizeWrapper = function() {
 	if (td.tdContainer.clientWidth > td.tdOuterWrapper.clientWidth) td.tdOuterWrapper.style.width = '100%';
 };
 
-td.selected = function() {
+td.logRowsSelected = function() {
 	for (var i = td.logRowsChosen.length; i-- > 0;) {
 		if (td.logRowsChosen[i]) return true;
 	}
 	return false;
 };
 
-td.getPrevious = function() {
+td.getPreviousLogRow = function() {
 	for (var i = td.logRowActiveId; --i > 0;) {
 		if (td.logRowsChosen[i - 1]) return i;
 	}
 	return td.logRowActiveId;
 };
 
-td.getNext = function() {
+td.getNextLogRow = function() {
 	for (var i = td.logRowActiveId, j = td.logRowsChosen.length; i++ < j;) {
 		if (td.logRowsChosen[i - 1]) return i;
 	}
@@ -1709,7 +1709,7 @@ td.htmlEncode = function(text) {
 	return retVal;
 };
 
-td.restore = function(e) {
+td.reloadPage = function(e) {
 	var newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
 	if (td.get) newLoc.push(td.get);
 

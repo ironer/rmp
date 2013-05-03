@@ -1147,19 +1147,17 @@ td.showDump = function(id) {
 	return true;
 };
 
-//td.getTitlesData = function(titles) {
-//	var i, retArray = [];
-//	for (i = titles.length; i-- > 0;) {
-//		retArray.push(td.getTitlePath(titles[i]));
-//	}
-//	return retArray.reverse();
-//};
-//
+td.getTitlesData = function(titles) {
+	var i, j, retArray = [], data;
+	for (i = 0, j = titles.length; i < j; ++i) {
+		data = {'path': td.getTitlePath(titles[i])};
+		retArray.push(data);
+	}
+	return retArray;
+};
 
-td.getTitlePath = function(e, el) {
-	var revPath = [], parent = el.parentNode, titleType = parseInt(el.getAttribute('data-tt')), pk;
-
-	td.tdStop(e);
+td.getTitlePath = function(title) {
+	var revPath = [], parent = title.parentNode, titleType = parseInt(title.getAttribute('data-tt')), key;
 
 	if (titleType > 4) {
 		revPath.push(titleType);
@@ -1169,65 +1167,38 @@ td.getTitlePath = function(e, el) {
 			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {}
 			revPath.push('9');
 		} else {
-			revPath.push(el.getAttribute('data-pk'));
+			revPath.push(title.getAttribute('data-pk'));
 			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {
-				if (pk = parent.getAttribute('data-pk')) revPath.push(pk);
+				if (key = parent.getAttribute('data-pk')) revPath.push(key);
 			}
 		}
 		revPath.push(parent.data.add ? 1 : 0, parent.data.path, 1);
 	} else if (titleType === 2) {
-		revPath.push(el.getAttribute('data-pk'));
+		revPath.push(title.getAttribute('data-pk'));
 		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-log')) {
-			if (pk = parent.getAttribute('data-pk')) revPath.push(pk);
+			if (key = parent.getAttribute('data-pk')) revPath.push(key);
 		}
 		revPath.push(parent.hash, 2);
+	} else if (titleType === 3) {
+		revPath.push(title.getAttribute('data-pk'));
+		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-view-dump')) {
+			if (key = (parent.getAttribute('data-pk') || parent.getAttribute('data-tdindex'))) revPath.push(key);
+		}
+		revPath.push(parent.logRow.hash, 3);
 	} else if (titleType === 4) {
 		if (JAK.DOM.hasClass(parent, 'nd-top')) {
 			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {}
 			revPath.push('9');
 		} else {
-			revPath.push(el.getAttribute('data-pk'));
+			revPath.push(title.getAttribute('data-pk'));
 			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {
-				if (pk = parent.getAttribute('data-pk')) revPath.push(pk);
+				if (key = parent.getAttribute('data-pk')) revPath.push(key);
 			}
 		}
 		revPath.push(parent.hash, 4);
-	} else if (titleType === 3) {
-		revPath.push(el.getAttribute('data-pk'));
-		revPath.push(parent.hash, 4);
 	}
-//	else if (JAK.DOM.hasClass(parent, 'nd-top')) {
-//		revPath.push('9' + parent.className.split(' ')[0].split('-')[1]);
-//		while (parent = parent.parentNode) {
-//			if (titleType === 4 && parent.tagName.toLowerCase() === 'pre') revPath.push(parent.hash, 4);
-//			else if (titleType === 1 && JAK.DOM.hasClass(parent, 'nd-change')) revPath.push(parent.logRow.hash, 1);
-//			else if (parent.tagName.toLowerCase() === 'body') return false;
-//			else continue;
-//			break;
-//		}
-//	} else {
-//
-//		if (JAK.DOM.hasClass(el, 'nd-key')) revPath.push(key + el.innerHTML);
-//
-//		else return false;
-//
-//		while ((el = el.parentNode) && el.tagName.toLowerCase() === 'div' && null !== (key = el.getAttribute('data-pk'))) {
-//			if (parseInt(key[0]) % 2 && (++i + 1) && privateVar) {
-//				revPath.push((i ? '#' : '*') + key);
-//				privateVar = false;
-//			} else {
-//				revPath.push(key);
-//			}
-//			if (key[0] === '3' || key[0] === '4') privateVar = true;
-//		}
-//		if (JAK.DOM.hasClass(el, 'nd-dump')) {
-//			revPath.push(el.hash, 'dump');
-//		} else {
-//			revPath.push(el.tdIndex, td.logRowActive.hash, 'log');
-//			logRow = td.logRowActive;
-//		}
-//	}
-	console.debug(revPath.reverse().join('§'));
+
+	return(revPath.reverse().join('§'));
 };
 
 td.setTitles = function(container) {
@@ -1245,7 +1216,6 @@ td.setTitles = function(container) {
 			JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle);
 			JAK.Events.addListener(titleSpan.tdTitle, 'mousemove', titleSpan.tdTitle, td.hoverTitle);
 			JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
-			JAK.Events.addListener(titleSpan.tdTitle, 'dblclick', titleSpan.tdTitle, td.getTitlePath);
 		}
 	}
 };

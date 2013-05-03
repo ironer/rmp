@@ -19,10 +19,10 @@ try {
 			. "&line=$line" . '"><i>' . htmlspecialchars(substr($file, strlen(ROOT))) . "</i> <b>@$line</b></a></small>]</pre>";
 }
 
-//$a = array(array('test'));
-//App::dump($a);
-//$b = 'test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test';
-//App::dump($a, $b);
+$a = array(array('test'));
+App::dump($a);
+$b = 'test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test';
+App::dump($a, $b);
 
 
 if (DEBUG) {

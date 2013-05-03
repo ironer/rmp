@@ -502,7 +502,7 @@ span.nd-var-change {
 .nd-td #logContainer {
 	overflow: scroll;
 }
-.nd-local .nd-top:hover,
+.nd-local #logContainer .nd-top:hover,
 .nd-local .nd-dump .nd-key:hover,
 .nd-local #tdView .nd-key:hover,
 .nd-local .nd-top.nd-hovered, .nd-local .nd-top.nd-edited,

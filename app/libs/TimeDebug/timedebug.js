@@ -112,10 +112,10 @@ td.init = function(logId) {
 	document.body.style.marginLeft = td.tdContainer.style.width = td.control.style.left = td.tdWidth + 'px';
 	td.viewSize = JAK.DOM.getDocSize();
 
-	var elements, tdIndex;
+	var el, i, j, k, l, elements, tdIndex;
 	var logNodes = td.logView.childNodes;
 
-	for (var i = 0, j = logNodes.length, k; i < j; ++i) {
+	for (i = 0, j = logNodes.length; i < j; ++i) {
 		if (logNodes[i].nodeType === 1 && logNodes[i].tagName.toLowerCase() === 'pre') {
 			if (JAK.DOM.hasClass(logNodes[i], 'nd-dump')) {
 				td.hash2Id[logNodes[i].hash = logNodes[i].getAttribute('data-hash')] = logNodes[i].id;
@@ -135,6 +135,7 @@ td.init = function(logId) {
 			} else if (JAK.DOM.hasClass(logNodes[i], 'nd-view-dump')) {
 				td.dumps.push(logNodes[i]);
 				logNodes[i].objects = [];
+				logNodes[i].oriId = logNodes[i].id;
 				td.setTitles(logNodes[i]);
 				elements = logNodes[i].childNodes;
 				for (k = elements.length; k-- > 0;) {
@@ -145,6 +146,14 @@ td.init = function(logId) {
 					}
 				}
 			}
+		}
+	}
+
+	for (i = 0, j = td.logRows.length, l = -1; i < j; ++i, l = k) {
+		if ((k = td.indexes[i]) !== l) {
+			el = td.dumps[k];
+			el.logRow = td.logRows[i];
+			td.tdInnerWrapper.appendChild(el);
 		}
 	}
 
@@ -304,15 +313,15 @@ td.changeVar = function(e) {
 	return false;
 };
 
-td.changeAction = function(e, el) {
+td.changeAction = function(e) {
 	if (!td.local || e.ctrlKey || e.metaKey) return true;
+
+	var hashes = [], el = JAK.Events.getTarget(e);
 
 	if (JAK.DOM.hasClass(el, 'nd-indenter') && e.button === JAK.Browser.mouse.left) {
 		if (this.logRow) td.showLog(true, this.logRow);
 		return true;
 	}
-
-	var hashes = [];
 
 	if (e.button === JAK.Browser.mouse.right) {
 		td.tdStop(e);
@@ -1128,11 +1137,6 @@ td.showDump = function(id) {
 		(td.tdView.oriId && (td.tdView.id = td.tdView.oriId)) || td.tdInnerWrapper.removeChild(td.tdView);
 
 		td.tdView = td.dumps[td.indexes[id - 1]];
-		td.tdInnerWrapper.appendChild(td.tdView);
-		if (!td.tdView.oriId) {
-			td.tdInnerWrapper.appendChild(td.tdView);
-			td.tdView.oriId = td.tdView.id;
-		}
 		td.tdView.id = 'tdView';
 		td.tdResizeWrapper();
 	}
@@ -1152,15 +1156,45 @@ td.showDump = function(id) {
 //};
 //
 
-td.getTitlePath = function(e, el, a) {
-	var revPath = [], parent = el.parentNode, titleType = parseInt(el.getAttribute('data-tt'));
+td.getTitlePath = function(e, el) {
+	var revPath = [], parent = el.parentNode, titleType = parseInt(el.getAttribute('data-tt')), pk;
 
-	console.debug(e);
-	console.debug(el);
-	console.debug(a);
-	
+	td.tdStop(e);
+
 	if (titleType > 4) {
 		revPath.push(titleType);
+	} else if (titleType === 1) {
+		if (JAK.DOM.hasClass(parent, 'nd-ori-var') && (parent = parent.parentNode)) revPath.push('0');
+		else if (JAK.DOM.hasClass(parent, 'nd-top')) {
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {}
+			revPath.push('9');
+		} else {
+			revPath.push(el.getAttribute('data-pk'));
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {
+				if (pk = parent.getAttribute('data-pk')) revPath.push(pk);
+			}
+		}
+		revPath.push(parent.data.add ? 1 : 0, parent.data.path, 1);
+	} else if (titleType === 2) {
+		revPath.push(el.getAttribute('data-pk'));
+		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-log')) {
+			if (pk = parent.getAttribute('data-pk')) revPath.push(pk);
+		}
+		revPath.push(parent.hash, 2);
+	} else if (titleType === 4) {
+		if (JAK.DOM.hasClass(parent, 'nd-top')) {
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {}
+			revPath.push('9');
+		} else {
+			revPath.push(el.getAttribute('data-pk'));
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {
+				if (pk = parent.getAttribute('data-pk')) revPath.push(pk);
+			}
+		}
+		revPath.push(parent.hash, 4);
+	} else if (titleType === 3) {
+		revPath.push(el.getAttribute('data-pk'));
+		revPath.push(parent.hash, 4);
 	}
 //	else if (JAK.DOM.hasClass(parent, 'nd-top')) {
 //		revPath.push('9' + parent.className.split(' ')[0].split('-')[1]);
@@ -1193,7 +1227,7 @@ td.getTitlePath = function(e, el, a) {
 //			logRow = td.logRowActive;
 //		}
 //	}
-	console.debug(revPath.reverse().join(','));
+	console.debug(revPath.reverse().join('§'));
 };
 
 td.setTitles = function(container) {
@@ -1211,7 +1245,7 @@ td.setTitles = function(container) {
 			JAK.Events.addListener(titleSpan, 'click', titleSpan, td.pinTitle);
 			JAK.Events.addListener(titleSpan.tdTitle, 'mousemove', titleSpan.tdTitle, td.hoverTitle);
 			JAK.Events.addListener(titleSpan.tdTitle, 'mousedown', titleSpan.tdTitle, td.titleAction);
-//			JAK.Events.addListener(titleSpan.tdTitle, 'dblclick', titleSpan.tdTitle, td.getTitlePath);
+			JAK.Events.addListener(titleSpan.tdTitle, 'dblclick', titleSpan.tdTitle, td.getTitlePath);
 		}
 	}
 };

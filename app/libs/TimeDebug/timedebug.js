@@ -317,13 +317,14 @@ td.changeVar = function(e) {
 
 td.switchFullHeight = function(result, force) {
 	force = force || 0;
-	var i = td.fullResults.indexOf(result);
 
-	if (i === -1 && force !== 1) {
+	if (!result.fullHeight && force !== 1) {
 		td.fullResults.push(result);
+		result.fullHeight = true;
 		JAK.DOM.addClass(result, 'nd-fullheight');
-	} else if (i !== -1 && force !== 2) {
-		td.fullResults.splice(i, 1);
+	} else if (result.fullHeight && force !== 2) {
+		td.fullResults.splice(td.fullResults.indexOf(result), 1);
+		result.fullHeight = false;
 		JAK.DOM.removeClass(result, 'nd-fullheight');
 	}
 };
@@ -332,7 +333,7 @@ td.changeAction = function(e, el) {
 	if (!td.local || e.ctrlKey || e.metaKey) return true;
 
 	if (el.res && e.button === JAK.Browser.mouse.left) {
-		td.switchFullHeight(el);
+		if (e.altKey) td.switchFullHeight(el);
 		return true;
 	}
 

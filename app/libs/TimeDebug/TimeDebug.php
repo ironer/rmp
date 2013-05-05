@@ -273,9 +273,9 @@ class TimeDebug {
 				'Shift + LC' => 'prijmout opravu / formatovat JSON'
 			),
 			'OVLADANI VYSLEDKU ZMEN (pouze local)' => array(
-				'Left Click' => 'prepnout 1 radkovy / plna vyska',
-				'Right Click' => 'otevrit modal konzoli pro upravu',
+				'Alt + Left Click' => 'prepnout 1 radkovy / plna vyska',
 				'Alt + Space' => 'prepnout rezim zobrazeni vysledku',
+				'Right Click' => 'otevrit modal konzoli pro upravu'
 			)
 		);
 

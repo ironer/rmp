@@ -204,7 +204,6 @@ pre.nd-location {
 .nd-td .nd-valid-json, .nd-td .nd-invalid-json, .nd-td .nd-result {
 	font-weight: bold;
 	color: #008;
-	height: 16px;
 	line-height: 16px;
 	width: auto;
 	margin: 4px 0;
@@ -229,7 +228,9 @@ pre.nd-location {
 	white-space: pre-wrap;
 	word-wrap: break-word;
 	border-radius: 5px;
-	padding: 0 0 4px;
+	padding: 0;
+	height: 20px;
+	min-height: 20px;
 }
 .nd-result .nd-rollover {
 	position: relative;
@@ -244,10 +245,12 @@ pre.nd-location {
 .nd-result:hover, .nd-result.nd-hovered, .nd-result.nd-edited {
 	overflow: visible;
 }
+.nd-result.nd-fullheight {
+	height: auto;
+}
 .nd-result:hover .nd-rollover, .nd-result.nd-hovered .nd-rollover, .nd-result.nd-edited .nd-rollover {
 	color: #000;
 	background: #fc8;
-	position: absolute;
 	z-index: 10;
 	box-shadow: 3px 2px 8px #888;
 }

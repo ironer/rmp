@@ -29,6 +29,7 @@ td.dumps = [];
 td.indexes = [];
 td.response = null;
 td.hash2Id = {};
+td.results = [];
 
 td.tdContainer = JAK.mel('div', {id: 'tdContainer'});
 td.tdOuterWrapper = JAK.mel('div', {id: 'tdOuterWrapper'});
@@ -58,6 +59,7 @@ td.consoleConfig = {'x': 600, 'y': 340};
 td.textareaTimeout = null;
 td.consoleHoverTimeout = null;
 td.changes = [];
+td.fullResults = [];
 td.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
 td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'title': ' ', 'showLogRow': true});
 td.hoveredChange = null;
@@ -188,12 +190,12 @@ td.init = function(logId) {
 	JAK.Events.addListener(JAK.gel('tdMenuRestore'), 'click', td, td.reloadPage);
 	td.showDump(logId);
 	JAK.Events.addListener(window, 'resize', td, td.windowResize);
-	JAK.Events.addListener(document, 'keydown', td, td.readKeyDown);
 	JAK.Events.addListener(document, 'contextmenu', td, td.tdStop);
 	JAK.Events.addListener(td.tdInnerWrapper, 'mousedown', td, td.changeVar);
 
 	if (window.addEventListener) window.addEventListener('DOMMouseScroll', td.mouseWheel, false);
 	window.onmousewheel = document.onmousewheel = td.mouseWheel;
+	document.onkeydown = td.readKeyDown;
 
 	if (td.response) td.loadChanges(td.response);
 	td.setTitles(td.control);
@@ -272,61 +274,74 @@ td.findVarEl = function(el, path, add) {
 };
 
 td.mouseWheel = function(e) {
-	var el = JAK.Events.getTarget(e);
-	if (el.tagName.toLowerCase() === 'b') el = el.parentNode;
+	var tar = JAK.Events.getTarget(e);
+	if (tar.tagName.toLowerCase() === 'b') tar = tar.parentNode;
 
-	if (td.titleActive === null && !JAK.DOM.hasClass(el, 'nd-titled')) return true;
+	if (td.titleActive === null && !JAK.DOM.hasClass(tar, 'nd-titled')) return true;
 
 	td.tdStop(e);
 
-	el = td.titleActive || el.tdTitle;
+	tar = td.titleActive || tar.tdTitle;
 
 	var delta = 0;
 
 	if (e.wheelDelta) delta = (e.wheelDelta > 0 ? -1 : 16);
 	else if (e.detail) delta = (e.detail < 0 ? -1 : 16);
 
-	el.scrollTop = Math.max(0, 16 * parseInt((el.scrollTop + delta) / 16));
+	tar.scrollTop = Math.max(0, 16 * parseInt((tar.scrollTop + delta) / 16));
 	return false;
 };
 
 td.changeVar = function(e) {
 	if (!td.local || e.shiftKey || e.ctrlKey || e.metaKey || e.button !== JAK.Browser.mouse.right) return true;
 
-	var el = JAK.Events.getTarget(e);
-	if (el.tagName.toLowerCase() === 'b') el = el.parentNode;
+	var tar = JAK.Events.getTarget(e);
+	if (tar.tagName.toLowerCase() === 'b') tar = tar.parentNode;
 
 	td.tdStop(e);
 
 	if (e.altKey) {
-		if (JAK.DOM.hasClass(el, 'nd-array')) {
-			if (JAK.DOM.hasClass(el, 'nd-top')) td.hideTitle(td.titleActive);
-			td.consoleOpen(el, td.saveArrayAdd);
+		if (JAK.DOM.hasClass(tar, 'nd-array')) {
+			if (JAK.DOM.hasClass(tar, 'nd-top')) td.hideTitle(td.titleActive);
+			td.consoleOpen(tar, td.saveArrayAdd);
 		}
-	} else if (JAK.DOM.hasClass(el, 'nd-key')) {
-		td.consoleOpen(el, td.saveVarChange);
-	} else if (JAK.DOM.hasClass(el, 'nd-top')) {
+	} else if (JAK.DOM.hasClass(tar, 'nd-key')) {
+		td.consoleOpen(tar, td.saveVarChange);
+	} else if (JAK.DOM.hasClass(tar, 'nd-top')) {
 		td.hideTitle(td.titleActive);
-		td.consoleOpen(el, td.saveVarChange);
+		td.consoleOpen(tar, td.saveVarChange);
 	}
 
 	return false;
 };
 
-td.changeAction = function(e) {
+td.switchFullHeight = function(result, force) {
+	force = force || 0;
+	var i = td.fullResults.indexOf(result);
+
+	if (i === -1 && force !== 1) {
+		td.fullResults.push(result);
+		JAK.DOM.addClass(result, 'nd-fullheight');
+	} else if (i !== -1 && force !== 2) {
+		td.fullResults.splice(i, 1);
+		JAK.DOM.removeClass(result, 'nd-fullheight');
+	}
+};
+
+td.changeAction = function(e, el) {
 	if (!td.local || e.ctrlKey || e.metaKey) return true;
 
-	var hashes = [], el = JAK.Events.getTarget(e);
-
-	if (JAK.DOM.hasClass(el, 'nd-indenter') && e.button === JAK.Browser.mouse.left) {
-		if (this.logRow) td.showLog(true, this.logRow);
+	if (el.res && e.button === JAK.Browser.mouse.left) {
+		td.switchFullHeight(el);
 		return true;
 	}
+
+	var hashes = [], tar = JAK.Events.getTarget(e);
 
 	if (e.button === JAK.Browser.mouse.right) {
 		td.tdStop(e);
 
-		if (el.id === 'tdDeleteChange') {
+		if (tar.id === 'tdDeleteChange') {
 			if (!e.altKey) return false;
 			this.deleteMe = true;
 
@@ -341,9 +356,9 @@ td.changeAction = function(e) {
 	} else if (e.button === JAK.Browser.mouse.left && !e.altKey) {
 		JAK.Events.cancelDef(e);
 
-		if (JAK.DOM.hasClass(el, 'nd-ori-var')) return true;
-		if (el.id === 'tdDeleteChange') {
-			el.showLogRow = !el.showLogRow;
+		if (JAK.DOM.hasClass(tar, 'nd-ori-var')) return true;
+		if (tar.id === 'tdDeleteChange') {
+			tar.showLogRow = !tar.showLogRow;
 			td.checkDeleteChange();
 			return true;
 		}
@@ -860,6 +875,7 @@ td.createChange = function(data, container, varEl, logRow) {
 			change.resEl = resEl;
 			resEl.change = change;
 			resEl.res = data.res;
+			td.results.push(resEl);
 			change.listeners.push(JAK.Events.addListener(resEl, 'mouseover', resEl, td.hoverChange));
 			change.listeners.push(JAK.Events.addListener(resEl, 'mouseout', resEl, td.unhoverChange));
 			change.listeners.push(JAK.Events.addListener(resEl, 'mousedown', change, td.changeAction));
@@ -1223,7 +1239,7 @@ td.setTitles = function(container) {
 td.showTitle = function(e) {
 	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null || td.hide[0] === 2) return false;
 
-	var tdTitleRows, tdParents, el = JAK.Events.getTarget(e);
+	var tdTitleRows, tdParents, tar = JAK.Events.getTarget(e);
 
 	td.tdStop(e);
 
@@ -1270,7 +1286,7 @@ td.showTitle = function(e) {
 		td.visibleTitles.push(this.tdTitle);
 		td.keepMaxZIndex(this.tdTitle);
 		td.titleActive = this.tdTitle;
-	} else if (JAK.DOM.hasClass(el, 'nd-titled') && this.tdTitle.style.zIndex < td.zIndexMax) td.keepMaxZIndex(this.tdTitle);
+	} else if (JAK.DOM.hasClass(tar, 'nd-titled') && this.tdTitle.style.zIndex < td.zIndexMax) td.keepMaxZIndex(this.tdTitle);
 
 	if (td.titleActive === null) return false;
 
@@ -1336,9 +1352,9 @@ td.hoverTitle = function(e) {
 	e = e || window.event;
 	if (td.hide[0] === 2 || td.actionData.element !== null) return true;
 
-	var el = JAK.Events.getTarget(e);
+	var tar = JAK.Events.getTarget(e);
 
-	if (parseInt(this.style.zIndex) === td.zIndexMax || JAK.DOM.hasClass(el, 'nd-titled') || td.titleHideTimeout !== null) return true;
+	if (parseInt(this.style.zIndex) === td.zIndexMax || JAK.DOM.hasClass(tar, 'nd-titled') || td.titleHideTimeout !== null) return true;
 
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
@@ -1525,15 +1541,15 @@ td.pinTitle = function(e) {
 		td.titleHideTimeout = null;
 	}
 
-	var el = JAK.Events.getTarget(e);
-	if (el.tagName.toLowerCase() === 'b') el = el.parentNode;
+	var tar = JAK.Events.getTarget(e);
+	if (tar.tagName.toLowerCase() === 'b') tar = tar.parentNode;
 
-	if (!JAK.DOM.hasClass(el, 'nd-titled')) return false;
+	if (!JAK.DOM.hasClass(tar, 'nd-titled')) return false;
 
-	if (td.titleActive && td.titleActive !== el.tdTitle) td.hideTitle();
+	if (td.titleActive && td.titleActive !== tar.tdTitle) td.hideTitle();
 
 	if (td.titleActive === null) {
-		td.titleActive = el.tdTitle;
+		td.titleActive = tar.tdTitle;
 		td.titleActive.pinned = false;
 		JAK.DOM.removeClass(td.titleActive, 'nd-pinned');
 	} else {
@@ -1594,11 +1610,16 @@ td.readConsoleKeyPress = function(e) {
 };
 
 td.readKeyDown = function(e) {
-	var i, tdNext;
+	var i, j, tdNext;
 
 	if (e.shiftKey) {
 		if (e.keyCode === 13 && td.tdConsole) return td.tdConsole.callback();
-	} else if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+	} else if (e.altKey) {
+		if (e.keyCode === 32 && !td.tdConsole && td.results.length) {
+			j = (i = td.results.length) === td.fullResults.length ? 1 : 2;
+			while (i-- > 0) td.switchFullHeight(td.results[i], j);
+		}
+	} else if (!e.ctrlKey && !e.metaKey) {
 		if (e.keyCode === 38 && !td.tdConsole && td.logRowActiveId > 1) {
 			tdNext = td.logRowsSelected() ? td.getPreviousLogRow() : td.logRowActiveId - 1;
 			if (tdNext === td.logRowActiveId) return true;

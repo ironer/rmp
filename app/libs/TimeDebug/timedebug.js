@@ -1331,6 +1331,7 @@ td.titleAction = function(e) {
 			else td.startTitleDrag(e, this);
 		} else if (!e.shiftKey) {
 			this.resized = false;
+			this.data.width = this.data.height = null;
 			td.titleAutosize(this);
 		} else return true;
 	} else if (e.shiftKey) return true;
@@ -1412,61 +1413,6 @@ td.endTitleAction = function() {
 	}
 };
 
-td.getTitlesData = function() {
-	var i, j, title, retArray = [], titleData;
-	for (i = 0, j = td.visibleTitles.length; i < j; ++i) {
-		title = td.visibleTitles[i];
-		titleData = {'path': td.getTitlePath(title), 'data': JSON.stringify(title.data)};
-		retArray.push(titleData);
-	}
-	return retArray;
-};
-
-td.getTitlePath = function(title) {
-	var revPath = [], parent = title.parentNode, titleType = parseInt(title.getAttribute('data-tt')), key;
-
-	if (titleType > 4) {
-		revPath.push(titleType);
-	} else if (titleType === 1) {
-		if (JAK.DOM.hasClass(parent, 'nd-ori-var') && (parent = parent.parentNode)) revPath.push('0');
-		else if (JAK.DOM.hasClass(parent, 'nd-top')) {
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {}
-			revPath.push('9');
-		} else {
-			revPath.push(title.getAttribute('data-pk'));
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {
-				if (key = parent.getAttribute('data-pk')) revPath.push(key);
-			}
-		}
-		revPath.push(parent.data.add ? 1 : 0, parent.data.path, 1);
-	} else if (titleType === 2) {
-		revPath.push(title.getAttribute('data-pk'));
-		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-log')) {
-			if (key = parent.getAttribute('data-pk')) revPath.push(key);
-		}
-		revPath.push(parent.hash, 2);
-	} else if (titleType === 3) {
-		revPath.push(title.getAttribute('data-pk'));
-		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-view-dump')) {
-			if (key = (parent.getAttribute('data-pk') || parent.getAttribute('data-tdindex'))) revPath.push(key);
-		}
-		revPath.push(parent.logRow.hash, 3);
-	} else if (titleType === 4) {
-		if (JAK.DOM.hasClass(parent, 'nd-top')) {
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {}
-			revPath.push('9');
-		} else {
-			revPath.push(title.getAttribute('data-pk'));
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {
-				if (key = parent.getAttribute('data-pk')) revPath.push(key);
-			}
-		}
-		revPath.push(parent.hash, 4);
-	}
-
-	return(revPath.reverse().join('§'));
-};
-
 td.tdStop = function(e) {
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
@@ -1530,6 +1476,7 @@ td.hideTitle = function(el) {
 		for (index = el.activeChilds.length; index-- > 0;) td.hideTitle(el.activeChilds[index]);
 	}
 	JAK.DOM.setStyle(el, {'display': 'none', 'zIndex': 99});
+	el.data.left = el.data.top = null;
 
 	return true;
 };
@@ -1613,7 +1560,7 @@ td.readConsoleKeyPress = function(e) {
 };
 
 td.readKeyDown = function(e) {
-	var i, j, tdNext;
+	var i, j, tdNext, title;
 
 	if (e.shiftKey) {
 		if (e.keyCode === 13 && td.tdConsole) return td.tdConsole.callback();
@@ -1656,10 +1603,11 @@ td.readKeyDown = function(e) {
 				td.titleHideTimeout = null;
 			}
 			for (i = td.visibleTitles.length; i-- > 0;) {
-				td.visibleTitles[i].style.display = 'none';
-				td.visibleTitles[i].pinned = false;
-				JAK.DOM.removeClass(td.visibleTitles[i], 'nd-pinned');
-				td.visibleTitles[i].resized = false;
+				title = td.visibleTitles[i];
+				JAK.DOM.setStyle(title, {'display': 'none', 'zIndex': 99});
+				JAK.DOM.removeClass(title, 'nd-pinned');
+				title.pinned = title.resized = false;
+				title.data.left = title.data.top = title.data.width = title.data.height = null;
 			}
 			td.visibleTitles.length = 0;
 			td.zIndexMax = 100;
@@ -1743,6 +1691,75 @@ td.reloadPage = function(e) {
 
 	window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
 	return false;
+};
+
+td.getTitlePath = function(title) {
+	var revPath = [], parent = title.parentNode, titleType = parseInt(title.getAttribute('data-tt')), key;
+
+	if (titleType > 4) {
+		revPath.push(titleType);
+	} else if (titleType === 1) {
+		if (JAK.DOM.hasClass(parent, 'nd-ori-var') && (parent = parent.parentNode)) revPath.push('0');
+		else if (JAK.DOM.hasClass(parent, 'nd-top')) {
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {}
+			revPath.push('9');
+		} else {
+			revPath.push(title.getAttribute('data-pk'));
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {
+				if (key = parent.getAttribute('data-pk')) revPath.push(key);
+			}
+		}
+		revPath.push(parent.data.add ? 1 : 0, parent.data.path, 1);
+	} else if (titleType === 2) {
+		revPath.push(title.getAttribute('data-pk'));
+		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-log')) {
+			if (key = parent.getAttribute('data-pk')) revPath.push(key);
+		}
+		revPath.push(parent.hash, 2);
+	} else if (titleType === 3) {
+		revPath.push(title.getAttribute('data-pk'));
+		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-view-dump')) {
+			if (key = (parent.getAttribute('data-pk') || parent.getAttribute('data-tdindex'))) revPath.push(key);
+		}
+		revPath.push(parent.logRow.hash, 3);
+	} else if (titleType === 4) {
+		if (JAK.DOM.hasClass(parent, 'nd-top')) {
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {}
+			revPath.push('9');
+		} else {
+			revPath.push(title.getAttribute('data-pk'));
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {
+				if (key = parent.getAttribute('data-pk')) revPath.push(key);
+			}
+		}
+		revPath.push(parent.hash, 4);
+	}
+
+	return(revPath.reverse().join('§'));
+};
+
+td.getTitlesData = function() {
+	var i, j, retArray = [];
+	for (i = 0, j = td.visibleTitles.length; i < j; ++i) {
+		retArray.push({
+			'path': td.getTitlePath(td.visibleTitles[i]),
+			'data': JSON.stringify(td.visibleTitles[i].data),
+			'zIndex': parseInt(td.visibleTitles[i].style.zIndex)
+		});
+	}
+	return retArray;
+};
+
+td.getChangesData = function() {
+	var i, j, retArray = [];
+	for (i = 0, j = td.visibleTitles.length; i < j; ++i) {
+		retArray.push({
+			'path': td.getTitlePath(td.visibleTitles[i]),
+			'data': JSON.stringify(td.visibleTitles[i].data),
+			'zIndex': parseInt(td.visibleTitles[i].style.zIndex)
+		});
+	}
+	return retArray;
 };
 
 td.sendChanges = function(e) {

@@ -4,6 +4,8 @@
  * @author: Stefan Fiedler
  */
 
+// TODO: predelat .add u change na changeType
+// TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -38,6 +40,7 @@ td.tdFullWidth = false;
 td.tdWidth = 400;
 
 // srollleft a scrolltop u logcontainer and tdcontainer a velikost tdwrapperu
+// automaticke prepinani logu pri najeti na change v change listu
 
 td.control = JAK.cel('div', 'nd-control');
 td.controlSpaceX = 0;

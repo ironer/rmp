@@ -29,7 +29,6 @@ td.dumps = [];
 td.indexes = [];
 td.response = null;
 td.hash2Id = {};
-td.results = [];
 
 td.tdContainer = JAK.mel('div', {id: 'tdContainer'});
 td.tdOuterWrapper = JAK.mel('div', {id: 'tdOuterWrapper'});
@@ -37,6 +36,8 @@ td.tdInnerWrapper = JAK.mel('div', {id: 'tdInnerWrapper'});
 td.tdView = JAK.mel('pre', {id: 'tdView'});
 td.tdFullWidth = false;
 td.tdWidth = 400;
+
+// srollleft a scrolltop u logcontainer and tdcontainer a velikost tdwrapperu
 
 td.control = JAK.cel('div', 'nd-control');
 td.controlSpaceX = 0;
@@ -59,6 +60,7 @@ td.consoleConfig = {'x': 600, 'y': 340};
 td.textareaTimeout = null;
 td.consoleHoverTimeout = null;
 td.changes = [];
+td.results = [];
 td.fullResults = [];
 td.tdChangeList = JAK.mel('div', {'id': 'tdChangeList'});
 td.deleteChange = JAK.mel('div', {'id': 'tdDeleteChange', 'innerHTML': 'X', 'title': ' ', 'showLogRow': true});
@@ -1739,38 +1741,41 @@ td.getTitlePath = function(title) {
 };
 
 td.getTitlesData = function() {
-	var i, j, retArray = [];
+	var i, j, titles = [], title;
 	for (i = 0, j = td.visibleTitles.length; i < j; ++i) {
-		retArray.push({
-			'path': td.getTitlePath(td.visibleTitles[i]),
-			'data': JSON.stringify(td.visibleTitles[i].data),
-			'zIndex': parseInt(td.visibleTitles[i].style.zIndex)
-		});
+		if ((title = td.visibleTitles[i]).pinned) {
+			titles.push({
+				'path': td.getTitlePath(title),
+				'data': JSON.stringify(title.data),
+				'css': {
+					'scrollTop': parseInt(title.style.scrollTop),
+					'zIndex': parseInt(title.style.zIndex)
+				}
+			});
+		}
 	}
-	return retArray;
+	return titles;
 };
 
 td.getChangesData = function() {
-	var i, j, retArray = [];
-	for (i = 0, j = td.visibleTitles.length; i < j; ++i) {
-		retArray.push({
-			'path': td.getTitlePath(td.visibleTitles[i]),
-			'data': JSON.stringify(td.visibleTitles[i].data),
-			'zIndex': parseInt(td.visibleTitles[i].style.zIndex)
-		});
+	var i, j, changes = [], results = [], change;
+	for (i = 0, j = td.changes.length; i < j; ++i) {
+		change = td.changes[i].data;
+		changes.push([change.path, change.add === 2 ? JSON.stringify(change.value) : change.value, change.add]);
+		results.push(change.resEl && change.resEl.fullHeight ? 1 : 0);
 	}
-	return retArray;
+	return {'changes': changes, 'results': results};
+};
+
+td.getTdData = function() {
+
 };
 
 td.sendChanges = function(e) {
-	var i, j, len = td.changes.length, change, changesArray = [], changesBase62, newLoc, url;
-	if (!len) return false;
+	var i, j, changesArray, changesBase62, newLoc, url;
+	if (!(changesArray = td.getChangesData())['changes'].length) return false;
 
-	for (i = 0; i < len; ++i) {
-		change = td.changes[i].data;
-		changesArray.push([change.path, change.add === 2 ? JSON.stringify(change.value) : change.value, change.add]);
-	}
-	changesBase62 = b62s.base8To62(b62s.compress(JSON.stringify(changesArray)));
+	changesBase62 = b62s.base8To62(b62s.compress(JSON.stringify(changesArray['changes'])));
 
 	newLoc = {
 		'url': window.location.protocol + '//' + window.location.host + window.location.pathname,
@@ -1927,7 +1932,8 @@ td.wrapSelection = function(e, el, key) {
 	var swap = td.keyChanges[key];
 	var retVal = el.value.slice(0, start) + swap[0];
 
-	if (end - start > 1 && (key === "'" || key === '"') && ((el.value[start] === '"' && el.value[end - 1] === '"') || (el.value[start] === "'" && el.value[end - 1] === "'"))) {
+	if (end - start > 1 && (key === "'" || key === '"')
+			&& ((el.value[start] === '"' && el.value[end - 1] === '"') || (el.value[start] === "'" && el.value[end - 1] === "'"))) {
 		td.areaWrite(el, retVal + el.value.slice(start + 1, end - 1) + swap[1] + el.value.slice(end), start + 1, end - 1);
 	} else td.areaWrite(el, retVal + el.value.slice(start, end) + swap[1] + el.value.slice(end), start + 1, end + 1);
 

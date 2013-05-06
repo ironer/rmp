@@ -4,7 +4,10 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: predelat .add u change na changeType
+
+// TODO: predelat type u change na step
+// TODO: predelat .add u change na type
+// TODO: posilat resFull s changes - nepridavat do changes data
 // TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole

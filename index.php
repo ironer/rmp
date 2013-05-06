@@ -27,8 +27,8 @@ App::dump($a, $b);
 
 if (DEBUG) {
 	App::lg('Zobrazeni debuggeru', $app);
-//	$response = TimeDebug::getResponse();
-//	App::dump($response);
+	$response = TimeDebug::getResponse();
+	App::dump($response);
 
 	echo '<hr>Generovani odpovedi: <b>' . TimeDebug::runtime() . '</b>'
 			. ' / Max. pamet: <b>' . TimeDebug::maxMem() . '</b> / Max. alokovana: <b>' . TimeDebug::maxMem(TRUE) . '</b>'

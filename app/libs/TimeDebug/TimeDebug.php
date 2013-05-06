@@ -52,11 +52,11 @@ class TimeDebug {
 	private static $timeDebug = array();
 	private static $timeDebugMD5 = array();
 
+	public static $request = array();
 	private static $cache = '';
 	private static $get = array();
 	private static $post = array();
 	private static $maxUrlLength = 0;
-	private static $request = array();
 	private static $varCounter = 0;
 
 	public static $resources = array('stream' => 'stream_get_meta_data', 'stream-context' => 'stream_context_get_options', 'curl' => 'curl_getinfo');

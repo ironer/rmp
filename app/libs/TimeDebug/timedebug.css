@@ -40,7 +40,7 @@ pre.nd-location {
 .nd-string b {
 	color: #f34;
 }
-.nd-titled:hover {
+.nd-td .nd-titled:hover {
 	background: #9f3;
 	border-radius: 4px;
 }
@@ -248,7 +248,7 @@ pre.nd-location {
 .nd-result.nd-fullheight {
 	height: auto;
 }
-.nd-result:hover .nd-rollover, .nd-result.nd-hovered .nd-rollover, .nd-result.nd-edited .nd-rollover {
+.nd-td .nd-result:hover .nd-rollover, .nd-result.nd-hovered .nd-rollover, .nd-result.nd-edited .nd-rollover {
 	color: #000;
 	background: #fc8;
 	z-index: 10;

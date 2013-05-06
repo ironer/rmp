@@ -1164,60 +1164,6 @@ td.showDump = function(id) {
 	return true;
 };
 
-td.getTitlesData = function(titles) {
-	var i, j, retArray = [], data;
-	for (i = 0, j = titles.length; i < j; ++i) {
-		data = {'path': td.getTitlePath(titles[i])};
-		retArray.push(data);
-	}
-	return retArray;
-};
-
-td.getTitlePath = function(title) {
-	var revPath = [], parent = title.parentNode, titleType = parseInt(title.getAttribute('data-tt')), key;
-
-	if (titleType > 4) {
-		revPath.push(titleType);
-	} else if (titleType === 1) {
-		if (JAK.DOM.hasClass(parent, 'nd-ori-var') && (parent = parent.parentNode)) revPath.push('0');
-		else if (JAK.DOM.hasClass(parent, 'nd-top')) {
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {}
-			revPath.push('9');
-		} else {
-			revPath.push(title.getAttribute('data-pk'));
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {
-				if (key = parent.getAttribute('data-pk')) revPath.push(key);
-			}
-		}
-		revPath.push(parent.data.add ? 1 : 0, parent.data.path, 1);
-	} else if (titleType === 2) {
-		revPath.push(title.getAttribute('data-pk'));
-		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-log')) {
-			if (key = parent.getAttribute('data-pk')) revPath.push(key);
-		}
-		revPath.push(parent.hash, 2);
-	} else if (titleType === 3) {
-		revPath.push(title.getAttribute('data-pk'));
-		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-view-dump')) {
-			if (key = (parent.getAttribute('data-pk') || parent.getAttribute('data-tdindex'))) revPath.push(key);
-		}
-		revPath.push(parent.logRow.hash, 3);
-	} else if (titleType === 4) {
-		if (JAK.DOM.hasClass(parent, 'nd-top')) {
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {}
-			revPath.push('9');
-		} else {
-			revPath.push(title.getAttribute('data-pk'));
-			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {
-				if (key = parent.getAttribute('data-pk')) revPath.push(key);
-			}
-		}
-		revPath.push(parent.hash, 4);
-	}
-
-	return(revPath.reverse().join('§'));
-};
-
 td.setTitles = function(container) {
 	var titleSpan, titleStrong, titleStrongs;
 
@@ -1227,6 +1173,7 @@ td.setTitles = function(container) {
 			titleSpan = titleStrong.parentNode.parentNode;
 			titleSpan.tdTitle = titleStrong.parentNode;
 			titleSpan.tdTitle.tdInner = titleStrong;
+			titleSpan.tdTitle.data = {'left': null, 'top': null, 'width': null, 'height': null};
 
 			JAK.Events.addListener(titleSpan, 'mousemove', titleSpan, td.showTitle);
 			JAK.Events.addListener(titleSpan, 'mouseout', titleSpan, td.hideTimer);
@@ -1291,8 +1238,8 @@ td.showTitle = function(e) {
 
 	if (td.titleActive === null) return false;
 
-	td.titleActive.style.left = (td.titleActive.tdLeft = (e.pageX || e.clientX) + 20) + 'px';
-	td.titleActive.style.top = (td.titleActive.tdTop = (e.pageY || e.clientY) - 5) + 'px';
+	td.titleActive.style.left = (td.titleActive.data.left = (e.pageX || e.clientX) + 20) + 'px';
+	td.titleActive.style.top = (td.titleActive.data.top = (e.pageY || e.clientY) - 5) + 'px';
 
 	td.titleAutosize();
 
@@ -1417,8 +1364,8 @@ td.titleResizing = function(e) {
 	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
-		el.userWidth = el.tdWidth = Math.max(Math.min(td.viewSize.width - el.tdLeft - 20, td.actionData.width + e.screenX - td.actionData.startX), 16);
-		el.userHeight = el.tdHeight = 16 * parseInt(Math.max(Math.min(td.viewSize.height - el.tdTop - 35, td.actionData.height + e.screenY - td.actionData.startY), 16) / 16);
+		el.data.width = el.tdWidth = Math.max(Math.min(td.viewSize.width - el.data.left - 20, td.actionData.width + e.screenX - td.actionData.startX), 16);
+		el.data.height = el.tdHeight = 16 * parseInt(Math.max(Math.min(td.viewSize.height - el.data.top - 35, td.actionData.height + e.screenY - td.actionData.startY), 16) / 16);
 		JAK.DOM.setStyle(el, {'width': el.tdWidth + 'px', 'height': el.tdHeight + 'px'});
 	} else {
 		td.endTitleAction();
@@ -1428,8 +1375,8 @@ td.titleResizing = function(e) {
 td.startTitleDrag = function(e, el) {
 	td.actionData.startX = e.screenX;
 	td.actionData.startY = e.screenY;
-	td.actionData.offsetX = el.tdLeft;
-	td.actionData.offsetY = el.tdTop;
+	td.actionData.offsetX = el.data.left;
+	td.actionData.offsetY = el.data.top;
 	td.actionData.element = el;
 
 	td.actionData.listeners.push(
@@ -1446,9 +1393,9 @@ td.titleDragging = function(e) {
 	var el = td.actionData.element;
 
 	if (e.button === JAK.Browser.mouse.left) {
-		el.tdLeft = Math.max(Math.min(td.viewSize.width - 36, td.actionData.offsetX + e.screenX - td.actionData.startX), 0);
-		el.tdTop = Math.max(Math.min(td.viewSize.height - 51, td.actionData.offsetY + e.screenY - td.actionData.startY), 0);
-		JAK.DOM.setStyle(el, {'left': el.tdLeft + 'px', 'top': el.tdTop + 'px'});
+		el.data.left = Math.max(Math.min(td.viewSize.width - 36, td.actionData.offsetX + e.screenX - td.actionData.startX), 0);
+		el.data.top = Math.max(Math.min(td.viewSize.height - 51, td.actionData.offsetY + e.screenY - td.actionData.startY), 0);
+		JAK.DOM.setStyle(el, {'left': el.data.left + 'px', 'top': el.data.top + 'px'});
 		td.titleAutosize(el);
 	} else {
 		td.endTitleAction();
@@ -1465,6 +1412,61 @@ td.endTitleAction = function() {
 	}
 };
 
+td.getTitlesData = function() {
+	var i, j, title, retArray = [], titleData;
+	for (i = 0, j = td.visibleTitles.length; i < j; ++i) {
+		title = td.visibleTitles[i];
+		titleData = {'path': td.getTitlePath(title), 'data': JSON.stringify(title.data)};
+		retArray.push(titleData);
+	}
+	return retArray;
+};
+
+td.getTitlePath = function(title) {
+	var revPath = [], parent = title.parentNode, titleType = parseInt(title.getAttribute('data-tt')), key;
+
+	if (titleType > 4) {
+		revPath.push(titleType);
+	} else if (titleType === 1) {
+		if (JAK.DOM.hasClass(parent, 'nd-ori-var') && (parent = parent.parentNode)) revPath.push('0');
+		else if (JAK.DOM.hasClass(parent, 'nd-top')) {
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {}
+			revPath.push('9');
+		} else {
+			revPath.push(title.getAttribute('data-pk'));
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-change')) {
+				if (key = parent.getAttribute('data-pk')) revPath.push(key);
+			}
+		}
+		revPath.push(parent.data.add ? 1 : 0, parent.data.path, 1);
+	} else if (titleType === 2) {
+		revPath.push(title.getAttribute('data-pk'));
+		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-log')) {
+			if (key = parent.getAttribute('data-pk')) revPath.push(key);
+		}
+		revPath.push(parent.hash, 2);
+	} else if (titleType === 3) {
+		revPath.push(title.getAttribute('data-pk'));
+		while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-view-dump')) {
+			if (key = (parent.getAttribute('data-pk') || parent.getAttribute('data-tdindex'))) revPath.push(key);
+		}
+		revPath.push(parent.logRow.hash, 3);
+	} else if (titleType === 4) {
+		if (JAK.DOM.hasClass(parent, 'nd-top')) {
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {}
+			revPath.push('9');
+		} else {
+			revPath.push(title.getAttribute('data-pk'));
+			while ((parent = parent.parentNode) && !JAK.DOM.hasClass(parent, 'nd-dump')) {
+				if (key = parent.getAttribute('data-pk')) revPath.push(key);
+			}
+		}
+		revPath.push(parent.hash, 4);
+	}
+
+	return(revPath.reverse().join('§'));
+};
+
 td.tdStop = function(e) {
 	JAK.Events.cancelDef(e);
 	JAK.Events.stopEvent(e);
@@ -1476,11 +1478,11 @@ td.titleAutosize = function(el) {
 
 	var tdCheckWidthDif = false;
 	var tdWidthDif;
-	td.spaceX = Math.max(td.viewSize.width - el.tdLeft - 20, 0);
-	td.spaceY = 16 * parseInt(Math.max(td.viewSize.height - el.tdTop - 35, 0) / 16);
+	td.spaceX = Math.max(td.viewSize.width - el.data.left - 20, 0);
+	td.spaceY = 16 * parseInt(Math.max(td.viewSize.height - el.data.top - 35, 0) / 16);
 
 	if (el.resized) {
-		el.style.width = (td.spaceX < el.userWidth ? el.tdWidth = td.spaceX : el.tdWidth = el.userWidth) + 'px';
+		el.style.width = (td.spaceX < el.data.width ? el.tdWidth = td.spaceX : el.tdWidth = el.data.width) + 'px';
 	} else if (td.spaceX < el.oriWidth) {
 		el.style.width = (el.tdWidth = td.spaceX) + 'px';
 	} else {
@@ -1489,7 +1491,7 @@ td.titleAutosize = function(el) {
 	}
 
 	if (el.resized) {
-		el.style.height = (td.spaceY < el.userHeight ? el.tdHeight = td.spaceY : el.tdHeight = el.userHeight) + 'px';
+		el.style.height = (td.spaceY < el.data.height ? el.tdHeight = td.spaceY : el.tdHeight = el.data.height) + 'px';
 	} else if (td.spaceY < (el.changesHeight || 0) + el.tdInner.clientHeight || td.spaceY < el.oriHeight) {
 		el.style.height = (el.tdHeight = td.spaceY) + 'px';
 		if (tdCheckWidthDif && (tdWidthDif = Math.max(el.oriWidth - el.clientWidth, 0))) {

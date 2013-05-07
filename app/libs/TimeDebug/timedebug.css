@@ -363,6 +363,11 @@ pre.nd-location {
 .nd-private {
 	color: #00e;
 }
+.nd-unset {
+	color: #fdc;
+	background: #900;
+	border-radius: 6px;
+}
 .nd-control a {
 	text-decoration: none;
 }

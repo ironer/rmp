@@ -4,9 +4,9 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: predelat .add u change na type
-// TODO: posilat resFull s changes - nepridavat do changes data
+// TODO: odstranit titulek pro change type 2 a zabranit editaci promenne
 // TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
+// TODO: posilat resFull s changes - nepridavat do changes data
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -310,6 +310,8 @@ td.changeVar = function(e) {
 		if (JAK.DOM.hasClass(tar, 'nd-array')) {
 			if (JAK.DOM.hasClass(tar, 'nd-top')) td.hideTitle(td.titleActive);
 			td.consoleOpen(tar, td.saveArrayAdd);
+		} else if (JAK.DOM.hasClass(tar, 'nd-key')) {
+			td.saveVarChange(2, tar);
 		}
 	} else if (JAK.DOM.hasClass(tar, 'nd-key')) {
 		td.consoleOpen(tar, td.saveVarChange);
@@ -514,7 +516,7 @@ td.printPath = function(change) {
 	else retVal += !close || key == parseInt(key) ? retKey + close : "'" + retKey + "'" + close;
 
 	if (change.data.type % 2) retVal += change.valid && typeof change.data.value === 'object' ? ' +=' : '[] =';
-	else if (change.data.type) retVal += ' un$et';
+	else if (change.data.type) retVal += ' <b class="nd-unset">( unset )</b>';
 	else retVal += ' =';
 
 	return retVal;
@@ -551,9 +553,9 @@ td.updateChangeList = function(el) {
 		}
 
 		change.innerHTML = '<span' + (typeof change.data.res !== 'undefined' ? ' class="nd-res nd-restype' + change.data.res + '">' : '>')
-				+ '[' + change.runtime + ']</span> ' + td.printPath(change) + ' <span class="nd-'
+				+ '[' + change.runtime + ']</span> ' + td.printPath(change) + (change.data.type !== 2 ? ' <span class="nd-'
 				+ (change.valid ? 'valid' : 'invalid') +'-json' + (change.formated ? ' nd-formated' : '') + '">'
-				+ JSON.stringify(change.data.value) + '</span>';
+				+ JSON.stringify(change.data.value) + '</span>' : '');
 
 		if (change.data.oriVar) { change.appendChild(change.data.oriVar); change.style.paddingRight = '16px'; }
 		else change.removeAttribute('style');
@@ -732,31 +734,12 @@ td.findNearestChar = function(text, chars, index, rev, quotes) {
 	return false;
 };
 
-td.saveVarChange = function(type) {
-	type = type || 0;
-	var varEl = td.tdConsole.varEl;
-	var el = varEl;
+td.getVarData = function(el) {
+	var revPath = [];
 	var key = el.getAttribute('data-pk') || '8';
 	var privateVar = key[0] === '7';
-	var i = -1;
-	var change;
-	var revPath = [];
 	var logRow = false;
-
-	var areaVal = td.tdConsole.area.value;
-	var value, valid, formated, s = td.parseJson(areaVal);
-
-	if (s.status) {
-		value = s.json;
-		valid = s.valid;
-		formated = valid && (areaVal === td.formatJson(value));
-		if (type % 2) type = valid && JSON.stringify(value)[0] === '{' ? 3 : 1;
-	} else {
-		value = areaVal;
-		formated = valid = false;
-	}
-
-	td.consoleClose();
+	var i = -1;
 
 	if (JAK.DOM.hasClass(el, 'nd-top')) {
 		revPath.push('9' + el.className.split(' ')[0].split('-')[1]);
@@ -786,9 +769,38 @@ td.saveVarChange = function(type) {
 		}
 	}
 
+	return {'path': revPath.reverse().join(','), 'container': el, 'logRow': logRow};
+};
+
+td.saveVarChange = function(type, varEl) {
+	type = type || 0;
+	varEl = varEl || td.tdConsole.varEl;
+	var varData = td.getVarData(varEl);
+	if (varData === false) return false;
+
+	var change, value = '', valid = false, formated = false, areaVal = '', update = true;
+
+	if (type !== 2) {
+		areaVal = td.tdConsole.area.value;
+		var parsedJson = td.parseJson(areaVal);
+
+		if (parsedJson.status) {
+			value = parsedJson.json;
+			valid = parsedJson.valid;
+			formated = valid && (areaVal === td.formatJson(value));
+			if (type % 2) type = valid && JSON.stringify(value)[0] === '{' ? 3 : 1;
+		} else {
+			value = areaVal;
+			formated = valid = false;
+		}
+
+		td.consoleClose();
+	}
+
 	if (change = varEl.change) {
-		if (!(change.valid === valid && change.formated === formated && change.data.type === type &&
-				JSON.stringify(change.data.value) === JSON.stringify(value))) {
+		if (change.valid === valid && change.formated === formated && change.data.type === type &&
+				JSON.stringify(change.data.value) === JSON.stringify(value)) update = false;
+		else {
 			change.valid = valid;
 			change.formated = formated;
 			change.data.type = type;
@@ -796,12 +808,12 @@ td.saveVarChange = function(type) {
 		}
 	} else {
 		varEl = td.duplicateNode(varEl);
-		change = td.createChange({'path': revPath.reverse().join(','), 'value': value, 'type': type}, el, varEl, logRow);
+		change = td.createChange({'path': varData['path'], 'value': value, 'type': type}, varData['container'], varEl, varData['logRow']);
 		change.valid = valid;
 		change.formated = formated;
 	}
 
-	if (varEl.title !== areaVal) {
+	if (update || varEl.title !== areaVal) {
 		varEl.title = areaVal;
 		td.updateChangeList(change);
 	}

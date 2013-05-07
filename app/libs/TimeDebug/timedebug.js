@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: po uprave formatovani zkontrolovat type
 // TODO: predelat .add u change na type
 // TODO: posilat resFull s changes - nepridavat do changes data
 // TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
@@ -371,20 +370,22 @@ td.changeAction = function(e, el) {
 			return true;
 		}
 		if (e.shiftKey) {
-			if (this.valid) {
-				if (!this.formated) {
-					var formated = td.formatJson(this.data.value);
-					if (formated === false) return this.formated = false;
-					this.varEl.title = this.title = formated;
-					this.formated = true;
-					td.updateChangeList(this);
-				}
-			} else {
-				this.varEl.title = this.title = JSON.stringify(this.data.value);
-				this.valid = true;
-				this.formated = (this.title === td.formatJson(this.data.value));
-				td.updateChangeList(this);
+			var jsonString, formatedJson, update = false;
+			if (!this.valid) {
+				this.varEl.title = this.title = jsonString = JSON.stringify(this.data.value);
+				this.valid = update = true;
 			}
+			if (!this.formated) {
+				if ((formatedJson = td.formatJson(this.data.value)) === false) {
+					this.formated = false;
+				} else {
+					this.varEl.title = this.title = formatedJson;
+					this.formated = update = true;
+				}
+			}
+			if (!update) return true;
+			if (this.data.type % 2) this.data.type = this.valid && jsonString[0] === '{' ? 3 : 1;
+			td.updateChangeList(this);
 			return true;
 		}
 		if (this.logRow) {

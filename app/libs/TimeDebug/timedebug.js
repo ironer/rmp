@@ -5,7 +5,6 @@
  */
 
 
-// TODO: predelat type u change na step
 // TODO: predelat .add u change na type
 // TODO: posilat resFull s changes - nepridavat do changes data
 // TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
@@ -252,10 +251,10 @@ td.findVarEl = function(el, path, add) {
 	var i = 0, j, child;
 
 	if (path[0][0] === '#' || path[0][0] === '*') path[0] = path[0].slice(1);
-	var type = parseInt(path[0][0]);
+	var step = parseInt(path[0][0]);
 
-	if (type === 9) return JAK.DOM.getElementsByClass('nd-top', el)[0] || null;
-	else if (type >= 7) {
+	if (step === 9) return JAK.DOM.getElementsByClass('nd-top', el)[0] || null;
+	else if (step >= 7) {
 		if (add) {
 			for (j = el.childNodes.length; i < j; ++i) {
 				child = el.childNodes[i];

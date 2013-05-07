@@ -91,13 +91,13 @@ class TimeDebug {
 				$key = substr($key, 1);
 			}
 
-			$retKey['type'] = intval($key[0]);
-			if ($retKey['type'] < 1) {
+			$retKey['step'] = intval($key[0]);
+			if ($retKey['step'] < 1) {
 				self::$request[$id]['error'] = "Krok cesty ma chybny typ klice: $key[1].";
 				return FALSE;
 			}
 
-			if ($retKey['type'] !== 2) {
+			if ($retKey['step'] !== 2) {
 				$retKey['key'] = substr($key, 1);
 				if ($retKey['key'] === FALSE ) {
 					self::$request[$id]['error'] = "Krok cesty ma prazdny nazev property nebo klic ve varPath.";
@@ -434,7 +434,7 @@ class TimeDebug {
 		if (empty($varPath) || !is_array($varPath)) throw new Exception('Neni nastavena neprazdna cesta typu pole (nalezen typ '
 				. gettype($varPath) . ') pro zmenu v promenne typu ' . gettype($var), 7);
 
-		$changeType = $varPath[0]['type'];
+		$step = $varPath[0]['step'];
 		$priv = isset($varPath[0]['priv']) ? $varPath[0]['priv'] : 0;
 		$retText = '';
 
@@ -444,7 +444,7 @@ class TimeDebug {
 			foreach ($fields as $k => &$v) $varArray[$k[0] === "\x00" ? substr($k, strrpos($k, "\x00") + 1) : $k] = $v;
 		}
 
-		if ($changeType >= 7)  {
+		if ($step >= 7)  {
 			if ($add && !is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole pro pridani prvku.', 9);
 			$retText .= '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result ';
 
@@ -471,8 +471,8 @@ class TimeDebug {
 
 			$retText .= '<div class="nd-rollover"><div class="nd-indenter">';
 
-			if ($changeType === 7) $retText .= ' Chranena property "' . $varPath[0]['key'] . '":';
-			elseif ($changeType === 8) $retText .= ' Klic/property "' . $varPath[0]['key'] . '":';
+			if ($step === 7) $retText .= ' Chranena property "' . $varPath[0]['key'] . '":';
+			elseif ($step === 8) $retText .= ' Klic/property "' . $varPath[0]['key'] . '":';
 
 			if ($add) {
 				if ($overwrite) {
@@ -495,14 +495,14 @@ class TimeDebug {
 
 			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_TYPE => 1, self::DUMP_ID => TRUE));
 			$retVal[2] = $retText . '</div></div></pre>';
-		} elseif ($changeType === 2 || $changeType === 4 || $changeType === 6) {
+		} elseif ($step === 2 || $step === 4 || $step === 6) {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);
 			$index = $varPath[1]['key'];
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index, 9);
 			$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name, $add, $hash);
-		} elseif ($changeType === 1 || $changeType === 3 || $changeType === 5) {
+		} elseif ($step === 1 || $step === 3 || $step === 5) {
 			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.', 9);
-			if ($changeType === 1) {
+			if ($step === 1) {
 				$objClass = $varPath[0]['key'];
 				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.', 9);
 			} else $objClass = get_class($var);
@@ -520,7 +520,7 @@ class TimeDebug {
 				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 9);
 				$retVal = self::applyChange($var->$property, array_slice($varPath, 1), $value, $name, $add, $hash);
 			}
-		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $changeType . '", ocekavano cislo 0 az 9.', 8);
+		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $step . '", ocekavano cislo 0 az 9.', 8);
 		return $retVal;
 	}
 

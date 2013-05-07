@@ -1457,8 +1457,13 @@ td.titleAutosize = function(el) {
 	return true;
 };
 
-td.hideTimer = function() {
-	if (td.titleHideTimeout) window.clearTimeout(td.titleHideTimeout);
+td.hideTimer = function(e) {
+	td.tdStop(e);
+
+	if (td.titleHideTimeout) {
+		window.clearTimeout(td.titleHideTimeout);
+		td.titleHideTimeout = null;
+	}
 	if (!this.tdTitle.pinned && td.actionData.element === null) td.titleHideTimeout = window.setTimeout(td.hideTitle, 300);
 };
 

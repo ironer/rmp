@@ -462,7 +462,7 @@ class TimeDebug {
 					}
 				}
 				if ($overwrite) $retText .= 'nd-array-overwrite">';
-				else $retText .= 'nd-array-type">';
+				else $retText .= 'nd-array-add">';
 			} elseif($type) {
 
 			} elseif($var !== $value) {

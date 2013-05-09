@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: odstranit titulek pro change type 2 a zabranit editaci promenne
+// TODO: udelat prepinani editace a smazani klice
 // TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
 // TODO: posilat resFull s changes - nepridavat do changes data
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
@@ -311,6 +311,7 @@ td.changeVar = function(e) {
 			if (JAK.DOM.hasClass(tar, 'nd-top')) td.hideTitle(td.titleActive);
 			td.consoleOpen(tar, td.saveArrayAdd);
 		} else if (JAK.DOM.hasClass(tar, 'nd-key')) {
+			// podminit jen kdyz je prvkem pole
 			td.saveVarChange(2, tar);
 		}
 	} else if (JAK.DOM.hasClass(tar, 'nd-key')) {
@@ -821,7 +822,7 @@ td.saveVarChange = function(type, varEl) {
 };
 
 td.editVarChange = function() {
-	return td.saveVarChange(td.tdConsole.varEl.change.data.type);
+	return td.saveVarChange(td.tdConsole.varEl.change.data.type % 2 ? td.tdConsole.varEl.change.data.type : 0);
 };
 
 td.saveArrayAdd = function() {
@@ -1205,7 +1206,9 @@ td.setTitles = function(container) {
 };
 
 td.showTitle = function(e) {
-	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null || td.hide[0] === 2) return false;
+	if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || td.actionData.element !== null || td.tdConsole !== null || td.hide[0] === 2) {
+		return false;
+	}
 
 	var tdTitleRows, tdParents, tar = JAK.Events.getTarget(e);
 
@@ -1254,7 +1257,9 @@ td.showTitle = function(e) {
 		td.visibleTitles.push(this.tdTitle);
 		td.keepMaxZIndex(this.tdTitle);
 		td.titleActive = this.tdTitle;
-	} else if (JAK.DOM.hasClass(tar, 'nd-titled') && this.tdTitle.style.zIndex < td.zIndexMax) td.keepMaxZIndex(this.tdTitle);
+	} else if (tar.nodeType === 1 && JAK.DOM.hasClass(tar, 'nd-titled') && this.tdTitle.style.zIndex < td.zIndexMax) {
+		td.keepMaxZIndex(this.tdTitle);
+	}
 
 	if (td.titleActive === null) return false;
 

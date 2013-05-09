@@ -515,11 +515,14 @@ class TimeDebug {
 			$index = $varPath[1]['key'];
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index, 9);
 			if ($type === 2 && !empty($varPath[0]['unset'])) {
+				$oriVar = $var;
+				$retVal[1] = self::dumpSmallVar($oriVar[$index], array(self::TITLE_TYPE => 1, self::DUMP_ID => TRUE));
 				unset($var[$index]);
 				if (!isset($var[$index])) {
-					$retText .= ' Odstranen prvek z pole s indexem "' . $index . '" s hodnotou ' . json_encode($var) . ' (' . gettype($var) . '). ';
+					$retText .= ' Odstranen prvek z pole s indexem "' . $index . '" s hodnotou ' . json_encode($oriVar[$index]) . ' ('
+							. gettype($oriVar[$index]) . '). ';
 					$retVal[0] = 1;
-				}
+				} else throw new Exception('Nepovedlo se odebrani prvku z pole na indexu "' . $varPath[0]['key'] . '".', 9);
 			} else {
 				$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name, $type, $hash);
 			}

@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: opravit zobrazovani puvodni hodnoty na unsetovanem prvku
+// TODO: odstranit prazdny titulek nad varEl a change pro uspesny unset
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 

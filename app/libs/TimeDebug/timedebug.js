@@ -4,7 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat v php unset indexu pole
+// TODO: opravit zobrazovani puvodni hodnoty na unsetovanem prvku
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 

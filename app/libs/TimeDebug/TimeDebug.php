@@ -76,36 +76,43 @@ class TimeDebug {
 			return FALSE;
 		}
 
+		$unsetArray = NULL;
 		foreach ($varPath as &$key) {
 			if (empty($key)) {
 				self::$request[$id]['error'] = "Krok cesty nema uveden typ ani klic.";
 				return FALSE;
 			}
 
-			$retKey = array();
+			$retStep = array();
 			if ($key[0] === '*') {
-				$retKey['priv'] = 2;
+				$retStep['priv'] = 2;
 				$key = substr($key, 1);
 			} else if ($key[0] === '#') {
-				$retKey['priv'] = 1;
+				$retStep['priv'] = 1;
 				$key = substr($key, 1);
 			}
 
-			$retKey['step'] = intval($key[0]);
-			if ($retKey['step'] < 1) {
+			$retStep['step'] = intval($key[0]);
+			if ($retStep['step'] < 1) {
 				self::$request[$id]['error'] = "Krok cesty ma chybny typ klice: $key[1].";
 				return FALSE;
 			}
 
-			if ($retKey['step'] !== 2) {
-				$retKey['key'] = substr($key, 1);
-				if ($retKey['key'] === FALSE ) {
+			if ($retStep['step'] !== 2) {
+				$retStep['key'] = substr($key, 1);
+				if ($retStep['key'] === FALSE ) {
 					self::$request[$id]['error'] = "Krok cesty ma prazdny nazev property nebo klic ve varPath.";
 					return FALSE;
 				}
 			}
 
-			$key = $retKey;
+			$key = $retStep;
+
+			if (self::$request[$id]['type'] === 2) {
+				if (in_array($retStep['step'], array(2, 4, 6))) $unsetArray = &$key;
+				else if ($unsetArray !== NULL && $retStep['step'] > 6) $unsetArray['unset'] = 1;
+				else $unsetArray = NULL;
+			}
 		} unset($key);
 		return TRUE;
 	}
@@ -249,6 +256,7 @@ class TimeDebug {
 			),
 			'EDITACE PROMENNYCH (pouze local)' => array(
 				'Right Click' => 'otevrit modal konzoli pro zadani',
+				'Alt + RC' => 'unsetovat prvek pole s danym indexem',
 				'RC na masku' => 'zavrit konzoli, pokud je beze zmen'
 			),
 			'ROZSIROVANI POLI (pouze local)' => array(
@@ -269,6 +277,7 @@ class TimeDebug {
 			'UPRAVA ZADANYCH ZMEN (pouze local)' => array(
 				'Left Click' => 'naskrolovat na vybranou zmenu',
 				'Right Click' => 'otevrit modal konzoli pro upravu',
+				'Alt + RC' => 'unsetovat prvek pole s danym indexem',
 				'LC na krizek' => 'vypnout automaticke prepinani logu',
 				'Alt + RC na krizek' => 'smazat vybranou zmenu',
 				'Shift + LC' => 'prijmout opravu / formatovat JSON'
@@ -438,6 +447,7 @@ class TimeDebug {
 		$step = $varPath[0]['step'];
 		$priv = isset($varPath[0]['priv']) ? $varPath[0]['priv'] : 0;
 		$retText = '';
+		$retVal = array();
 
 		if ($priv) {
 			$fields = (array) $var;
@@ -480,23 +490,22 @@ class TimeDebug {
 			if ($type % 2) {
 				if ($overwrite) {
 					$retText .= ' Upraveno';
-					$retVal = array(5);
+					$retVal[0] = 5;
 				} else {
 					$retText .= ' Doplneno';
-					$retVal = array(3);
+					$retVal[0] = 3;
 				}
 
 				$retText .= ' pole ' . json_encode($oriVar) . ' polem ' . ($type === 2 ? $value : json_encode($values)) . '. ';
 				if ($oriVar === $var) ++$retVal[0];
 			} elseif ($type) {
-				$retText .= ' Odebran index z pole. ';
-				$retVal = array(1);
+				throw new Exception('Nepovedlo se odebrani prvku z pole na indexu "' . $varPath[0]['key'] . '".', 9);
 			} elseif ($changed) {
 				$retText .= ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). ';
-				$retVal = array(1);
+				$retVal[0] = 1;
 			} else {
 				$retText .= ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). ';
-				$retVal = array(2);
+				$retVal[0] = 2;
 			}
 
 			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_TYPE => 1, self::DUMP_ID => TRUE));
@@ -505,7 +514,15 @@ class TimeDebug {
 			if (!is_array($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavano pole.', 9);
 			$index = $varPath[1]['key'];
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index, 9);
-			$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name, $type, $hash);
+			if ($type === 2 && !empty($varPath[0]['unset'])) {
+				unset($var[$index]);
+				if (!isset($var[$index])) {
+					$retText .= ' Odstranen prvek z pole s indexem "' . $index . '" s hodnotou ' . json_encode($var) . ' (' . gettype($var) . '). ';
+					$retVal[0] = 1;
+				}
+			} else {
+				$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name, $type, $hash);
+			}
 		} elseif ($step === 1 || $step === 3 || $step === 5) {
 			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.', 9);
 			if ($step === 1) {

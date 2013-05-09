@@ -4,8 +4,7 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
-// TODO: posilat resFull s changes - nepridavat do changes data
+// TODO: udelat v php unset indexu pole
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -234,6 +233,7 @@ td.loadChanges = function(changesData) {
 		change = td.createChange(changesData[i], container, varEl, log);
 		change.valid = true;
 		change.formated = true;
+		if (change.resEl && changesData[i]['fullHeight'] === 1) td.switchFullHeight(change.resEl, 2);
 	}
 	td.updateChangeList();
 };
@@ -1806,13 +1806,17 @@ td.getTitlesData = function() {
 };
 
 td.getChangesData = function() {
-	var i, j, changes = [], results = [], change;
+	var i, j, changesData = [], changeData;
 	for (i = 0, j = td.changes.length; i < j; ++i) {
-		change = td.changes[i].data;
-		changes.push([change.path, change.type === 3 ? JSON.stringify(change.value) : change.value, change.type]);
-		results.push(change.resEl && change.resEl.fullHeight ? 1 : 0);
+		changeData = td.changes[i].data;
+		changesData.push([
+			changeData.path,
+			changeData.type === 2 ? '' : (changeData.type === 3 ? JSON.stringify(changeData.value) : changeData.value),
+			changeData.type,
+			(td.changes[i].resEl ? td.changes[i].resEl.fullHeight : changeData['fullHeight']) ? 1 : 0
+		]);
 	}
-	return {'changes': changes, 'results': results};
+	return changesData;
 };
 
 td.getTdData = function() {
@@ -1820,10 +1824,10 @@ td.getTdData = function() {
 };
 
 td.sendChanges = function(e) {
-	var i, j, changesArray, changesBase62, newLoc, url;
-	if (!(changesArray = td.getChangesData())['changes'].length) return false;
+	var i, j, changes, changesBase62, newLoc, url;
+	if (!(changes = td.getChangesData()).length) return false;
 
-	changesBase62 = b62s.base8To62(b62s.compress(JSON.stringify(changesArray['changes'])));
+	changesBase62 = b62s.base8To62(b62s.compress(JSON.stringify(changes)));
 
 	newLoc = {
 		'url': window.location.protocol + '//' + window.location.host + window.location.pathname,

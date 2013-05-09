@@ -189,7 +189,8 @@ class TimeDebug {
 				self::$request[$i]['path'] = self::$request[$i][0];
 				self::$request[$i]['value'] = self::$request[$i][1];
 				self::$request[$i]['type'] = self::$request[$i][2];
-				unset(self::$request[$i][0], self::$request[$i][1], self::$request[$i][2]);
+				self::$request[$i]['fullHeight'] = self::$request[$i][3];
+				unset(self::$request[$i][0], self::$request[$i][1], self::$request[$i][2], self::$request[$i][3]);
 				$path = explode(',', self::$request[$i]['path']);
 				if ($path[0] === 'dump') {
 					self::$request[$i]['varPath'] = array_slice($path, 2);
@@ -563,7 +564,15 @@ class TimeDebug {
 
 		for ($i = 0; $i < self::$request['count']; ++$i) {
 			$change = self::$request[$i];
-			if (empty($change['res'])) $change = array('path' => $change['path'], 'value' => $change['value'], 'type' => $change['type'], 'res' => 0);
+			if (empty($change['res'])) {
+				$change = array(
+					'path' => $change['path'],
+					'value' => $change['value'],
+					'type' => $change['type'],
+					'fullHeight' => $change['fullHeight'],
+					'res' => 0
+				);
+			}
 			$response[] = $change;
 		}
 		return $response;

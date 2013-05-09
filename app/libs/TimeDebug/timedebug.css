@@ -475,6 +475,10 @@ span.nd-var-change {
 	color: #039;
 	border-radius: 4px;
 }
+span.nd-var-unset {
+	background: #fcc;
+	color: #700;
+}
 #tdContainer #tdView {
 	background: #fff;
 	position: relative;

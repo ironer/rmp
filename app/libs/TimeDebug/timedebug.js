@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: udelat prepinani editace a smazani klice
 // TODO: udelat unset jako varchange pro klice, co jsou prvky pole na Alt + RightClick
 // TODO: posilat resFull s changes - nepridavat do changes data
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
@@ -310,11 +309,12 @@ td.changeVar = function(e) {
 		if (JAK.DOM.hasClass(tar, 'nd-array')) {
 			if (JAK.DOM.hasClass(tar, 'nd-top')) td.hideTitle(td.titleActive);
 			td.consoleOpen(tar, td.saveArrayAdd);
-		} else if (JAK.DOM.hasClass(tar, 'nd-key')) {
-			// podminit jen kdyz je prvkem pole
+		} else if (td.isArrayElement(tar)) {
+			if (tar.change && tar.change.data.type === 2) return false;
 			td.saveVarChange(2, tar);
 		}
 	} else if (JAK.DOM.hasClass(tar, 'nd-key')) {
+		if (tar.change && tar.change.data.type === 2 && tar.oriTitle) tar.title = tar.oriTitle;
 		td.consoleOpen(tar, td.saveVarChange);
 	} else if (JAK.DOM.hasClass(tar, 'nd-top')) {
 		td.hideTitle(td.titleActive);
@@ -322,6 +322,11 @@ td.changeVar = function(e) {
 	}
 
 	return false;
+};
+
+td.isArrayElement = function(el) {
+	var key;
+	return JAK.DOM.hasClass(el, 'nd-key') && (key = el.parentNode.getAttribute('data-pk')) && !(key[0] % 2);
 };
 
 td.switchFullHeight = function(result, force) {
@@ -358,10 +363,16 @@ td.changeAction = function(e, el) {
 			td.updateChangeList();
 			td.tdChangeList.removeChild(this);
 			return false;
-		} else if (e.altKey) return false;
+		} else if (e.altKey) {
+			if (this.data.type !== 2 && this.varEl && td.isArrayElement(this.varEl)) td.saveVarChange(2, this.varEl);
+			return false;
+		}
 
 		if (this.logRow) td.showLog(true, this.logRow);
-		if (this.varEl) td.consoleOpen(this.varEl, td.editVarChange);
+		if (this.varEl) {
+			if (this.data.type === 2 && this.varEl.oriTitle) this.varEl.title = this.varEl.oriTitle;
+			td.consoleOpen(this.varEl, td.editVarChange);
+		}
 		return false;
 	} else if (e.button === JAK.Browser.mouse.left && !e.altKey) {
 		JAK.Events.cancelDef(e);
@@ -373,6 +384,7 @@ td.changeAction = function(e, el) {
 			return true;
 		}
 		if (e.shiftKey) {
+			if (this.data.type === 2) return true;
 			var jsonString, formatedJson, update = false;
 			if (!this.valid) {
 				this.varEl.title = this.title = jsonString = JSON.stringify(this.data.value);
@@ -799,13 +811,16 @@ td.saveVarChange = function(type, varEl) {
 	}
 
 	if (change = varEl.change) {
-		if (change.valid === valid && change.formated === formated && change.data.type === type &&
-				JSON.stringify(change.data.value) === JSON.stringify(value)) update = false;
-		else {
-			change.valid = valid;
-			change.formated = formated;
+		if (change.data.type === type && (type === 2  || (change.valid === valid && change.formated === formated &&
+				JSON.stringify(change.data.value) === JSON.stringify(value)))) {
+			update = false;
+		} else {
 			change.data.type = type;
-			change.data.value = value;
+			if (type !== 2) {
+				change.data.value = value;
+				change.valid = valid;
+				change.formated = formated;
+			}
 		}
 	} else {
 		varEl = td.duplicateNode(varEl);
@@ -814,7 +829,12 @@ td.saveVarChange = function(type, varEl) {
 		change.formated = formated;
 	}
 
-	if (update || varEl.title !== areaVal) {
+	if (update || (type !== 2 && varEl.title !== areaVal)) {
+		if (type === 2) {
+			varEl.oriTitle = varEl.title;
+			JAK.DOM.addClass(varEl, 'nd-var-unset');
+		} else JAK.DOM.removeClass(varEl, 'nd-var-unset');
+
 		varEl.title = areaVal;
 		td.updateChangeList(change);
 	}

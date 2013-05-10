@@ -270,6 +270,10 @@ pre.nd-location {
 	color: #403;
 	background: #fdf;
 }
+.nd-td .nd-unseted {
+	color: #330;
+	background: #ed9;
+}
 .nd-td .nd-error {
 	color: #600;
 	background: #fbb;

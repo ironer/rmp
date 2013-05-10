@@ -489,23 +489,23 @@ class TimeDebug {
 
 			if ($type % 2) {
 				if ($overwrite) {
-					$retText .= ' Upraveno';
 					$retVal[0] = 5;
+					$retText .= ' Upraveno';
 				} else {
-					$retText .= ' Doplneno';
 					$retVal[0] = 3;
+					$retText .= ' Doplneno';
 				}
 
-				$retText .= ' pole ' . json_encode($oriVar) . ' polem ' . ($type === 2 ? $value : json_encode($values)) . '. ';
 				if ($oriVar === $var) ++$retVal[0];
+				$retText .= ' pole ' . json_encode($oriVar) . ' polem ' . ($type === 2 ? $value : json_encode($values)) . '. ';
 			} elseif ($type) {
 				throw new Exception('Nepovedlo se odebrani prvku z pole na indexu "' . $varPath[0]['key'] . '".', 9);
 			} elseif ($changed) {
-				$retText .= ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). ';
 				$retVal[0] = 1;
+				$retText .= ' Zmena z ' . json_encode($oriVar) . ' (' . gettype($oriVar) . ') na ' . json_encode($var) . ' (' . gettype($var) . '). ';
 			} else {
-				$retText .= ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). ';
 				$retVal[0] = 2;
+				$retText .= ' Ponechana puvodni identicka hodnota ' . json_encode($var) . ' (' . gettype($var) . '). ';
 			}
 
 			$retVal[1] = self::dumpSmallVar($oriVar, array(self::TITLE_TYPE => 1, self::DUMP_ID => TRUE));
@@ -516,12 +516,13 @@ class TimeDebug {
 			if (!isset($var[$index])) throw new Exception('Pole nema definovan prvek s indexem ' . $index, 9);
 			if ($type === 2 && !empty($varPath[0]['unset'])) {
 				$oriVar = $var;
-				$retVal[1] = self::dumpSmallVar($oriVar[$index], array(self::TITLE_TYPE => 1, self::DUMP_ID => TRUE));
 				unset($var[$index]);
 				if (!isset($var[$index])) {
-					$retText .= ' Odstranen prvek z pole s indexem "' . $index . '" s hodnotou ' . json_encode($oriVar[$index]) . ' ('
-							. gettype($oriVar[$index]) . '). ';
 					$retVal[0] = 1;
+					$retVal[1] = self::dumpSmallVar($oriVar[$index], array(self::TITLE_TYPE => 1, self::DUMP_ID => TRUE));
+					$retVal[2] = '<pre' . ( $name ? ' id="' . $name . '"' : '') . ' class="nd-result nd-unseted"><div class="nd-rollover">'
+							. '<div class="nd-indenter"> Odstranen prvek z pole s indexem "' . $index . '" s hodnotou ' . json_encode($oriVar[$index])
+							. ' (' . gettype($oriVar[$index]) . '). </div></div></pre>';
 				} else throw new Exception('Nepovedlo se odebrani prvku z pole na indexu "' . $varPath[0]['key'] . '".', 9);
 			} else {
 				$retVal = self::applyChange($var[$index], array_slice($varPath, 1), $value, $name, $type, $hash);
@@ -530,11 +531,15 @@ class TimeDebug {
 			if (!is_object($var)) throw new Exception('Promenna typu ' . gettype($var) . ', ocekavan objekt.', 9);
 			if ($step === 1) {
 				$objClass = $varPath[0]['key'];
-				if (get_class($var) !== $objClass) throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.', 9);
+				if (get_class($var) !== $objClass) {
+					throw new Exception('Objekt je tridy ' . get_class($var) . ' ocekavana ' . $objClass . '.', 9);
+				}
 			} else $objClass = get_class($var);
 			$property = $varPath[1]['key'];
 			if ($priv) {
-				if (!isset($varArray, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 9);
+				if (!isset($varArray, $property)) {
+					throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 9);
+				}
 				$retVal = self::applyChange($varArray[$property], array_slice($varPath, 1), $value, $name, $type, $hash);
 				if ($priv === 2) {
 					$refObj = new ReflectionObject($var);
@@ -543,7 +548,9 @@ class TimeDebug {
 					$refProp->setValue($var, $varArray[$property]);
 				}
 			} else {
-				if (!property_exists($var, $property)) throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 9);
+				if (!property_exists($var, $property)) {
+					throw new Exception('Objekt tridy "' . $objClass . '" nema dostupnou property: ' . $property . '.', 9);
+				}
 				$retVal = self::applyChange($var->$property, array_slice($varPath, 1), $value, $name, $type, $hash);
 			}
 		} else throw new Exception('Byl zadan spatny typ cesty pro zmenu v promenne "' . $step . '", ocekavano cislo 0 az 9.', 8);

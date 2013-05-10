@@ -4,7 +4,6 @@
  * @author: Stefan Fiedler
  */
 
-// TODO: odstranit prazdny titulek nad varEl a change pro uspesny unset
 // TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 
@@ -46,7 +45,7 @@ td.controlSpaceX = 0;
 td.help = '';
 
 td.visibleTitles = [];
-td.titleActive = null;
+td.activeTitle = null;
 td.titleHideTimeout = null;
 td.hide = [0, JAK.mel('div', {'id': 'tdTitleMask'}), JAK.mel('pre', {'id': 'tdNoTitles', 'innerHTML': 'Titulky vypnuty'})];
 
@@ -282,11 +281,11 @@ td.mouseWheel = function(e) {
 	var tar = JAK.Events.getTarget(e);
 	if (tar.tagName.toLowerCase() === 'b') tar = tar.parentNode;
 
-	if (td.titleActive === null && !JAK.DOM.hasClass(tar, 'nd-titled')) return true;
+	if (td.activeTitle === null && !JAK.DOM.hasClass(tar, 'nd-titled')) return true;
 
 	td.tdStop(e);
 
-	tar = td.titleActive || tar.tdTitle;
+	tar = td.activeTitle || tar.tdTitle;
 
 	var delta = 0;
 
@@ -307,7 +306,7 @@ td.changeVar = function(e) {
 
 	if (e.altKey) {
 		if (JAK.DOM.hasClass(tar, 'nd-array')) {
-			if (JAK.DOM.hasClass(tar, 'nd-top')) td.hideTitle(td.titleActive);
+			if (JAK.DOM.hasClass(tar, 'nd-top')) td.hideTitle(td.activeTitle);
 			td.consoleOpen(tar, td.saveArrayAdd);
 		} else if (td.isArrayElement(tar)) {
 			if (tar.change && tar.change.data.type === 2) return false;
@@ -317,7 +316,7 @@ td.changeVar = function(e) {
 		if (tar.change && tar.change.data.type === 2 && tar.oriTitle) tar.title = tar.oriTitle;
 		td.consoleOpen(tar, td.saveVarChange);
 	} else if (JAK.DOM.hasClass(tar, 'nd-top')) {
-		td.hideTitle(td.titleActive);
+		td.hideTitle(td.activeTitle);
 		td.consoleOpen(tar, td.saveVarChange);
 	}
 
@@ -572,11 +571,15 @@ td.updateChangeList = function(el) {
 
 		if (change.data.oriVar) { change.appendChild(change.data.oriVar); change.style.paddingRight = '16px'; }
 		else change.removeAttribute('style');
+
 		if (change.lastChange) {
 			change.id = 'tdLastChange';
 			change.lastChange = false;
 		} else if (el) change.removeAttribute('id');
-		change.title = change.varEl ? change.varEl.title : td.formatJson(change.data.value);
+
+		if (change.data.type === 2) change.title = '';
+		else change.title = change.varEl ? change.varEl.title : td.formatJson(change.data.value);
+
 		td.tdChangeList.appendChild(change);
 	}
 	td.changes.reverse();
@@ -1234,14 +1237,14 @@ td.showTitle = function(e) {
 
 	td.tdStop(e);
 
-	if (td.titleActive && td.titleActive !== this.tdTitle) {
+	if (td.activeTitle && td.activeTitle !== this.tdTitle) {
 		td.hideTitle();
 	} else if (td.titleHideTimeout) {
 		window.clearTimeout(td.titleHideTimeout);
 		td.titleHideTimeout = null;
 	}
 
-	if (td.titleActive === null && this.tdTitle.style.display !== 'block') {
+	if (td.activeTitle === null && this.tdTitle.style.display !== 'block') {
 		this.tdTitle.style.display = 'block';
 
 		if (!this.tdTitle.hasOwnProperty('oriWidth')) {
@@ -1276,15 +1279,15 @@ td.showTitle = function(e) {
 
 		td.visibleTitles.push(this.tdTitle);
 		td.keepMaxZIndex(this.tdTitle);
-		td.titleActive = this.tdTitle;
+		td.activeTitle = this.tdTitle;
 	} else if (tar.nodeType === 1 && JAK.DOM.hasClass(tar, 'nd-titled') && this.tdTitle.style.zIndex < td.zIndexMax) {
 		td.keepMaxZIndex(this.tdTitle);
 	}
 
-	if (td.titleActive === null) return false;
+	if (td.activeTitle === null) return false;
 
-	td.titleActive.style.left = (td.titleActive.data.left = (e.pageX || e.clientX) + 20) + 'px';
-	td.titleActive.style.top = (td.titleActive.data.top = (e.pageY || e.clientY) - 5) + 'px';
+	td.activeTitle.style.left = (td.activeTitle.data.left = (e.pageX || e.clientX) + 20) + 'px';
+	td.activeTitle.style.top = (td.activeTitle.data.top = (e.pageY || e.clientY) - 5) + 'px';
 
 	td.titleAutosize();
 
@@ -1465,7 +1468,7 @@ td.tdStop = function(e) {
 };
 
 td.titleAutosize = function(el) {
-	el = el || td.titleActive;
+	el = el || td.activeTitle;
 
 	var tdCheckWidthDif = false;
 	var tdWidthDif;
@@ -1494,14 +1497,15 @@ td.titleAutosize = function(el) {
 	return true;
 };
 
-td.hideTimer = function(e) {
-	td.tdStop(e);
+td.hideTimer = function() {
+	if (td.activeTitle !== this.tdTitle) return false;
 
 	if (td.titleHideTimeout) {
 		window.clearTimeout(td.titleHideTimeout);
 		td.titleHideTimeout = null;
 	}
 	if (!this.tdTitle.pinned && td.actionData.element === null) td.titleHideTimeout = window.setTimeout(td.hideTitle, 300);
+	return true;
 };
 
 td.hideTitle = function(el) {
@@ -1515,8 +1519,8 @@ td.hideTitle = function(el) {
 	if (el && el.pinned) {
 		el.pinned = false;
 		JAK.DOM.removeClass(el, 'nd-pinned');
-	} else if ((el = td.titleActive) !== null) {
-		td.titleActive = null;
+	} else if ((el = td.activeTitle) !== null) {
+		td.activeTitle = null;
 	} else return false;
 
 	if ((index = td.visibleTitles.indexOf(el)) !== -1) td.visibleTitles.splice(index, 1);
@@ -1546,16 +1550,16 @@ td.pinTitle = function(e) {
 
 	if (!JAK.DOM.hasClass(tar, 'nd-titled')) return false;
 
-	if (td.titleActive && td.titleActive !== tar.tdTitle) td.hideTitle();
+	if (td.activeTitle && td.activeTitle !== tar.tdTitle) td.hideTitle();
 
-	if (td.titleActive === null) {
-		td.titleActive = tar.tdTitle;
-		td.titleActive.pinned = false;
-		JAK.DOM.removeClass(td.titleActive, 'nd-pinned');
+	if (td.activeTitle === null) {
+		td.activeTitle = tar.tdTitle;
+		td.activeTitle.pinned = false;
+		JAK.DOM.removeClass(td.activeTitle, 'nd-pinned');
 	} else {
-		td.titleActive.pinned = true;
-		JAK.DOM.addClass(td.titleActive, 'nd-pinned');
-		td.titleActive = null;
+		td.activeTitle.pinned = true;
+		JAK.DOM.addClass(td.activeTitle, 'nd-pinned');
+		td.activeTitle = null;
 	}
 	return false;
 };
@@ -1637,15 +1641,15 @@ td.readKeyDown = function(e) {
 				td.setLocationHashes(true, [[td.logWrapper, 'loganchor', td.logContainer, 100]]);
 			}
 			return false;
-		} else if (e.keyCode === 37 && td.titleActive) {
-				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop - 16) / 16);
+		} else if (e.keyCode === 37 && td.activeTitle) {
+				td.activeTitle.scrollTop = 16 * parseInt((td.activeTitle.scrollTop - 16) / 16);
 				return false;
-		} else if (e.keyCode === 39 && td.titleActive) {
-				td.titleActive.scrollTop = 16 * parseInt((td.titleActive.scrollTop + 16) / 16);
+		} else if (e.keyCode === 39 && td.activeTitle) {
+				td.activeTitle.scrollTop = 16 * parseInt((td.activeTitle.scrollTop + 16) / 16);
 				return false;
 		} else if (e.keyCode === 27) {
 			if (td.tdConsole) return td.consoleClose();
-			if (!(td.visibleTitles.length - (td.titleActive === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni titulku?')) {
+			if (!(td.visibleTitles.length - (td.activeTitle === null ? 0 : 1)) || !confirm('Opravdu resetovat nastaveni titulku?')) {
 				return true;
 			}
 			if (td.titleHideTimeout) {
@@ -1661,7 +1665,7 @@ td.readKeyDown = function(e) {
 			}
 			td.visibleTitles.length = 0;
 			td.zIndexMax = 100;
-			td.titleActive = null;
+			td.activeTitle = null;
 			return false;
 		} else if (e.keyCode === 13 && td.tdConsole) {
 			JAK.Events.stopEvent(e);

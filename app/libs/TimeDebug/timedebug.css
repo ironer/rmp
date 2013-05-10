@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2013 Stefan Fiedler & Michal Kovar
+ * Styles for TimeDebug GUI (2013)
+ * @author: Stefan Fiedler (http://ironer.cz)
+ * Author of styles for base PHP class 'Dumper': David Grudl (http://davidgrudl.com)
+ */
+
 body {
 	margin: 0;
 }

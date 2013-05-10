@@ -1,11 +1,12 @@
 /**
- * Copyright (c) 2013 Stefan Fiedler
- * Object for TimeDebug GUI
- * @author: Stefan Fiedler
+ * Copyright (c) 2013 Stefan Fiedler & Michal Kovar
+ * Object for TimeDebug GUI (2013)
+ * @author: Stefan Fiedler (http://ironer.cz)
+ * used sources: Seznam's JAK library (http://seznam.cz)
  */
-
-// TODO: udelat getTitle element pro ukladani a loadovani zobrazenych titulku
+		
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
+// TODO: nacist nastaveni z localstorage a/nebo z konzole
 
 // TODO: ulozit serii testu v TimeDebugu
 // TODO: vyplivnout vystup do iframe nebo dalsiho okna
@@ -15,7 +16,7 @@ var td = {};
 
 td.local = false;
 td.get = '';
-td.post = {};
+td.post = [];
 td.maxUrlLength = 1000;
 
 td.logView = JAK.gel('logView');
@@ -29,6 +30,7 @@ td.dumps = [];
 td.indexes = [];
 td.response = null;
 td.hash2Id = {};
+td.oldRequest = '';
 
 td.tdContainer = JAK.mel('div', {id: 'tdContainer'});
 td.tdOuterWrapper = JAK.mel('div', {id: 'tdOuterWrapper'});
@@ -36,9 +38,6 @@ td.tdInnerWrapper = JAK.mel('div', {id: 'tdInnerWrapper'});
 td.tdView = JAK.mel('pre', {id: 'tdView'});
 td.tdFullWidth = false;
 td.tdWidth = 400;
-
-// srollleft a scrolltop u logcontainer and tdcontainer a velikost tdwrapperu
-// automaticke prepinani logu pri najeti na change v change listu
 
 td.control = JAK.cel('div', 'nd-control');
 td.controlSpaceX = 0;
@@ -200,7 +199,10 @@ td.init = function(logId) {
 	window.onmousewheel = document.onmousewheel = td.mouseWheel;
 	document.onkeydown = td.readKeyDown;
 
-	if (td.response) td.loadChanges(td.response);
+	if (td.response.length) {
+		td.loadChanges(td.response);
+		td.oldRequest = JSON.stringify(td.getChangesData());
+	}
 	td.setTitles(td.control);
 };
 
@@ -1793,10 +1795,10 @@ td.getTitlePath = function(title) {
 };
 
 td.getTitlesData = function() {
-	var i, j, titles = [], title;
+	var i, j, titlesData = [], title;
 	for (i = 0, j = td.visibleTitles.length; i < j; ++i) {
 		if ((title = td.visibleTitles[i]).pinned) {
-			titles.push({
+			titlesData.push({
 				'path': td.getTitlePath(title),
 				'data': JSON.stringify(title.data),
 				'css': {
@@ -1806,7 +1808,7 @@ td.getTitlesData = function() {
 			});
 		}
 	}
-	return titles;
+	return titlesData;
 };
 
 td.getChangesData = function() {
@@ -1824,7 +1826,21 @@ td.getChangesData = function() {
 };
 
 td.getTdData = function() {
+	var tdData = {
+		'get': td.get,
+		'post': td.post,
+		'oldRequest': td.oldRequest,
+		'tdFullWidth': td.tdFullWidth,
+		'tdWidth': td.tdWidth,
+		'logRowActiveHash': td.logRowActive === null ? '' : td.logRowActive.hash,
+		'logRowsChosenHashes': []
+	};
 
+	for (var i = 0, j = td.logRows.length; i < j; ++i) if (td.logRowsChosen[i]) tdData['logRowsChosenHashes'].push(td.logRows[i].hash);
+
+	return tdData;
+	// srollleft a scrolltop u logcontainer and tdcontainer a velikost tdwrapperu
+	// automaticke prepinani logu pri najeti na change v change listu
 };
 
 td.sendChanges = function(e) {
@@ -1849,8 +1865,11 @@ td.sendChanges = function(e) {
 		}
 		req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': changesBase62}));
 
+		console.debug(changes);
+		console.debug(td.getTitlesData());
+		console.debug(td.getTdData());
 		td.logView.appendChild(req);
-		req.submit();
+//		req.submit();
 	} else if ((url = newLoc.url + newLoc.sendGet).length <= td.maxUrlLength) {
 		window.open(url, e.shiftKey ? '_blank' : '_self');
 	} else {

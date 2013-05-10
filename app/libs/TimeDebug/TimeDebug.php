@@ -1,8 +1,9 @@
 <?php
 
 /**
- * Author of PHP class 'TimeDebug': 2013 Stefan Fiedler
- * Author of base PHP class 'Dumper': 2004 David Grudl (http://davidgrudl.com)
+ * TimeDebug class for modeling, debugging and tuning of data structures in PHP (2013)
+ * @author: Stefan Fiedler (http://ironer.cz)
+ * Author of base PHP class 'Dumper': David Grudl (http://davidgrudl.com)
  */
 
 // TODO: zkontrolovat dumpovani resources

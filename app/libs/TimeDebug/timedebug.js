@@ -1779,18 +1779,6 @@ td.htmlEncode = function(text) {
 	return retVal;
 };
 
-td.reloadPage = function(e) {
-	if (!td.allowClick || e.button !== JAK.Browser.mouse.left) return false;
-
-	td.disableClick();
-
-	var newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
-	if (td.get) newLoc.push(td.get);
-
-	window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
-	return true;
-};
-
 td.getTitlePath = function(title) {
 	var revPath = [], parent = title.parentNode, titleType = parseInt(title.getAttribute('data-tt')), key;
 
@@ -1871,7 +1859,7 @@ td.getTdData = function() {
 	var tdData = {
 		'get': td.get,
 		'post': td.post,
-		'oldRequest': td.oldRequest,
+		'oldRequest': JSON.parse(td.oldRequest),
 		'tdFullWidth': td.tdFullWidth,
 		'tdWidth': td.tdWidth,
 		'logRowActiveHash': td.logRowActive === null ? '' : td.logRowActive.hash,
@@ -1884,23 +1872,6 @@ td.getTdData = function() {
 	// automaticke prepinani logu pri najeti na change v change listu
 	// aktualni stav skryti nebo podcerneni titulku
 	return tdData;
-};
-
-td.disableClick = function() {
-	if (td.clickTimeout) {
-		window.clearTimeout(td.clickTimeout);
-		td.clickTimeout = null;
-	}
-	td.allowClick = false;
-	td.clickTimeout = window.setTimeout(td.enableClick, 1000);
-};
-
-td.enableClick = function() {
-	if (td.clickTimeout) {
-		window.clearTimeout(td.clickTimeout);
-		td.clickTimeout = null;
-	}
-	td.allowClick = true;
 };
 
 td.sendChanges = function(e) {
@@ -1929,11 +1900,11 @@ td.sendChanges = function(e) {
 		}
 		req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': changesBase62}));
 
-		console.debug(changes);
-		console.debug(td.getTitlesData());
-		console.debug(td.getTdData());
+//		console.debug(changes);
+//		console.debug(td.getTitlesData());
+//		console.debug(td.getTdData());
 		td.logView.appendChild(req);
-//		req.submit();
+		req.submit();
 	} else if ((url = newLoc.url + newLoc.sendGet).length <= td.maxUrlLength) {
 		window.open(url, e.shiftKey ? '_blank' : '_self');
 	} else {
@@ -1963,6 +1934,48 @@ td.sendChanges = function(e) {
 	}
 
 	return false;
+};
+
+td.reloadPage = function(e) {
+	if (!td.allowClick || e.button !== JAK.Browser.mouse.left) return false;
+
+	td.disableClick();
+
+	var i, j, newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
+	if (td.get) newLoc.push(td.get);
+
+	if (td.post.length) {
+		var req = JAK.mel('form', {'action': newLoc.join('?'), method:'post'}, {'display': 'none'});
+		if (e.shiftKey) req.target = '_blank';
+
+		for (i = 0, j = td.post.length; i < j; ++i) {
+			req.appendChild(JAK.mel('textarea', {'name': td.post[i][0], 'value': td.post[i][1]}));
+		}
+
+		td.logView.appendChild(req);
+		req.submit();
+	} else {
+		window.open(newLoc.join('?'), e.shiftKey ? '_blank' : '_self');
+	}
+
+	return true;
+};
+
+td.disableClick = function() {
+	if (td.clickTimeout) {
+		window.clearTimeout(td.clickTimeout);
+		td.clickTimeout = null;
+	}
+	td.allowClick = false;
+	td.clickTimeout = window.setTimeout(td.enableClick, 1000);
+};
+
+td.enableClick = function() {
+	if (td.clickTimeout) {
+		window.clearTimeout(td.clickTimeout);
+		td.clickTimeout = null;
+	}
+	td.allowClick = true;
 };
 
 td.getRows = function(el, start, end) {

@@ -1,7 +1,8 @@
 <?php
 
 /**
- * TimeDebug class for modeling, debugging and tuning of data structures in PHP (2013)
+ * Copyright (c) 2013 Stefan Fiedler & Michal Kovar
+ * TimeDebug class for modeling, debugging and tuning of data structures in PHP
  * @author: Stefan Fiedler (http://ironer.cz)
  * Author of base PHP class 'Dumper': David Grudl (http://davidgrudl.com)
  */

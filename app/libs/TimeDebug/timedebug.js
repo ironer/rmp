@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2013 Stefan Fiedler & Michal Kovar
- * Object for TimeDebug GUI (2013)
+ * Object for TimeDebug GUI
  * @author: Stefan Fiedler (http://ironer.cz)
  * used sources: Seznam's JAK library (http://seznam.cz)
  */

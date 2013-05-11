@@ -4,7 +4,9 @@
  * @author: Stefan Fiedler (http://ironer.cz)
  * used sources: Seznam's JAK library (http://seznam.cz)
  */
-		
+
+// TODO: zablokovat druhe odeslani, kdyz jede ajax
+
 // TODO: ulozit nastaveni do localstorage a/nebo vyexportovat do konzole
 // TODO: nacist nastaveni z localstorage a/nebo z konzole
 
@@ -1394,7 +1396,6 @@ td.titleAction = function(e) {
 };
 
 td.startTitleResize = function(e, el) {
-	el.resized = true;
 	td.actionData.startX = e.screenX;
 	td.actionData.startY = e.screenY;
 	td.actionData.width = (el.tdWidth === 'auto' ? el.offsetWidth : el.tdWidth);
@@ -1418,6 +1419,7 @@ td.titleResizing = function(e) {
 		el.data.width = el.tdWidth = Math.max(Math.min(td.viewSize.width - el.data.left - 20, td.actionData.width + e.screenX - td.actionData.startX), 16);
 		el.data.height = el.tdHeight = 16 * parseInt(Math.max(Math.min(td.viewSize.height - el.data.top - 35, td.actionData.height + e.screenY - td.actionData.startY), 16) / 16);
 		JAK.DOM.setStyle(el, {'width': el.tdWidth + 'px', 'height': el.tdHeight + 'px'});
+		if (!el.resized) el.resized = true;
 	} else {
 		td.endTitleAction();
 	}
@@ -1838,12 +1840,15 @@ td.getTdData = function() {
 
 	for (var i = 0, j = td.logRows.length; i < j; ++i) if (td.logRowsChosen[i]) tdData['logRowsChosenHashes'].push(td.logRows[i].hash);
 
-	return tdData;
 	// srollleft a scrolltop u logcontainer and tdcontainer a velikost tdwrapperu
 	// automaticke prepinani logu pri najeti na change v change listu
+	// aktualni stav skryti nebo podcerneni titulku
+	return tdData;
 };
 
 td.sendChanges = function(e) {
+	td.tdStop(e);
+
 	var i, j, changes, changesBase62, newLoc, url;
 	if (!(changes = td.getChangesData()).length) return false;
 

@@ -77,7 +77,6 @@ class TimeDebug {
 			return FALSE;
 		}
 
-		$unsetArray = NULL;
 		foreach ($varPath as &$key) {
 			if (empty($key)) {
 				self::$request[$id]['error'] = "Krok cesty nema uveden typ ani klic.";
@@ -111,8 +110,8 @@ class TimeDebug {
 
 			if (self::$request[$id]['type'] === 2) {
 				if (in_array($retStep['step'], array(2, 4, 6))) $unsetArray = &$key;
-				else if ($unsetArray !== NULL && $retStep['step'] > 6) $unsetArray['unset'] = 1;
-				else $unsetArray = NULL;
+				else if (isset($unsetArray) && $retStep['step'] > 6) $unsetArray['unset'] = 1;
+				else unset($unsetArray);
 			}
 		} unset($key);
 		return TRUE;

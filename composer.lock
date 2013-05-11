@@ -3,21 +3,62 @@
         "This file locks the dependencies of your project to a known state",
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
     ],
-    "hash": "2d5489b10c78649199c0e778b19f42b6",
+    "hash": "9b130a34fc90a39e44843846445391f7",
     "packages": [
+        {
+            "name": "ironer/base62shrink",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ironer/base62shrink.git",
+                "reference": "89dfbbec0ed5fa308bf5e9762f92c65faf8e5c6b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ironer/base62shrink/zipball/89dfbbec0ed5fa308bf5e9762f92c65faf8e5c6b",
+                "reference": "89dfbbec0ed5fa308bf5e9762f92c65faf8e5c6b",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "Base62Shrink/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause",
+                "GPL-2.0",
+                "GPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Stefan Fiedler",
+                    "email": "ironer80@gmail.com"
+                }
+            ],
+            "description": "Simple javascript to perform LZW compression on longer structured or repetitive UTF8 data (like stringified JSON) to some universally web safe form. Simple PHP class for server side data processing.",
+            "keywords": [
+                "compression"
+            ],
+            "time": "2013-05-11 18:59:43"
+        },
         {
             "name": "ironer/timedebug",
             "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ironer/timedebug.git",
-                "reference": "221f559c0590a0b0379ff420f2ee748a41b9fc9b"
+                "reference": "64d8f6b7b84c375e89e620a202176fc7c4fdf88c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ironer/timedebug/zipball/221f559c0590a0b0379ff420f2ee748a41b9fc9b",
-                "reference": "221f559c0590a0b0379ff420f2ee748a41b9fc9b",
+                "url": "https://api.github.com/repos/ironer/timedebug/zipball/64d8f6b7b84c375e89e620a202176fc7c4fdf88c",
+                "reference": "64d8f6b7b84c375e89e620a202176fc7c4fdf88c",
                 "shasum": ""
+            },
+            "require": {
+                "ironer/base62shrink": "@dev"
             },
             "type": "library",
             "autoload": {
@@ -42,7 +83,7 @@
                 "debugging",
                 "modeling"
             ],
-            "time": "2013-05-11 18:07:02"
+            "time": "2013-05-11 19:05:43"
         }
     ],
     "packages-dev": [
@@ -51,7 +92,7 @@
     "aliases": [
 
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": {
         "ironer/timedebug": 20
     },

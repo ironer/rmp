@@ -1,0 +1,64 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
+    ],
+    "hash": "2d5489b10c78649199c0e778b19f42b6",
+    "packages": [
+        {
+            "name": "ironer/timedebug",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ironer/timedebug.git",
+                "reference": "221f559c0590a0b0379ff420f2ee748a41b9fc9b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ironer/timedebug/zipball/221f559c0590a0b0379ff420f2ee748a41b9fc9b",
+                "reference": "221f559c0590a0b0379ff420f2ee748a41b9fc9b",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "TimeDebug/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause",
+                "GPL-2.0",
+                "GPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Stefan Fiedler",
+                    "email": "ironer80@gmail.com"
+                }
+            ],
+            "description": "debugging and modeling tool for PHP",
+            "keywords": [
+                "debugging",
+                "modeling"
+            ],
+            "time": "2013-05-11 18:07:02"
+        }
+    ],
+    "packages-dev": [
+
+    ],
+    "aliases": [
+
+    ],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "ironer/timedebug": 20
+    },
+    "platform": [
+
+    ],
+    "platform-dev": [
+
+    ]
+}

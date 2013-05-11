@@ -1,0 +1,8 @@
+{
+	"require": {
+		"ironer/timedebug": "@dev"
+	},
+	"config": {
+		"vendor-dir": "app/libs"
+	}
+}

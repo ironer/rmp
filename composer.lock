@@ -11,18 +11,21 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ironer/base62shrink.git",
-                "reference": "9b248265e87d317595b73451cf16731e37455f34"
+                "reference": "baa2fd93d899a743110c29c15a237d2cf3c7c236"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ironer/base62shrink/zipball/9b248265e87d317595b73451cf16731e37455f34",
-                "reference": "9b248265e87d317595b73451cf16731e37455f34",
+                "url": "https://api.github.com/repos/ironer/base62shrink/zipball/baa2fd93d899a743110c29c15a237d2cf3c7c236",
+                "reference": "baa2fd93d899a743110c29c15a237d2cf3c7c236",
                 "shasum": ""
             },
             "type": "library",
             "autoload": {
                 "classmap": [
                     "Base62Shrink/"
+                ],
+                "files": [
+                    "Base62Shrink/loader.php"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -41,7 +44,7 @@
             "keywords": [
                 "compression"
             ],
-            "time": "2013-05-11 19:36:53"
+            "time": "2013-05-11 19:54:16"
         },
         {
             "name": "ironer/timedebug",
@@ -49,12 +52,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ironer/timedebug.git",
-                "reference": "d0e922f646ceb8ac6c77dcbab0d26e094e00b66f"
+                "reference": "7667ed0ce77b610a7cf1b46e14d1fd81b41838ba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ironer/timedebug/zipball/d0e922f646ceb8ac6c77dcbab0d26e094e00b66f",
-                "reference": "d0e922f646ceb8ac6c77dcbab0d26e094e00b66f",
+                "url": "https://api.github.com/repos/ironer/timedebug/zipball/7667ed0ce77b610a7cf1b46e14d1fd81b41838ba",
+                "reference": "7667ed0ce77b610a7cf1b46e14d1fd81b41838ba",
                 "shasum": ""
             },
             "require": {
@@ -83,7 +86,7 @@
                 "debugging",
                 "modeling"
             ],
-            "time": "2013-05-11 19:38:26"
+            "time": "2013-05-11 20:01:22"
         }
     ],
     "packages-dev": [

@@ -1413,7 +1413,6 @@ td.titleAction = function(e) {
 			if (e.shiftKey) td.hideTitle(this);
 			else td.startTitleDrag(e, this);
 		} else if (!e.shiftKey) {
-			this.resized = false;
 			this.data.width = this.data.height = null;
 			td.titleAutosize(this);
 		} else return true;
@@ -1450,7 +1449,6 @@ td.titleResizing = function(e) {
 		el.data.width = el.tdWidth = Math.max(Math.min(td.viewSize.width - el.data.left - 20, td.actionData.width + e.screenX - td.actionData.startX), 16);
 		el.data.height = el.tdHeight = 16 * parseInt(Math.max(Math.min(td.viewSize.height - el.data.top - 35, td.actionData.height + e.screenY - td.actionData.startY), 16) / 16);
 		JAK.DOM.setStyle(el, {'width': el.tdWidth + 'px', 'height': el.tdHeight + 'px'});
-		if (!el.resized) el.resized = true;
 	} else {
 		td.endTitleAction();
 	}
@@ -1510,7 +1508,7 @@ td.titleAutosize = function(el) {
 	td.spaceX = Math.max(td.viewSize.width - el.data.left - 20, 0);
 	td.spaceY = 16 * parseInt(Math.max(td.viewSize.height - el.data.top - 35, 0) / 16);
 
-	if (el.resized) {
+	if (el.data.width !== null) {
 		el.style.width = (td.spaceX < el.data.width ? el.tdWidth = td.spaceX : el.tdWidth = el.data.width) + 'px';
 	} else if (td.spaceX < el.oriWidth) {
 		el.style.width = (el.tdWidth = td.spaceX) + 'px';
@@ -1519,7 +1517,7 @@ td.titleAutosize = function(el) {
 		tdCheckWidthDif = true;
 	}
 
-	if (el.resized) {
+	if (el.data.height !== null) {
 		el.style.height = (td.spaceY < el.data.height ? el.tdHeight = td.spaceY : el.tdHeight = el.data.height) + 'px';
 	} else if (td.spaceY < (el.changesHeight || 0) + el.tdInner.clientHeight || td.spaceY < el.oriHeight) {
 		el.style.height = (el.tdHeight = td.spaceY) + 'px';
@@ -1700,7 +1698,7 @@ td.readKeyDown = function(e) {
 				title = td.visibleTitles[i];
 				JAK.DOM.setStyle(title, {'display': 'none', 'zIndex': 99});
 				JAK.DOM.removeClass(title, 'nd-pinned');
-				title.pinned = title.resized = false;
+				title.pinned = false;
 				title.data.left = title.data.top = title.data.width = title.data.height = null;
 			}
 			td.visibleTitles.length = 0;
@@ -1900,11 +1898,11 @@ td.sendChanges = function(e) {
 		}
 		req.appendChild(JAK.mel('textarea', {'name': 'tdrequest', 'value': changesBase62}));
 
-//		console.debug(changes);
-//		console.debug(td.getTitlesData());
-//		console.debug(td.getTdData());
+		console.debug(changes);
+		console.debug(td.getTitlesData());
+		console.debug(td.getTdData());
 		td.logView.appendChild(req);
-		req.submit();
+//		req.submit();
 	} else if ((url = newLoc.url + newLoc.sendGet).length <= td.maxUrlLength) {
 		window.open(url, e.shiftKey ? '_blank' : '_self');
 	} else {

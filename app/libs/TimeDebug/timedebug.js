@@ -1828,9 +1828,9 @@ td.getTitlesData = function() {
 		if ((title = td.visibleTitles[i]).pinned) {
 			titlesData.push({
 				'path': td.getTitlePath(title),
-				'data': JSON.stringify(title.data),
+				'data': JSON.parse(JSON.stringify(title.data)),
 				'css': {
-					'scrollTop': parseInt(title.style.scrollTop),
+					'scrollTop': parseInt(title.scrollTop),
 					'zIndex': parseInt(title.style.zIndex)
 				}
 			});
@@ -1866,6 +1866,13 @@ td.getTdData = function() {
 
 	for (var i = 0, j = td.logRows.length; i < j; ++i) if (td.logRowsChosen[i]) tdData['logRowsChosenHashes'].push(td.logRows[i].hash);
 
+	tdData['styles'] = {};
+
+	tdData['scrolls'] = {
+		'tdContainer': {'scrollLeft': td.tdContainer.scrollLeft, 'scrollTop': td.tdContainer.scrollTop},
+		'logContainer': {'scrollLeft': td.logContainer.scrollLeft, 'scrollTop': td.logContainer.scrollTop}
+	};
+
 	// srollleft a scrolltop u logcontainer and tdcontainer a velikost tdwrapperu
 	// automaticke prepinani logu pri najeti na change v change listu
 	// aktualni stav skryti nebo podcerneni titulku
@@ -1879,6 +1886,7 @@ td.sendChanges = function(e) {
 	if (!td.allowClick || e.button !== JAK.Browser.mouse.left || !(changes = td.getChangesData()).length) return false;
 
 	td.disableClick();
+	if (td.activeTitle !== null) td.hideTitle();
 
 	changesBase62 = b62s.base8To62(b62s.compress(JSON.stringify(changes)));
 
@@ -1938,6 +1946,7 @@ td.reloadPage = function(e) {
 	if (!td.allowClick || e.button !== JAK.Browser.mouse.left) return false;
 
 	td.disableClick();
+	if (td.activeTitle !== null) td.hideTitle();
 
 	var i, j, newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
 	if (td.get) newLoc.push(td.get);

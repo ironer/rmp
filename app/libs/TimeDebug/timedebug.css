@@ -552,7 +552,7 @@ span.nd-var-unset {
 	border-radius: 4px 0 0 4px;
 }
 .nd-fullscreen #tdContainer #tdView {
-	padding-top: 50px;
+	margin-top: 42px;
 }
 .nd-fullscreen #logContainer {
 	position: fixed;

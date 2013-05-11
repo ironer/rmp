@@ -40,6 +40,8 @@ td.tdInnerWrapper = JAK.mel('div', {id: 'tdInnerWrapper'});
 td.tdView = JAK.mel('pre', {id: 'tdView'});
 td.tdFullWidth = false;
 td.tdWidth = 400;
+td.wrapperWidth = null;
+td.wrapperHeight = null;
 
 td.control = JAK.cel('div', 'nd-control');
 td.controlSpaceX = 0;
@@ -1746,9 +1748,12 @@ td.windowResize = function() {
 td.tdResizeWrapper = function() {
 	var viewWidth = td.tdView.clientWidth;
 	var viewHeight = td.tdView.clientHeight;
-	if (viewWidth > td.tdOuterWrapper.clientWidth) td.tdOuterWrapper.style.width = viewWidth + 'px';
-	if (viewHeight > td.tdOuterWrapper.clientHeight) td.tdOuterWrapper.style.height = viewHeight + 'px';
-	if (td.tdContainer.clientWidth > td.tdOuterWrapper.clientWidth) td.tdOuterWrapper.style.width = '100%';
+	if (viewWidth > td.tdOuterWrapper.clientWidth) td.tdOuterWrapper.style.width = td.wrapperWidth = viewWidth + 'px';
+	if (viewHeight > td.tdOuterWrapper.clientHeight) td.tdOuterWrapper.style.height = td.wrapperHeight = viewHeight + 'px';
+	if (td.tdContainer.clientWidth > td.tdOuterWrapper.clientWidth) {
+		td.wrapperWidth = null;
+		td.tdOuterWrapper.style.width = '100%';
+	}
 };
 
 td.logRowsSelected = function() {
@@ -1861,21 +1866,21 @@ td.getTdData = function() {
 		'tdFullWidth': td.tdFullWidth,
 		'tdWidth': td.tdWidth,
 		'logRowActiveHash': td.logRowActive === null ? '' : td.logRowActive.hash,
-		'logRowsChosenHashes': []
+		'logRowsChosenHashes': [],
+		'showLogRow': td.deleteChange.showLogRow,
+		'consoleConfig': td.consoleConfig,
+		'hide': td.hide[0]
 	};
 
 	for (var i = 0, j = td.logRows.length; i < j; ++i) if (td.logRowsChosen[i]) tdData['logRowsChosenHashes'].push(td.logRows[i].hash);
 
-	tdData['styles'] = {};
+	tdData['styles'] = {'tdOuterWrapper': {'width': td.wrapperWidth, 'height': td.wrapperHeight}};
 
 	tdData['scrolls'] = {
 		'tdContainer': {'scrollLeft': td.tdContainer.scrollLeft, 'scrollTop': td.tdContainer.scrollTop},
 		'logContainer': {'scrollLeft': td.logContainer.scrollLeft, 'scrollTop': td.logContainer.scrollTop}
 	};
 
-	// srollleft a scrolltop u logcontainer and tdcontainer a velikost tdwrapperu
-	// automaticke prepinani logu pri najeti na change v change listu
-	// aktualni stav skryti nebo podcerneni titulku
 	return tdData;
 };
 
@@ -1883,7 +1888,9 @@ td.sendChanges = function(e) {
 	td.tdStop(e);
 
 	var i, j, changes, changesBase62, newLoc, url;
-	if (!td.allowClick || e.button !== JAK.Browser.mouse.left || !(changes = td.getChangesData()).length) return false;
+	if (!td.allowClick || td.actionData.element !== null || e.button !== JAK.Browser.mouse.left || !(changes = td.getChangesData()).length) {
+		return false;
+	}
 
 	td.disableClick();
 	if (td.activeTitle !== null) td.hideTitle();
@@ -1909,6 +1916,9 @@ td.sendChanges = function(e) {
 		console.debug(changes);
 		console.debug(td.getTitlesData());
 		console.debug(td.getTdData());
+
+		
+
 		td.logView.appendChild(req);
 //		req.submit();
 	} else if ((url = newLoc.url + newLoc.sendGet).length <= td.maxUrlLength) {
@@ -1943,7 +1953,7 @@ td.sendChanges = function(e) {
 };
 
 td.reloadPage = function(e) {
-	if (!td.allowClick || e.button !== JAK.Browser.mouse.left) return false;
+	if (!td.allowClick || td.actionData.element !== null || e.button !== JAK.Browser.mouse.left) return false;
 
 	td.disableClick();
 	if (td.activeTitle !== null) td.hideTitle();

@@ -20,8 +20,8 @@ require_once(LIBS . '/autoload.php');
 spl_autoload_register(
 	function($className) {
 		if (file_exists(CLASSES . "/$className.php")) require_once(CLASSES . "/$className.php");
-	})
-;
+	}
+);
 
 if (DEBUG) {
 	TimeDebug::init(CACHE,

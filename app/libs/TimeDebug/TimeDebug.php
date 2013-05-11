@@ -253,7 +253,9 @@ class TimeDebug {
 			),
 			'OVLADANI MENU (pouze local)' => array(
 				'Shift + "odeslat"' => 'odeslat zmeny do noveho okna',
-				'Ctrl/Cmd + "odeslat"' => 'vynutit odeslani POSTem'
+				'Ctrl/Cmd + "odeslat"' => 'vynutit odeslani POSTem',
+				'Shift + "obnovit"' => 'obnovit stranku do noveho okna',
+				'Ctrl/Cmd + "obnovit"' => 'obnovit a zapomenout POST'
 			),
 			'EDITACE PROMENNYCH (pouze local)' => array(
 				'Right Click' => 'otevrit modal konzoli pro zadani',

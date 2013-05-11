@@ -1944,7 +1944,7 @@ td.reloadPage = function(e) {
 	var i, j, newLoc = [window.location.protocol + '//' + window.location.host + window.location.pathname];
 	if (td.get) newLoc.push(td.get);
 
-	if (td.post.length) {
+	if (td.post.length && !e.ctrlKey && !e.metaKey) {
 		var req = JAK.mel('form', {'action': newLoc.join('?'), method:'post'}, {'display': 'none'});
 		if (e.shiftKey) req.target = '_blank';
 

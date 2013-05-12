@@ -20,8 +20,7 @@ try {
 }
 
 $a = array(array('test'));
-App::dump($a);
-$b = 'test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test test';
+$b = 'zluva B';
 App::dump($a, $b);
 
 

@@ -26,12 +26,12 @@ spl_autoload_register(
 if (DEBUG) {
 	TimeDebug::init(CACHE,
 		array(
-			'advancedlog' => ADVANCEDLOG,
+			'advancedLog' => ADVANCEDLOG,
 			'local' => LOCAL,
 			'root' => ROOT,
-			'starttime' => NOW,
-			'pathconstants' => array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP'),
-			'urllength' => 4000,
+			'startTime' => NOW,
+			'pathConstants' => array('CLASSES', 'LIBS', 'MODELS', 'PROCESSORS', 'ROUTERS', 'SERVICES', 'TEMPLATES', 'APP'),
+			'urlLength' => 4000,
 		)
 	);
 }
@@ -41,13 +41,13 @@ if (DEBUG) {
 $app = new App('GMasdasdasdasdasd', array(array(1,2,3,4), 'zlu asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd as dva', TRUE), array(array(1,2,3,4), 'zlu asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd as dva', TRUE));
 
 if (!empty($_GET['mail'])) {
-	return $app->route('mailrouter')->getModel()->process();
+	return $app->route('mailRouter')->getModel()->process();
 } elseif (!empty($_GET['imap'])) {
-	return $app->route('imaprouter')->getModel()->process();
+	return $app->route('imapRouter')->getModel()->process();
 } elseif (!empty($_GET['read'])) {
-	return $app->route('readrouter')->getModel()->process();
+	return $app->route('readRouter')->getModel()->process();
 } elseif (!empty($_GET['xls'])) {
-	return $app->route('xlsrouter')->getModel()->process();
+	return $app->route('xlsRouter')->getModel()->process();
 } else {
 	return $app->route()->getModel()->process();
 }

@@ -11,12 +11,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ironer/base62shrink.git",
-                "reference": "96832b9aa3c2861fb34e323fd0346dd0b0b9c9ff"
+                "reference": "9436fc61b63fcbf85b9936d0a0a6dc2c41c3f243"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ironer/base62shrink/zipball/96832b9aa3c2861fb34e323fd0346dd0b0b9c9ff",
-                "reference": "96832b9aa3c2861fb34e323fd0346dd0b0b9c9ff",
+                "url": "https://api.github.com/repos/ironer/base62shrink/zipball/9436fc61b63fcbf85b9936d0a0a6dc2c41c3f243",
+                "reference": "9436fc61b63fcbf85b9936d0a0a6dc2c41c3f243",
                 "shasum": ""
             },
             "type": "library",
@@ -44,7 +44,7 @@
             "keywords": [
                 "compression"
             ],
-            "time": "2013-05-11 21:33:31"
+            "time": "2013-05-15 11:38:59"
         },
         {
             "name": "ironer/timedebug",
@@ -52,12 +52,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ironer/timedebug.git",
-                "reference": "10f73474164bcfdae7115547aa14ee551aff2f84"
+                "reference": "fd8c22d651f6027fdb933b8cb5d0a1d050833776"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ironer/timedebug/zipball/10f73474164bcfdae7115547aa14ee551aff2f84",
-                "reference": "10f73474164bcfdae7115547aa14ee551aff2f84",
+                "url": "https://api.github.com/repos/ironer/timedebug/zipball/fd8c22d651f6027fdb933b8cb5d0a1d050833776",
+                "reference": "fd8c22d651f6027fdb933b8cb5d0a1d050833776",
                 "shasum": ""
             },
             "require": {
@@ -86,7 +86,7 @@
                 "debugging",
                 "modeling"
             ],
-            "time": "2013-05-12 09:24:41"
+            "time": "2013-05-15 11:23:23"
         }
     ],
     "packages-dev": [

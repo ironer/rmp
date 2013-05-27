@@ -52,12 +52,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ironer/timedebug.git",
-                "reference": "fd8c22d651f6027fdb933b8cb5d0a1d050833776"
+                "reference": "718bab36f24201a51fc64f9d3bebc646e500623e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ironer/timedebug/zipball/fd8c22d651f6027fdb933b8cb5d0a1d050833776",
-                "reference": "fd8c22d651f6027fdb933b8cb5d0a1d050833776",
+                "url": "https://api.github.com/repos/ironer/timedebug/zipball/718bab36f24201a51fc64f9d3bebc646e500623e",
+                "reference": "718bab36f24201a51fc64f9d3bebc646e500623e",
                 "shasum": ""
             },
             "require": {
@@ -86,7 +86,7 @@
                 "debugging",
                 "modeling"
             ],
-            "time": "2013-05-15 11:23:23"
+            "time": "2013-05-25 23:30:44"
         }
     ],
     "packages-dev": [

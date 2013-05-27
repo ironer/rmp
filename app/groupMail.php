@@ -36,7 +36,7 @@ if (DEBUG) {
 	);
 }
 
-App::dump(TimeDebug::$request);
+//App::dump(TimeDebug::$request);
 
 $app = new App('GMasdasdasdasdasd', array(array(1,2,3,4), 'zlu asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd as dva', TRUE), array(array(1,2,3,4), 'zlu asd asd asd asd asd asd asd asd asd asd asd asd asd asd asd as dva', TRUE));
 

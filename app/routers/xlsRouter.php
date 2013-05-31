@@ -2,10 +2,10 @@
 
 $router = new Router($this->router, $this);
 
-$export = new Excel('exportXLS', $this);
+$export = new HtmlTable('exportXLS', $this);
 
 $export->config(array(
-	'encoding' => 'bin',
+	'type' => 'xls',
 	'table' => array(
 		array(1, 'žluva', 'černá vrána'),
 		array(3, 'Štefan', 'Fiedler'),

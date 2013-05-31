@@ -1,14 +1,13 @@
 <?php
 
 /*
- * $table is non-associative array of non-associtive arrays (rows) containing data or MySQL resource
+ * $data is non-associative array of non-associtive arrays (rows) containing data
  * $columns is non-associative array of associtive arrays (columns):
  * 	format: cell data format (number, ut, defaults to text)
  * 	header: header of column
  * 	pre: prefix of every data in given column
  * 	post: postfix of every data in given column
  * 	funct: PHP aggregate function (min, max, avg, sum), which is calculated on all data in column, or string
- * (ONLY for binary)
  * 	align: align of text in cell (right, center, defaults to left)
  * 	halign: align of header in cell (right, center, defaults to left)
  * 	falign: align of footer in cell (right, center, defaults to left)
@@ -16,12 +15,11 @@
  * 	fback: background of footer cell
  */
 
-class Excel {
+class HtmlTable {
 	const
-		FILE_ENCODING = 'encoding',
-		ENCODING_BINARY = 'bin', // default
-		ENCODING_UTF8 = 'utf8',
-		ENCODING_UTF16 = 'utf16',
+		TABLE_TYPE = 'type',
+		TYPE_SCREEN = 'screen', // default
+		TYPE_EXCEL = 'xls',
 
 		EXPORT_FILENAME = 'filename',
 		TABLE_SOURCE = 'table',
@@ -45,7 +43,7 @@ class Excel {
 	public $id;
 	public $container;
 
-	private $encoding = self::ENCODING_BINARY;
+	private $type = self::TYPE_SCREEN;
 	private $filename = 'document';
 	private $columns = array();
 	private $data;
@@ -67,7 +65,7 @@ class Excel {
 	public function config($options = array()) {
 		if (!is_array($options)) throw new Exception("Konfigurator exporteru pro Excel ocekava pole s konfiguraci.");
 
-		if (!empty($options[self::FILE_ENCODING])) $this->encoding = strtolower($options[self::FILE_ENCODING]);
+		if (!empty($options[self::TABLE_TYPE]) && !DEBUG) $this->type = strtolower($options[self::TABLE_TYPE]);
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
 		if (!empty($options[self::TABLE_SOURCE])) {
 			if (($type = gettype($options[self::TABLE_SOURCE])) === 'resource') $this->resource = $options[self::TABLE_SOURCE];
@@ -91,10 +89,8 @@ class Excel {
 
 		$this->printTable();
 
-		if (!DEBUG) {
-//			if ($this->container) $this->container->stop = TRUE;
-			die;
-		}
+		if ($this->type === self::TYPE_EXCEL) die;
+		else if ($this->container) $this->container->stop = TRUE;
 
 		App::lg('Tabulka vyexportovana', $this);
 	}
@@ -106,12 +102,7 @@ class Excel {
 		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 		header("Content-Disposition: attachment; filename=$this->filename.xls");
 
-		if ($this->encoding === self::ENCODING_BINARY) {
-			header("Content-Type: application/force-download");
-			header("Content-Type: application/octet-stream");
-			header("Content-Type: application/download");
-			header("Content-Transfer-Encoding: binary");
-		} elseif ($this->encoding === self::ENCODING_UTF16) {
+		if ($this->type === self::TYPE_EXCEL) {
 			header("Content-Type: application/vnd.ms-excel; charset=utf-16");
 		} else {
 			header("Content-Type: application/vnd.ms-excel; charset=utf-8");
@@ -149,20 +140,15 @@ class Excel {
 				self::COLUMN_HEADER => isset($this->resColumns[$i]) ? $this->resColumns[$i] : 'Sloupec ' . ($i + 1),
 				self::COLUMN_PREFIX => '',
 				self::COLUMN_POSTFIX => '',
-				self::COLUMN_FOOTER_FUNCTION => ''
+				self::COLUMN_FOOTER_FUNCTION => '',
+				self::COLUMN_BIN_ALIGN => 'left',
+				self::COLUMN_BIN_HEADER_ALIGN => 'left',
+				self::COLUMN_BIN_FOOTER_ALIGN => 'left',
+				self::COLUMN_BIN_HEADER_BACKGROUND => '#aaaaff',
+				self::COLUMN_BIN_FOOTER_BACKGROUND => '#aaaaff'
 			);
 			
 			$func = $col[self::COLUMN_FOOTER_FUNCTION] = strtolower(strval($col[self::COLUMN_FOOTER_FUNCTION]));
-			
-			if ($this->encoding === self::ENCODING_BINARY) {
-				$col += array(
-					self::COLUMN_BIN_ALIGN => 'left',
-					self::COLUMN_BIN_HEADER_ALIGN => 'left',
-					self::COLUMN_BIN_FOOTER_ALIGN => 'left',
-					self::COLUMN_BIN_HEADER_BACKGROUND => '#aaaaff',
-					self::COLUMN_BIN_FOOTER_BACKGROUND => '#aaaaff'
-				);
-			}
 
 			$col['_prePostLen'] = strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
 			$num = $col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER
@@ -177,16 +163,11 @@ class Excel {
 
 
 	private function printTableHeader(&$columns) {
-		if ($this->encoding === self::ENCODING_BINARY) echo pack("ssssss", 0x809, 0x8, 0x0, 0x10, 0x0, 0x0);
-		elseif ($this->encoding === self::ENCODING_UTF16) echo "\xFF\xFE" . mb_convert_encoding("<table>\n", 'UTF-16LE', 'UTF-8');
-		else echo "<table>\n";
-
 		for ($header = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			if ($this->encoding === self::ENCODING_BINARY) $header .= $this->getString($columns[$i][self::COLUMN_HEADER], 0, $i);
-			else $header .= ($i ? '<td>' : '<tr><td>') . $columns[$i][self::COLUMN_HEADER] . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+			$header .= ($i ? '<td>' : '<tr><td>') . $columns[$i][self::COLUMN_HEADER] . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 		}
 
-		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($header, 'UTF-16LE', 'UTF-8') : $header;
+		echo $this->type === self::TYPE_EXCEL ? "\xFF\xFE" . mb_convert_encoding("<table>\n" . $header, 'UTF-16LE', 'UTF-8') : "<table>\n" . $header;
 	}
 
 
@@ -229,14 +210,10 @@ class Excel {
 			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
 			else $num = $col['_num'];
 
-			if ($this->encoding === self::ENCODING_BINARY) {
-				$rowText .= $num ? $this->getNumber($var, $rowNum, $i) : $this->getString($var, $rowNum, $i);
-			} else {
-				$rowText .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
-			}
+			$rowText .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 		} unset($col);
 
-		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($rowText, 'UTF-16LE', 'UTF-8') : $rowText;
+		echo $this->type === self::TYPE_EXCEL ? mb_convert_encoding($rowText, 'UTF-16LE', 'UTF-8') : $rowText;
 	}
 
 
@@ -297,20 +274,12 @@ class Excel {
 				else $num = $col['_num'];
 			} else $var = '';
 
-			if ($this->encoding === self::ENCODING_BINARY) {
-				$results .= $num ? $this->getNumber($var, $rowNum + 1, $i) : $this->getString($var, $rowNum + 1, $i);
-				$labels .= $this->getString($label, $rowNum + 2, $i);
-			} else {
-				$results .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
-				$labels .= ($i ? '<td>' : '<tr><td>') . $label . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
-			}
+			$results .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+			$labels .= ($i ? '<td>' : '<tr><td>') . $label . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 		} unset($col);
 
-		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($results . $labels, 'UTF-16LE', 'UTF-8') : $results . $labels;
-
-		if ($this->encoding === self::ENCODING_BINARY) echo pack("ss", 0x0A, 0x00);
-		elseif ($this->encoding === self::ENCODING_UTF16) echo mb_convert_encoding("<table>\n", 'UTF-16LE', 'UTF-8');
-		else echo "</table>\n";
+		$text = $results . $labels . "<table>\n";
+		echo $this->type === self::TYPE_EXCEL ? mb_convert_encoding($text, 'UTF-16LE', 'UTF-8') : $text;
 	}
 
 

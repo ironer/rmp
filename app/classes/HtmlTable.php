@@ -22,19 +22,27 @@ class HtmlTable {
 		TYPE_EXCEL = 'xls',
 
 		EXPORT_FILENAME = 'filename',
-		TABLE_SOURCE = 'table',
+		TABLE_SOURCE = 'source',
 		TABLE_COLUMNS = 'columns',
 
 		COLUMN_FORMAT = 'format',
 		COLUMN_HEADER = 'header',
 		COLUMN_PREFIX = 'pre',
 		COLUMN_POSTFIX = 'post',
-		COLUMN_FOOTER_FUNCTION = 'func',
+		COLUMN_FUNCTION = 'func',
 		COLUMN_ALIGN = 'align',
-		COLUMN_HEADER_ALIGN = 'halign',
-		COLUMN_FOOTER_ALIGN = 'falign',
-		COLUMN_HEADER_BACKGROUND = 'hback',
-		COLUMN_FOOTER_BACKGROUND = 'fback',
+		COLUMN_HOVER = 'hover',
+		
+		TABLE_ATTRIBUTES = 'table',
+		T_HEAD_ATTRIBUTES = 'thead',
+		T_HEAD_TR_ATTRIBUTES = 'theadtr',
+		T_HEAD_TR_TD_ATTRIBUTES = 'theadtrtd',
+		T_BODY_ATTRIBUTES = 'tbody',
+		T_BODY_TR_ODD_ATTRIBUTES = 'odd',
+		T_BODY_TR_EVEN_ATTRIBUTES = 'odd',
+		T_FOOT_ATTRIBUTES = 'tfoot',
+		T_FOOT_TR_ATTRIBUTES = 'tfoottr',
+		T_FOOT_TR_TD_ATTRIBUTES = 'tfoottrtd',
 
 		FORMAT_TEXT = 'text',
 		FORMAT_INTEGER = 'int',
@@ -50,6 +58,17 @@ class HtmlTable {
 	private $data;
 	private $resource;
 	private $resColumns = array();
+
+	private $table = ' border="1" cellpadding="3px" cellspacing="0" align"left" bgcolor="#ffffff" color="#000000"';
+	private $thead = ' valign="middle"';
+	private $theadtr = ' bgcolor="#009edf"';
+	private $theadtrtd = ' color="#ffffff"';
+	private $tbody = ' valign="middle"';
+	private $odd = '';
+	private $even = ' bgcolor="#e6e6e6"';
+	private $tfoot = ' valign="middle"';
+	private $tfoottr = ' bgcolor="444444"';
+	private $tfoottrtd = ' color="#ffffff"';
 
 
 	public function __construct($id, $container) {
@@ -68,11 +87,27 @@ class HtmlTable {
 
 		if (!empty($options[self::TABLE_TYPE]) && !DEBUG) $this->type = strtolower($options[self::TABLE_TYPE]);
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
+
 		if (!empty($options[self::TABLE_SOURCE])) {
 			if (($type = gettype($options[self::TABLE_SOURCE])) === 'resource') $this->resource = $options[self::TABLE_SOURCE];
 			elseif ($type === 'array' && isset($options[self::TABLE_SOURCE][0][0])) $this->data = $options[self::TABLE_SOURCE];
 		}
+
 		if (!empty($options[self::TABLE_COLUMNS])) $this->columns = $options[self::TABLE_COLUMNS];
+		if (!empty($options[self::TABLE_ATTRIBUTES])) $this->table = ' ' . $options[self::TABLE_ATTRIBUTES];
+
+		if (!empty($options[self::T_HEAD_ATTRIBUTES])) $this->thead = ' ' . $options[self::T_HEAD_ATTRIBUTES];
+		if (!empty($options[self::T_HEAD_TR_ATTRIBUTES])) $this->theadtr = ' ' . $options[self::T_HEAD_TR_ATTRIBUTES];
+		if (!empty($options[self::T_HEAD_TR_TD_ATTRIBUTES])) $this->theadtrtd = ' ' . $options[self::T_HEAD_TR_TD_ATTRIBUTES];
+
+		if (!empty($options[self::T_BODY_ATTRIBUTES])) $this->tbody = ' ' . $options[self::T_BODY_ATTRIBUTES];
+		if (!empty($options[self::T_BODY_TR_ODD_ATTRIBUTES])) $this->odd = ' ' . $options[self::T_BODY_TR_ODD_ATTRIBUTES];
+		if (!empty($options[self::T_BODY_TR_EVEN_ATTRIBUTES])) $this->even = ' ' . $options[self::T_BODY_TR_EVEN_ATTRIBUTES];
+
+		if (!empty($options[self::T_FOOT_ATTRIBUTES])) $this->tfoot = ' ' . $options[self::T_FOOT_ATTRIBUTES];
+		if (!empty($options[self::T_FOOT_TR_ATTRIBUTES])) $this->tfoottr = ' ' . $options[self::T_FOOT_TR_ATTRIBUTES];
+		if (!empty($options[self::T_FOOT_TR_TD_ATTRIBUTES])) $this->tfoottrtd = ' ' . $options[self::T_FOOT_TR_TD_ATTRIBUTES];
+
 		App::lg('Nactena konfigurace', $this);
 	}
 
@@ -114,7 +149,7 @@ class HtmlTable {
 	private function getTable() {
 		$columns = $this->prepareColumns();
 
-		$retText = $this->getTableHeader($columns);
+		$retText = "<table$this->table>\n<thead$this->thead>\n" . $this->getTableHeader($columns) . "</thead>\n<tbody$this->tbody>\n";
 
 		$rowNum = 0;
 		if (isset($this->data)) {
@@ -128,7 +163,7 @@ class HtmlTable {
 			}
 		}
 
-		$retText .= $this->getTableFooter($rowNum, $columns);
+		$retText .= "</tbody>\n<tfoot$this->tfoot>\n" . $this->getTableFooter($rowNum, $columns) . "</tfoot>\n</table>\n";
 
 		return $this->type === self::TYPE_EXCEL ? mb_convert_encoding($retText, 'UTF-16LE', 'UTF-8') : $retText;
 	}
@@ -143,22 +178,17 @@ class HtmlTable {
 				self::COLUMN_HEADER => isset($this->resColumns[$i]) ? $this->resColumns[$i] : 'Sloupec ' . ($i + 1),
 				self::COLUMN_PREFIX => '',
 				self::COLUMN_POSTFIX => '',
-				self::COLUMN_FOOTER_FUNCTION => '',
-				self::COLUMN_ALIGN => 'left',
-				self::COLUMN_HEADER_ALIGN => 'left',
-				self::COLUMN_FOOTER_ALIGN => 'left',
-				self::COLUMN_HEADER_BACKGROUND => '#aaaaff',
-				self::COLUMN_FOOTER_BACKGROUND => '#aaaaff'
+				self::COLUMN_FUNCTION => ''
 			);
 			
-			$func = $col[self::COLUMN_FOOTER_FUNCTION] = strtolower(strval($col[self::COLUMN_FOOTER_FUNCTION]));
+			$func = $col[self::COLUMN_FUNCTION] = strtolower(strval($col[self::COLUMN_FUNCTION]));
 
 			$col['_prePostLen'] = strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
 			$num = $col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER
 				|| $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT;
 			$avg = $num || $col[self::COLUMN_FORMAT] === self::FORMAT_UT;
-			if (!$num && $func === 'sum') $col[self::COLUMN_FOOTER_FUNCTION] = '';
-			if (!$avg && $func === 'avg') $col[self::COLUMN_FOOTER_FUNCTION] = '';
+			if (!$num && $func === 'sum') $col[self::COLUMN_FUNCTION] = '';
+			if (!$avg && $func === 'avg') $col[self::COLUMN_FUNCTION] = '';
 		} unset($col);
 
 		return $columns;
@@ -167,10 +197,10 @@ class HtmlTable {
 
 	private function getTableHeader(&$columns) {
 		for ($header = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			$header .= '<td>' . $columns[$i][self::COLUMN_HEADER] . '</td>';
+			$header .= "<td$this->theadtrtd><b>" . $columns[$i][self::COLUMN_HEADER] . '</b></td>';
 		}
 
-		return "<table>\n<tr>" . $header . '</tr>';
+		return "<tr$this->theadtr>" . $header . "</tr>\n";
 	}
 
 
@@ -193,7 +223,7 @@ class HtmlTable {
 					$value = $var = strval($row[$i]);
 			}
 
-			switch($col[self::COLUMN_FOOTER_FUNCTION]) {
+			switch($col[self::COLUMN_FUNCTION]) {
 				case 'min':
 					if (!isset($col['_calc']) || ($col['_num'] ? $value < $col['_calc'] : strcasecmp($value, $col['_calc']) < 0)) {
 						$col['_calc'] = $value;
@@ -214,10 +244,10 @@ class HtmlTable {
 			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
 			else $num = $col['_num'];
 
-			$rowText .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+			$rowText .= '<td>' . $var . '</td>';
 		} unset($col);
 
-		return $rowText;
+		return '<tr' . $rowNum ? $this->odd : $this->even . '>' . $rowText . "</tr>\n";
 	}
 
 
@@ -229,7 +259,7 @@ class HtmlTable {
 			$result = NULL;
 			$label = '';
 
-			switch ($col[self::COLUMN_FOOTER_FUNCTION]) {
+			switch ($col[self::COLUMN_FUNCTION]) {
 				case 'min':
 					if (isset($col['_calc'])) {
 						$result = $col['_calc'];
@@ -260,7 +290,7 @@ class HtmlTable {
 			if ($result !== NULL) {
 				switch($col[self::COLUMN_FORMAT]) {
 					case self::FORMAT_INTEGER:
-						if ($col[self::COLUMN_FOOTER_FUNCTION] === 'avg') {
+						if ($col[self::COLUMN_FUNCTION] === 'avg') {
 							$var = is_float($result) ? $result : floatval(strval($result));
 						} else $var = is_int($result) ? $result : intval(strval($result));
 						break;
@@ -278,11 +308,12 @@ class HtmlTable {
 				else $num = $col['_num'];
 			} else $var = '';
 
-			$results .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
-			$labels .= ($i ? '<td>' : '<tr><td>') . $label . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+			$results .= "<td$this->tfoottrtd><b>" . $var . '</b></td>';
+			$labels .=  "<td$this->tfoottrtd><b>" . $label . '</b></td>';
 		} unset($col);
 
-		return $results . $labels . "<table>\n";
+		return "<tr$this->tfoottr>" . $results . "</tr>\n<tr$this->tfoottr>" . $labels . "</tr>\n";
 	}
+
 }
 

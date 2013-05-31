@@ -6,7 +6,7 @@ $export = new HtmlTable('exportXLS', $this);
 
 $export->config(array(
 	'type' => 'xls',
-	'table' => array(
+	'source' => array(
 		array(1, 'žluva', 'černá vrána'),
 		array(3, 'Štefan', 'Fiedler'),
 		array(7, 'něco', 'nic')

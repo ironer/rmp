@@ -35,14 +35,9 @@ class HtmlTable {
 		
 		TABLE_ATTRIBUTES = 'table',
 		T_HEAD_ATTRIBUTES = 'thead',
-		T_HEAD_TR_ATTRIBUTES = 'theadtr',
-		T_HEAD_TR_TD_ATTRIBUTES = 'theadtrtd',
-		T_BODY_ATTRIBUTES = 'tbody',
 		T_BODY_TR_ODD_ATTRIBUTES = 'odd',
-		T_BODY_TR_EVEN_ATTRIBUTES = 'odd',
+		T_BODY_TR_EVEN_ATTRIBUTES = 'even',
 		T_FOOT_ATTRIBUTES = 'tfoot',
-		T_FOOT_TR_ATTRIBUTES = 'tfoottr',
-		T_FOOT_TR_TD_ATTRIBUTES = 'tfoottrtd',
 
 		FORMAT_TEXT = 'text',
 		FORMAT_INTEGER = 'int',
@@ -59,17 +54,11 @@ class HtmlTable {
 	private $resource;
 	private $resColumns = array();
 
-	private $table = ' border="1" cellpadding="3px" cellspacing="0" align"left" bgcolor="#ffffff" color="#000000"';
-	private $thead = ' valign="middle"';
-	private $theadtr = ' bgcolor="#009edf"';
-	private $theadtrtd = ' color="#ffffff"';
-	private $tbody = ' valign="middle"';
+	private $table = ' border="1" cellpadding="3px" cellspacing="0"';
+	private $thead = ' bgcolor="#88ccff"';
 	private $odd = '';
-	private $even = ' bgcolor="#e6e6e6"';
-	private $tfoot = ' valign="middle"';
-	private $tfoottr = ' bgcolor="444444"';
-	private $tfoottrtd = ' color="#ffffff"';
-
+	private $even = ' bgcolor="#ddeeff"';
+	private $tfoot = ' bgcolor="#ffeebb"';
 
 	public function __construct($id, $container) {
 		if ($container instanceof App) {
@@ -97,16 +86,11 @@ class HtmlTable {
 		if (!empty($options[self::TABLE_ATTRIBUTES])) $this->table = ' ' . $options[self::TABLE_ATTRIBUTES];
 
 		if (!empty($options[self::T_HEAD_ATTRIBUTES])) $this->thead = ' ' . $options[self::T_HEAD_ATTRIBUTES];
-		if (!empty($options[self::T_HEAD_TR_ATTRIBUTES])) $this->theadtr = ' ' . $options[self::T_HEAD_TR_ATTRIBUTES];
-		if (!empty($options[self::T_HEAD_TR_TD_ATTRIBUTES])) $this->theadtrtd = ' ' . $options[self::T_HEAD_TR_TD_ATTRIBUTES];
 
-		if (!empty($options[self::T_BODY_ATTRIBUTES])) $this->tbody = ' ' . $options[self::T_BODY_ATTRIBUTES];
 		if (!empty($options[self::T_BODY_TR_ODD_ATTRIBUTES])) $this->odd = ' ' . $options[self::T_BODY_TR_ODD_ATTRIBUTES];
 		if (!empty($options[self::T_BODY_TR_EVEN_ATTRIBUTES])) $this->even = ' ' . $options[self::T_BODY_TR_EVEN_ATTRIBUTES];
 
 		if (!empty($options[self::T_FOOT_ATTRIBUTES])) $this->tfoot = ' ' . $options[self::T_FOOT_ATTRIBUTES];
-		if (!empty($options[self::T_FOOT_TR_ATTRIBUTES])) $this->tfoottr = ' ' . $options[self::T_FOOT_TR_ATTRIBUTES];
-		if (!empty($options[self::T_FOOT_TR_TD_ATTRIBUTES])) $this->tfoottrtd = ' ' . $options[self::T_FOOT_TR_TD_ATTRIBUTES];
 
 		App::lg('Nactena konfigurace', $this);
 	}
@@ -149,7 +133,7 @@ class HtmlTable {
 	private function getTable() {
 		$columns = $this->prepareColumns();
 
-		$retText = "<table$this->table>\n<thead$this->thead>\n" . $this->getTableHeader($columns) . "</thead>\n<tbody$this->tbody>\n";
+		$retText = "<table$this->table>\n" . $this->getTableHeader($columns);
 
 		$rowNum = 0;
 		if (isset($this->data)) {
@@ -163,9 +147,9 @@ class HtmlTable {
 			}
 		}
 
-		$retText .= "</tbody>\n<tfoot$this->tfoot>\n" . $this->getTableFooter($rowNum, $columns) . "</tfoot>\n</table>\n";
+		$retText .= $this->getTableFooter($rowNum, $columns) . "</table>\n";
 
-		return $this->type === self::TYPE_EXCEL ? mb_convert_encoding($retText, 'UTF-16LE', 'UTF-8') : $retText;
+		return $this->type === self::TYPE_EXCEL ? "\xFF\xFE" . mb_convert_encoding($retText, 'UTF-16LE', 'UTF-8') : $retText;
 	}
 
 
@@ -197,10 +181,10 @@ class HtmlTable {
 
 	private function getTableHeader(&$columns) {
 		for ($header = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			$header .= "<td$this->theadtrtd><b>" . $columns[$i][self::COLUMN_HEADER] . '</b></td>';
+			$header .= "<td$this->thead><b>" . $columns[$i][self::COLUMN_HEADER] . '</b></td>';
 		}
 
-		return "<tr$this->theadtr>" . $header . "</tr>\n";
+		return "<tr>" . $header . "</tr>\n";
 	}
 
 
@@ -244,10 +228,10 @@ class HtmlTable {
 			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
 			else $num = $col['_num'];
 
-			$rowText .= '<td>' . $var . '</td>';
+			$rowText .= '<td' . ($rowNum % 2 ? $this->odd : $this->even) . '>' . $var . '</td>';
 		} unset($col);
 
-		return '<tr' . $rowNum ? $this->odd : $this->even . '>' . $rowText . "</tr>\n";
+		return '<tr>' . $rowText . "</tr>\n";
 	}
 
 
@@ -308,11 +292,11 @@ class HtmlTable {
 				else $num = $col['_num'];
 			} else $var = '';
 
-			$results .= "<td$this->tfoottrtd><b>" . $var . '</b></td>';
-			$labels .=  "<td$this->tfoottrtd><b>" . $label . '</b></td>';
+			$results .= "<td$this->tfoot><b>" . $var . '</b></td>';
+			$labels .=  "<td$this->tfoot><b>" . $label . '</b></td>';
 		} unset($col);
 
-		return "<tr$this->tfoottr>" . $results . "</tr>\n<tr$this->tfoottr>" . $labels . "</tr>\n";
+		return "<tr>" . $results . "</tr>\n<tr>" . $labels . "</tr>\n";
 	}
 
 }

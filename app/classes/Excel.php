@@ -19,8 +19,8 @@
 class Excel {
 	const
 		FILE_ENCODING = 'encoding',
-		ENCODING_BINARY = 'bin',
-		ENCODING_UTF8 = 'utf8', // default
+		ENCODING_BINARY = 'bin', // default
+		ENCODING_UTF8 = 'utf8',
 		ENCODING_UTF16 = 'utf16',
 
 		EXPORT_FILENAME = 'filename',
@@ -45,7 +45,7 @@ class Excel {
 	public $id;
 	public $container;
 
-	private $encoding = self::ENCODING_UTF8;
+	private $encoding = self::ENCODING_BINARY;
 	private $filename = 'document';
 	private $columns = array();
 	private $data;
@@ -92,8 +92,8 @@ class Excel {
 		$this->printTable();
 
 		if (!DEBUG) {
-			if ($this->container) $this->container->stop = TRUE;
-			else die;
+//			if ($this->container) $this->container->stop = TRUE;
+			die;
 		}
 
 		App::lg('Tabulka vyexportovana', $this);
@@ -178,15 +178,15 @@ class Excel {
 
 	private function printTableHeader(&$columns) {
 		if ($this->encoding === self::ENCODING_BINARY) echo pack("ssssss", 0x809, 0x8, 0x0, 0x10, 0x0, 0x0);
-		elseif ($this->encoding === self::ENCODING_UTF16) echo "\xFF\xFE" . mb_convert_encoding("<table>\n", 'UTF-16LE') . "\n";
+		elseif ($this->encoding === self::ENCODING_UTF16) echo "\xFF\xFE" . mb_convert_encoding("<table>\n", 'UTF-16LE', 'UTF-8');
 		else echo "<table>\n";
 
 		for ($header = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			if ($this->encoding === self::ENCODING_BINARY) $header .= $this->getString($columns[$i][self::COLUMN_HEADER], $i, 0);
+			if ($this->encoding === self::ENCODING_BINARY) $header .= $this->getString($columns[$i][self::COLUMN_HEADER], 0, $i);
 			else $header .= ($i ? '<td>' : '<tr><td>') . $columns[$i][self::COLUMN_HEADER] . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 		}
 
-		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($header, 'UTF-16LE') : $header;
+		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($header, 'UTF-16LE', 'UTF-8') : $header;
 	}
 
 
@@ -230,13 +230,13 @@ class Excel {
 			else $num = $col['_num'];
 
 			if ($this->encoding === self::ENCODING_BINARY) {
-				$rowText .= $num ? $this->getNumber($var, $i, $rowNum) : $this->getString($var, $i, $rowNum);
+				$rowText .= $num ? $this->getNumber($var, $rowNum, $i) : $this->getString($var, $rowNum, $i);
 			} else {
 				$rowText .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 			}
 		} unset($col);
 
-		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($rowText, 'UTF-16LE') : $rowText;
+		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($rowText, 'UTF-16LE', 'UTF-8') : $rowText;
 	}
 
 
@@ -298,70 +298,30 @@ class Excel {
 			} else $var = '';
 
 			if ($this->encoding === self::ENCODING_BINARY) {
-				$results .= $num ? $this->getNumber($var, $i, $rowNum + 1) : $this->getString($var, $i, $rowNum + 1);
-				$labels .= $this->getString($label, $i, $rowNum + 2);
+				$results .= $num ? $this->getNumber($var, $rowNum + 1, $i) : $this->getString($var, $rowNum + 1, $i);
+				$labels .= $this->getString($label, $rowNum + 2, $i);
 			} else {
 				$results .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 				$labels .= ($i ? '<td>' : '<tr><td>') . $label . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 			}
 		} unset($col);
 
-		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($results . $labels, 'UTF-16LE') : $results . $labels;
+		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($results . $labels, 'UTF-16LE', 'UTF-8') : $results . $labels;
 
 		if ($this->encoding === self::ENCODING_BINARY) echo pack("ss", 0x0A, 0x00);
-		elseif ($this->encoding === self::ENCODING_UTF16) echo mb_convert_encoding("<table>\n", 'UTF-16LE');
+		elseif ($this->encoding === self::ENCODING_UTF16) echo mb_convert_encoding("<table>\n", 'UTF-16LE', 'UTF-8');
 		else echo "</table>\n";
 	}
 
 
-	private function getString($var, $column, $row) {
-		return $var;
+	private function getString($var, $row, $col) {
+		$L = strlen($var);
+		return pack("ssssss", 0x204, 8 + $L, $row, $col, 0x0, $L) . $var;
 	}
 
 
-	private function getNumber($var, $column, $row) {
-		return $var;
+	private function getNumber($var, $row, $col) {
+		return pack("sssss", 0x203, 14, $row, $col, 0x0) . pack("d", $var);
 	}
 }
 
-/*
- *     $result=mysql_query("select * from tbl_name");
-    function xlsBOF()
-    {
-    echo pack("ssssss", 0x809, 0x8, 0x0, 0x10, 0x0, 0x0);
-    return;
-    }
-    function xlsEOF()
-    {
-    echo pack("ss", 0x0A, 0x00);
-    return;
-    }
-    function xlsWriteNumber($Row, $Col, $Value)
-    {
-    echo pack("sssss", 0x203, 14, $Row, $Col, 0x0);
-    echo pack("d", $Value);
-    return;
-    }
-    function xlsWriteLabel($Row, $Col, $Value )
-    {
-    $L = strlen($Value);
-    echo pack("ssssss", 0x204, 8 + $L, $Row, $Col, 0x0, $L);
-    echo $Value;
-    return;
-    }
-
-    xlsBOF();
-
-    xlsWriteLabel(0,0,"Heading1");
-    xlsWriteLabel(0,1,"Heading2");
-    xlsWriteLabel(0,2,"Heading3");
-    $xlsRow = 1;
-    while($row=mysql_fetch_array($result))
-    {
-    xlsWriteNumber($xlsRow,0,$row['field1']);
-    xlsWriteLabel($xlsRow,1,$row['field2']);
-    xlsWriteLabel($xlsRow,2,$row['field3']);
-    $xlsRow++;
-    }
-    xlsEOF();
- */

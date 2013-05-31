@@ -70,10 +70,11 @@ class Excel {
 		if (!empty($options[self::FILE_ENCODING])) $this->encoding = strtolower($options[self::FILE_ENCODING]);
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
 		if (!empty($options[self::TABLE_SOURCE])) {
-			if ($type = gettype($this->data) === 'resource') $this->resource = $options[self::TABLE_SOURCE];
+			if (($type = gettype($options[self::TABLE_SOURCE])) === 'resource') $this->resource = $options[self::TABLE_SOURCE];
 			elseif ($type === 'array' && isset($options[self::TABLE_SOURCE][0][0])) $this->data = $options[self::TABLE_SOURCE];
 		}
 		if (!empty($options[self::TABLE_COLUMNS])) $this->columns = $options[self::TABLE_COLUMNS];
+		App::lg('Nactena konfigurace', $this);
 	}
 
 	public function go() {
@@ -88,10 +89,14 @@ class Excel {
 		if (DEBUG) App::lg('Tabulka pripravena pro export', $this);
 		else $this->sendHead();
 
-		$this->printTableHeader();
-		$this->printTableBody();
+		$this->printTable();
 
-		if (!DEBUG) die();
+		if (!DEBUG) {
+			if ($this->container) $this->container->stop = TRUE;
+			else die;
+		}
+
+		App::lg('Tabulka vyexportovana', $this);
 	}
 
 
@@ -114,21 +119,28 @@ class Excel {
 	}
 
 
-	private function printTableHeader() {
-		if ($this->encoding === self::ENCODING_BINARY) echo pack("ssssss", 0x809, 0x8, 0x0, 0x10, 0x0, 0x0);
-		elseif ($this->encoding === self::ENCODING_UTF16) echo "\xFF\xFE" . mb_convert_encoding("<table>\n", 'UTF-16LE') . "\n";
-		else echo "<table>\n";
+	private function printTable() {
+		$columns = $this->prepareColumns();
 
-		for ($header = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
-			if ($this->encoding === self::ENCODING_BINARY) $header .= $this->getString($this->columns[$i][self::COLUMN_HEADER], $i, 0);
-			else $header .= ($i ? '<td>' : '<tr><td>') . $this->columns[$i][self::COLUMN_HEADER] . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+		$this->printTableHeader($columns);
+
+		$rowNum = 0;
+		if (isset($this->data)) {
+			for ($j = count($this->data); $rowNum < $j; ++$rowNum) {
+				$this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns);
+			}
+		}
+		if (isset($this->resource)) {
+			while ($row = mysql_fetch_row($this->resource)) {
+				$this->printOneRow($row, ++$rowNum, $columns);
+			}
 		}
 
-		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($header, 'UTF-16LE') : $header;
+		$this->printTableFooter($rowNum, $columns);
 	}
 
 
-	private function printTableBody() {
+	private function prepareColumns() {
 		for ($columns = array(), $i = 0, $j = count($this->columns); $i < $j; ++$i) {
 			$columns[$i] = (array) $this->columns[$i] + array(
 				self::COLUMN_FORMAT => self::FORMAT_TEXT,
@@ -148,6 +160,7 @@ class Excel {
 				);
 			}
 
+			$columns[$i]['_prePostLen'] = strlen($columns[$i][self::COLUMN_PREFIX] . $columns[$i][self::COLUMN_POSTFIX]);
 			$num = $columns[$i]['_num'] = $columns[$i][self::COLUMN_FORMAT] === self::FORMAT_INTEGER
 				|| $columns[$i][self::COLUMN_FORMAT] === self::FORMAT_FLOAT;
 			$avg = $num || $columns[$i][self::COLUMN_FORMAT] === self::FORMAT_UT;
@@ -155,57 +168,138 @@ class Excel {
 			if (!$avg && $func === 'avg') $columns[$i][self::COLUMN_FOOTER_FUNCTION] = '';
 		}
 
-		if (isset($this->data)) {
-			for ($i = 0, $j = count($this->data); $i < $j; ++$i) {
-				for ($row = '', $k = 0, $l = count($this->data[$i]); $k < $l; ++$k) {
-					switch($columns[$i][self::COLUMN_FORMAT]) {
-						case self::FORMAT_INTEGER:
-							$value = $var = is_int($this->data[$i][$k]) ? $this->data[$i][$k] : intval(strval($this->data[$i][$k]));
-							break;
-						case self::FORMAT_FLOAT:
-							$value = $var = is_float($this->data[$i][$k]) ? $this->data[$i][$k] : floatval(strval($this->data[$i][$k]));
-							break;
-						case self::FORMAT_UT:
-							$var = date('%d.%m.%Y %H:%i:%s', $value = $this->data[$i][$k]);
-							break;
-						default:
-							$value = $var = strval($this->data[$i][$k]);
-					}
-
-					switch($columns[$i][self::COLUMN_FOOTER_FUNCTION]) {
-						case 'min':
-							if (!isset($columns[$i]['_calc']) || $value < $columns[$i]['_calc']) $columns[$i]['_calc'] = $value;
-							break;
-						case 'max':
-							if (!isset($columns[$i]['_calc']) || $value > $columns[$i]['_calc']) $columns[$i]['_calc'] = $value;
-							break;
-						case 'avg':
-						case 'sum':
-							if (!isset($columns[$i]['_calc'])) $columns[$i]['_calc'] = $value;
-							else $columns[$i]['_calc'] += $value;
-							break;
-						case 'min':
-							if (!isset($columns[$i]['_temp'][0]) || $value < $columns[$i]['_temp'][0]) $columns[$i]['_temp'][0] = $value;
-					}
-
-
-					if ($this->encoding === self::ENCODING_BINARY) {
-						$row .= $num ? $this->getNumber($var, $i, $k) : $this->getString($var, $i, $k);
-					} else {
-						$row .= ($k ? '<td>' : '<tr><td>') . $this->columns[$i][self::COLUMN_HEADER] . ($k === $l - 1 ? "</td></tr>\n" : '</td>');
-					}
-				}
-
-				echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($row, 'UTF-16LE') : $row;
-			}
-
-		}
+		return $columns;
 	}
 
 
-	private function printTableFooter() {
-		if ($encoding === self::ENCODING_BINARY) echo pack("ss", 0x0A, 0x00);
-		elseif ($encoding === self::ENCODING_UTF16) echo mb_convert_encoding("<table>\n", 'UTF-16LE');
+	private function printTableHeader(&$columns) {
+		if ($this->encoding === self::ENCODING_BINARY) echo pack("ssssss", 0x809, 0x8, 0x0, 0x10, 0x0, 0x0);
+		elseif ($this->encoding === self::ENCODING_UTF16) echo "\xFF\xFE" . mb_convert_encoding("<table>\n", 'UTF-16LE') . "\n";
+		else echo "<table>\n";
+
+		for ($header = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
+			if ($this->encoding === self::ENCODING_BINARY) $header .= $this->getString($columns[$i][self::COLUMN_HEADER], $i, 0);
+			else $header .= ($i ? '<td>' : '<tr><td>') . $columns[$i][self::COLUMN_HEADER] . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+		}
+
+		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($header, 'UTF-16LE') : $header;
+	}
+
+
+	private function printOneRow($row, $rowNum, &$columns) {
+		for ($rowText = '', $i = 0, $j = count($row); $i < $j; ++$i) {
+			switch($columns[$i][self::COLUMN_FORMAT]) {
+				case self::FORMAT_INTEGER:
+					$value = $var = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i]));
+					break;
+				case self::FORMAT_FLOAT:
+					$value = $var = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i]));
+					break;
+				case self::FORMAT_UT:
+					$var = date('%d.%m.%Y %H:%i:%s', $value = $row[$i]);
+					break;
+				default:
+					$value = $var = strval($row[$i]);
+			}
+
+			switch($columns[$i][self::COLUMN_FOOTER_FUNCTION]) {
+				case 'min':
+					if (!isset($columns[$i]['_calc']) || $value < $columns[$i]['_calc']) $columns[$i]['_calc'] = $value;
+					break;
+				case 'max':
+					if (!isset($columns[$i]['_calc']) || $value > $columns[$i]['_calc']) $columns[$i]['_calc'] = $value;
+					break;
+				case 'avg':
+				case 'sum':
+					if (!isset($columns[$i]['_calc'])) $columns[$i]['_calc'] = $value;
+					else $columns[$i]['_calc'] += $value;
+			}
+
+			$num = FALSE;
+			if ($columns[$i]['_prePostLen']) $var = $columns[$i][self::COLUMN_PREFIX] . $var . $columns[$i][self::COLUMN_POSTFIX];
+			else $num = $columns[$i]['_num'];
+
+			if ($this->encoding === self::ENCODING_BINARY) {
+				$rowText .= $num ? $this->getNumber($var, $i, $rowNum) : $this->getString($var, $i, $rowNum);
+			} else {
+				$rowText .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+			}
+		}
+
+		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($rowText, 'UTF-16LE') : $rowText;
+	}
+
+
+	private function printTableFooter($rowNum, &$columns) {
+		$labels = $results = '';
+
+		for ($i = 0, $j = count($columns); $i < $j; ++$i) {
+			$result = NULL;
+			$label = '';
+
+			App::dump($columns[$i][self::COLUMN_FOOTER_FUNCTION]);
+			switch ($columns[$i][self::COLUMN_FOOTER_FUNCTION]) {
+				case 'min':
+					if (!isset($columns[$i]['_calc'])) {
+						$result = $columns[$i]['_calc'];
+						$label = 'Minimum';
+					}
+					break;
+				case 'max':
+					if (!isset($columns[$i]['_calc'])) {
+						$result = $columns[$i]['_calc'];
+						$label = 'Maximum';
+					}
+					break;
+				case 'avg':
+					if (!isset($columns[$i]['_calc'])) {
+						$result = $rowNum ? $columns[$i]['_calc'] / $rowNum : 0 ;
+						$label = 'Average';
+					}
+					break;
+				case 'sum':
+					if (!isset($columns[$i]['_calc'])) {
+						$result = $columns[$i]['_calc'];
+						$label = 'Sum';
+					}
+			}
+
+			$num = FALSE;
+
+			if ($result !== NULL) {
+				switch($columns[$i][self::COLUMN_FORMAT]) {
+					case self::FORMAT_INTEGER:
+						if ($columns[$i][self::COLUMN_FOOTER_FUNCTION] === 'avg') {
+							$var = is_float($result) ? $result : floatval(strval($result));
+						} else $var = is_int($result) ? $result : intval(strval($result));
+						break;
+					case self::FORMAT_FLOAT:
+						$var = is_float($result) ? $result : floatval(strval($result));
+						break;
+					case self::FORMAT_UT:
+						$var = date('%d.%m.%Y %H:%i:%s', $result);
+						break;
+					default:
+						$var = strval($result);
+				}
+
+				if ($columns[$i]['_prePostLen']) $var = $columns[$i][self::COLUMN_PREFIX] . $result . $columns[$i][self::COLUMN_POSTFIX];
+				else $num = $columns[$i]['_num'];
+			} else $var = '';
+
+			if ($this->encoding === self::ENCODING_BINARY) {
+				$results .= $num ? $this->getNumber($var, $i, $rowNum + 1) : $this->getString($var, $i, $rowNum + 1);
+				$labels .= $this->getString($label, $i, $rowNum + 2);
+			} else {
+				$results .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+				$labels .= ($i ? '<td>' : '<tr><td>') . $label . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+			}
+		}
+
+		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($results . $labels, 'UTF-16LE') : $results . $labels;
+
+		if ($this->encoding === self::ENCODING_BINARY) echo pack("ss", 0x0A, 0x00);
+		elseif ($this->encoding === self::ENCODING_UTF16) echo mb_convert_encoding("<table>\n", 'UTF-16LE');
 		else echo "</table>\n";
 	}
 

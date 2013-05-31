@@ -142,16 +142,20 @@ class Excel {
 
 	private function prepareColumns() {
 		for ($columns = array(), $i = 0, $j = count($this->columns); $i < $j; ++$i) {
-			$columns[$i] = (array) $this->columns[$i] + array(
+			$col = &$columns[$i];
+
+			$col = (array) $this->columns[$i] + array(
 				self::COLUMN_FORMAT => self::FORMAT_TEXT,
 				self::COLUMN_HEADER => isset($this->resColumns[$i]) ? $this->resColumns[$i] : 'Sloupec ' . ($i + 1),
 				self::COLUMN_PREFIX => '',
 				self::COLUMN_POSTFIX => '',
 				self::COLUMN_FOOTER_FUNCTION => ''
 			);
-			$func = $columns[$i][self::COLUMN_FOOTER_FUNCTION] = strtolower(strval($columns[$i][self::COLUMN_FOOTER_FUNCTION]));
+			
+			$func = $col[self::COLUMN_FOOTER_FUNCTION] = strtolower(strval($col[self::COLUMN_FOOTER_FUNCTION]));
+			
 			if ($this->encoding === self::ENCODING_BINARY) {
-				$columns[$i] += array(
+				$col += array(
 					self::COLUMN_BIN_ALIGN => 'left',
 					self::COLUMN_BIN_HEADER_ALIGN => 'left',
 					self::COLUMN_BIN_FOOTER_ALIGN => 'left',
@@ -160,13 +164,13 @@ class Excel {
 				);
 			}
 
-			$columns[$i]['_prePostLen'] = strlen($columns[$i][self::COLUMN_PREFIX] . $columns[$i][self::COLUMN_POSTFIX]);
-			$num = $columns[$i]['_num'] = $columns[$i][self::COLUMN_FORMAT] === self::FORMAT_INTEGER
-				|| $columns[$i][self::COLUMN_FORMAT] === self::FORMAT_FLOAT;
-			$avg = $num || $columns[$i][self::COLUMN_FORMAT] === self::FORMAT_UT;
-			if (!$num && $func === 'sum') $columns[$i][self::COLUMN_FOOTER_FUNCTION] = '';
-			if (!$avg && $func === 'avg') $columns[$i][self::COLUMN_FOOTER_FUNCTION] = '';
-		}
+			$col['_prePostLen'] = strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
+			$num = $col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER
+				|| $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT;
+			$avg = $num || $col[self::COLUMN_FORMAT] === self::FORMAT_UT;
+			if (!$num && $func === 'sum') $col[self::COLUMN_FOOTER_FUNCTION] = '';
+			if (!$avg && $func === 'avg') $col[self::COLUMN_FOOTER_FUNCTION] = '';
+		} unset($col);
 
 		return $columns;
 	}
@@ -188,7 +192,9 @@ class Excel {
 
 	private function printOneRow($row, $rowNum, &$columns) {
 		for ($rowText = '', $i = 0, $j = count($row); $i < $j; ++$i) {
-			switch($columns[$i][self::COLUMN_FORMAT]) {
+			$col = &$columns[$i];
+
+			switch($col[self::COLUMN_FORMAT]) {
 				case self::FORMAT_INTEGER:
 					$value = $var = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i]));
 					break;
@@ -202,29 +208,33 @@ class Excel {
 					$value = $var = strval($row[$i]);
 			}
 
-			switch($columns[$i][self::COLUMN_FOOTER_FUNCTION]) {
+			switch($col[self::COLUMN_FOOTER_FUNCTION]) {
 				case 'min':
-					if (!isset($columns[$i]['_calc']) || $value < $columns[$i]['_calc']) $columns[$i]['_calc'] = $value;
+					if (!isset($col['_calc']) || ($col['_num'] ? $value < $col['_calc'] : strcasecmp($value, $col['_calc']) < 0)) {
+						$col['_calc'] = $value;
+					}
 					break;
 				case 'max':
-					if (!isset($columns[$i]['_calc']) || $value > $columns[$i]['_calc']) $columns[$i]['_calc'] = $value;
+					if (!isset($col['_calc']) || ($col['_num'] ? $value > $col['_calc'] : strcasecmp($value, $col['_calc']) > 0)) {
+						$col['_calc'] = $value;
+					}
 					break;
 				case 'avg':
 				case 'sum':
-					if (!isset($columns[$i]['_calc'])) $columns[$i]['_calc'] = $value;
-					else $columns[$i]['_calc'] += $value;
+					if (!isset($col['_calc'])) $col['_calc'] = $value;
+					else $col['_calc'] += $value;
 			}
 
 			$num = FALSE;
-			if ($columns[$i]['_prePostLen']) $var = $columns[$i][self::COLUMN_PREFIX] . $var . $columns[$i][self::COLUMN_POSTFIX];
-			else $num = $columns[$i]['_num'];
+			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
+			else $num = $col['_num'];
 
 			if ($this->encoding === self::ENCODING_BINARY) {
 				$rowText .= $num ? $this->getNumber($var, $i, $rowNum) : $this->getString($var, $i, $rowNum);
 			} else {
 				$rowText .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 			}
-		}
+		} unset($col);
 
 		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($rowText, 'UTF-16LE') : $rowText;
 	}
@@ -234,42 +244,42 @@ class Excel {
 		$labels = $results = '';
 
 		for ($i = 0, $j = count($columns); $i < $j; ++$i) {
+			$col = &$columns[$i];
 			$result = NULL;
 			$label = '';
 
-			App::dump($columns[$i][self::COLUMN_FOOTER_FUNCTION]);
-			switch ($columns[$i][self::COLUMN_FOOTER_FUNCTION]) {
+			switch ($col[self::COLUMN_FOOTER_FUNCTION]) {
 				case 'min':
-					if (!isset($columns[$i]['_calc'])) {
-						$result = $columns[$i]['_calc'];
+					if (isset($col['_calc'])) {
+						$result = $col['_calc'];
 						$label = 'Minimum';
 					}
 					break;
 				case 'max':
-					if (!isset($columns[$i]['_calc'])) {
-						$result = $columns[$i]['_calc'];
+					if (isset($col['_calc'])) {
+						$result = $col['_calc'];
 						$label = 'Maximum';
 					}
 					break;
 				case 'avg':
-					if (!isset($columns[$i]['_calc'])) {
-						$result = $rowNum ? $columns[$i]['_calc'] / $rowNum : 0 ;
-						$label = 'Average';
+					if (isset($col['_calc'])) {
+						$result = $rowNum ? $col['_calc'] / $rowNum : 0 ;
+						$label = 'Prumer';
 					}
 					break;
 				case 'sum':
-					if (!isset($columns[$i]['_calc'])) {
-						$result = $columns[$i]['_calc'];
-						$label = 'Sum';
+					if (isset($col['_calc'])) {
+						$result = $col['_calc'];
+						$label = 'Suma';
 					}
 			}
 
 			$num = FALSE;
 
 			if ($result !== NULL) {
-				switch($columns[$i][self::COLUMN_FORMAT]) {
+				switch($col[self::COLUMN_FORMAT]) {
 					case self::FORMAT_INTEGER:
-						if ($columns[$i][self::COLUMN_FOOTER_FUNCTION] === 'avg') {
+						if ($col[self::COLUMN_FOOTER_FUNCTION] === 'avg') {
 							$var = is_float($result) ? $result : floatval(strval($result));
 						} else $var = is_int($result) ? $result : intval(strval($result));
 						break;
@@ -283,8 +293,8 @@ class Excel {
 						$var = strval($result);
 				}
 
-				if ($columns[$i]['_prePostLen']) $var = $columns[$i][self::COLUMN_PREFIX] . $result . $columns[$i][self::COLUMN_POSTFIX];
-				else $num = $columns[$i]['_num'];
+				if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $result . $col[self::COLUMN_POSTFIX];
+				else $num = $col['_num'];
 			} else $var = '';
 
 			if ($this->encoding === self::ENCODING_BINARY) {
@@ -294,7 +304,7 @@ class Excel {
 				$results .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 				$labels .= ($i ? '<td>' : '<tr><td>') . $label . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 			}
-		}
+		} unset($col);
 
 		echo $this->encoding === self::ENCODING_UTF16 ? mb_convert_encoding($results . $labels, 'UTF-16LE') : $results . $labels;
 

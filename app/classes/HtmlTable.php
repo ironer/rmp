@@ -24,16 +24,17 @@ class HtmlTable {
 		EXPORT_FILENAME = 'filename',
 		TABLE_SOURCE = 'table',
 		TABLE_COLUMNS = 'columns',
+
 		COLUMN_FORMAT = 'format',
 		COLUMN_HEADER = 'header',
 		COLUMN_PREFIX = 'pre',
 		COLUMN_POSTFIX = 'post',
 		COLUMN_FOOTER_FUNCTION = 'func',
-		COLUMN_BIN_ALIGN = 'align',
-		COLUMN_BIN_HEADER_ALIGN = 'halign',
-		COLUMN_BIN_FOOTER_ALIGN = 'falign',
-		COLUMN_BIN_HEADER_BACKGROUND = 'hback',
-		COLUMN_BIN_FOOTER_BACKGROUND = 'fback',
+		COLUMN_ALIGN = 'align',
+		COLUMN_HEADER_ALIGN = 'halign',
+		COLUMN_FOOTER_ALIGN = 'falign',
+		COLUMN_HEADER_BACKGROUND = 'hback',
+		COLUMN_FOOTER_BACKGROUND = 'fback',
 
 		FORMAT_TEXT = 'text',
 		FORMAT_INTEGER = 'int',
@@ -87,7 +88,7 @@ class HtmlTable {
 		if (DEBUG) App::lg('Tabulka pripravena pro export', $this);
 		else $this->sendHead();
 
-		$this->printTable();
+		echo $this->getTable();
 
 		if ($this->type === self::TYPE_EXCEL) die;
 		else if ($this->container) $this->container->stop = TRUE;
@@ -110,24 +111,26 @@ class HtmlTable {
 	}
 
 
-	private function printTable() {
+	private function getTable() {
 		$columns = $this->prepareColumns();
 
-		$this->printTableHeader($columns);
+		$retText = $this->getTableHeader($columns);
 
 		$rowNum = 0;
 		if (isset($this->data)) {
 			for ($j = count($this->data); $rowNum < $j; ++$rowNum) {
-				$this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns);
+				$retText .= $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns);
 			}
 		}
 		if (isset($this->resource)) {
 			while ($row = mysql_fetch_row($this->resource)) {
-				$this->printOneRow($row, ++$rowNum, $columns);
+				$retText .= $this->printOneRow($row, ++$rowNum, $columns);
 			}
 		}
 
-		$this->printTableFooter($rowNum, $columns);
+		$retText .= $this->getTableFooter($rowNum, $columns);
+
+		return $this->type === self::TYPE_EXCEL ? mb_convert_encoding($retText, 'UTF-16LE', 'UTF-8') : $retText;
 	}
 
 
@@ -141,11 +144,11 @@ class HtmlTable {
 				self::COLUMN_PREFIX => '',
 				self::COLUMN_POSTFIX => '',
 				self::COLUMN_FOOTER_FUNCTION => '',
-				self::COLUMN_BIN_ALIGN => 'left',
-				self::COLUMN_BIN_HEADER_ALIGN => 'left',
-				self::COLUMN_BIN_FOOTER_ALIGN => 'left',
-				self::COLUMN_BIN_HEADER_BACKGROUND => '#aaaaff',
-				self::COLUMN_BIN_FOOTER_BACKGROUND => '#aaaaff'
+				self::COLUMN_ALIGN => 'left',
+				self::COLUMN_HEADER_ALIGN => 'left',
+				self::COLUMN_FOOTER_ALIGN => 'left',
+				self::COLUMN_HEADER_BACKGROUND => '#aaaaff',
+				self::COLUMN_FOOTER_BACKGROUND => '#aaaaff'
 			);
 			
 			$func = $col[self::COLUMN_FOOTER_FUNCTION] = strtolower(strval($col[self::COLUMN_FOOTER_FUNCTION]));
@@ -162,17 +165,18 @@ class HtmlTable {
 	}
 
 
-	private function printTableHeader(&$columns) {
+	private function getTableHeader(&$columns) {
 		for ($header = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			$header .= ($i ? '<td>' : '<tr><td>') . $columns[$i][self::COLUMN_HEADER] . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
+			$header .= '<td>' . $columns[$i][self::COLUMN_HEADER] . '</td>';
 		}
 
-		echo $this->type === self::TYPE_EXCEL ? "\xFF\xFE" . mb_convert_encoding("<table>\n" . $header, 'UTF-16LE', 'UTF-8') : "<table>\n" . $header;
+		return "<table>\n<tr>" . $header . '</tr>';
 	}
 
 
 	private function printOneRow($row, $rowNum, &$columns) {
-		for ($rowText = '', $i = 0, $j = count($row); $i < $j; ++$i) {
+		$rowText = '';
+		for ($i = 0, $j = count($row); $i < $j; ++$i) {
 			$col = &$columns[$i];
 
 			switch($col[self::COLUMN_FORMAT]) {
@@ -213,11 +217,11 @@ class HtmlTable {
 			$rowText .= ($i ? '<td>' : '<tr><td>') . $var . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 		} unset($col);
 
-		echo $this->type === self::TYPE_EXCEL ? mb_convert_encoding($rowText, 'UTF-16LE', 'UTF-8') : $rowText;
+		return $rowText;
 	}
 
 
-	private function printTableFooter($rowNum, &$columns) {
+	private function getTableFooter($rowNum, &$columns) {
 		$labels = $results = '';
 
 		for ($i = 0, $j = count($columns); $i < $j; ++$i) {
@@ -278,19 +282,7 @@ class HtmlTable {
 			$labels .= ($i ? '<td>' : '<tr><td>') . $label . ($i === $j - 1 ? "</td></tr>\n" : '</td>');
 		} unset($col);
 
-		$text = $results . $labels . "<table>\n";
-		echo $this->type === self::TYPE_EXCEL ? mb_convert_encoding($text, 'UTF-16LE', 'UTF-8') : $text;
-	}
-
-
-	private function getString($var, $row, $col) {
-		$L = strlen($var);
-		return pack("ssssss", 0x204, 8 + $L, $row, $col, 0x0, $L) . $var;
-	}
-
-
-	private function getNumber($var, $row, $col) {
-		return pack("sssss", 0x203, 14, $row, $col, 0x0) . pack("d", $var);
+		return $results . $labels . "<table>\n";
 	}
 }
 

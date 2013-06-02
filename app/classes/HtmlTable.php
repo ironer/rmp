@@ -214,37 +214,19 @@ class HtmlTable {
 
 			switch($col[self::COLUMN_FUNCTION]) {
 				case 'min':
-					if (!isset($col['_calc'])) {
-						if ($col['_num']) $col['_calc'] = $col['_value'] = $value;
-						else $col['_calc'] = iconv('UTF-8', 'ASCII//TRANSLIT', $col['_value'] = $value);
-					} elseif ($col['_num'] && $value < $col['_calc']) {
-						$col['_calc'] = $col['_value'] = $value;
-					} else {
-						$calc = iconv('UTF-8', 'ASCII//TRANSLIT', $value);
-						if (strcasecmp($value, $col['_calc']) < 0) {
-							$col['_calc'] = $calc;
-							$col['_value'] = $value;
-						}
+					if (!isset($col['_calc']) || ($col['_num'] ? $value < $col['_calc'] : strcasecmp($value, $col['_calc']) < 0)) {
+						$col['_calc'] = $value;
 					}
 					break;
 				case 'max':
-					if (!isset($col['_calc'])) {
-						if ($col['_num']) $col['_calc'] = $col['_value'] = $value;
-						else $col['_calc'] = iconv('UTF-8', 'ASCII//TRANSLIT', $col['_value'] = $value);
-					} elseif ($col['_num'] && $value > $col['_calc']) {
-						$col['_calc'] = $col['_value'] = $value;
-					} else {
-						$calc = iconv('UTF-8', 'ASCII//TRANSLIT', $value);
-						if (strcasecmp($value, $col['_calc']) > 0) {
-							$col['_calc'] = $calc;
-							$col['_value'] = $value;
-						}
+					if (!isset($col['_calc']) || ($col['_num'] ? $value > $col['_calc'] : strcasecmp($value, $col['_calc']) > 0)) {
+						$col['_calc'] = $value;
 					}
 					break;
 				case 'avg':
 				case 'sum':
-					if (!isset($col['_calc'])) $col['_calc'] = $col['_value'] = $value;
-					else $col['_calc'] = $col['_value'] += $value;
+					if (!isset($col['_calc'])) $col['_calc'] = $value;
+					else $col['_calc'] += $value;
 			}
 
 			$num = FALSE;
@@ -269,13 +251,13 @@ class HtmlTable {
 			switch ($col[self::COLUMN_FUNCTION]) {
 				case 'min':
 					if (isset($col['_calc'])) {
-						$result = $col['_value'];
+						$result = $col['_calc'];
 						$label = 'min';
 					}
 					break;
 				case 'max':
 					if (isset($col['_calc'])) {
-						$result = $col['_value'];
+						$result = $col['_calc'];
 						$label = 'max';
 					}
 					break;

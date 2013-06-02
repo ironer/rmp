@@ -61,15 +61,16 @@ class HtmlTable {
 	private $tfoot = ' bgcolor="#ffeecc"';
 	private $decimals = 2;
 	private $dateFormat = 'j.n.Y G:i:s';
+	private $debug = FALSE;
 
 
-	public function __construct($id, $container) {
+	public function __construct($id = NULL, $container = NULL) {
+		$this->debug = defined('DEBUG') ? DEBUG : FALSE;
+
 		if ($container instanceof App) {
 			$this->id = $id;
 			$this->container = $container;
-			App::lg("Vytvoren exporter pro Excel '$this->id'", $this);
-		} else {
-			throw new Exception("Konstruktor exporteru pro Excel ocekava odkaz na kontajner. Druhy argument neni objekt tridy 'App'.");
+			if ($this->debug) App::lg("Vytvoren exporter pro Excel '$this->id'", $this);
 		}
 	}
 
@@ -77,7 +78,7 @@ class HtmlTable {
 	public function config($options = array()) {
 		if (!is_array($options)) throw new Exception("Konfigurator exporteru pro Excel ocekava pole s konfiguraci.");
 
-		if (!empty($options[self::TABLE_TYPE]) && !(DEBUG === TRUE)) $this->type = strtolower($options[self::TABLE_TYPE]);
+		if (!empty($options[self::TABLE_TYPE]) && !$this->debug) $this->type = strtolower($options[self::TABLE_TYPE]);
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
 
 		if (!empty($options[self::TABLE_SOURCE])) {
@@ -98,7 +99,7 @@ class HtmlTable {
 		if (!empty($options[self::FLOAT_DECIMALS])) $this->decimals = $options[self::FLOAT_DECIMALS];
 		if (!empty($options[self::DATE_FORMAT])) $this->dateFormat = $options[self::DATE_FORMAT];
 
-		if (DEBUG === TRUE) App::lg('Nactena konfigurace', $this);
+		if ($this->debug) App::lg('Nactena konfigurace', $this);
 	}
 
 	public function go() {
@@ -110,15 +111,15 @@ class HtmlTable {
 		if (($i = count($this->columns)) > ($j = count($this->data[0]))) array_splice($this->columns, $j);
 		elseif ($i < $j) for (; $i < $j; ++$i) $this->columns[$i] = array();
 
-		if (DEBUG === TRUE) App::lg('Tabulka pripravena pro export', $this);
-		else $this->sendHead();
+		if ($this->debug) App::lg('Tabulka pripravena pro export', $this);
+		elseif ($this->type !== self::TYPE_SCREEN) $this->sendHead();
 
 		echo $this->getTable();
 
 		if ($this->type !== self::TYPE_SCREEN) die;
 		else if ($this->container) $this->container->stop = TRUE;
 
-		if (DEBUG === TRUE) App::lg('Tabulka vyexportovana', $this);
+		if ($this->debug) App::lg('Tabulka vyexportovana', $this);
 	}
 
 

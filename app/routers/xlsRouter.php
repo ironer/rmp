@@ -2,7 +2,7 @@
 
 $router = new Router($this->router, $this);
 
-$export = new HtmlTable('exportXLS', $this);
+$export = new HtmlTable('exportXLS');
 
 $export->config(array(
 	'type' => 'xls',

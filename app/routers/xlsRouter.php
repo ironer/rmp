@@ -7,9 +7,9 @@ $export = new HtmlTable('exportXLS', $this);
 $export->config(array(
 	'type' => 'xls',
 	'source' => array(
-		array(1, 'žluva', 'černá vrána', 1370086580),
-		array(3, 'Štefan', 'Fiedler', 1367667380),
-		array(7, 'něco', 'nic', 1372937780)
+		array(1, 'žluva', '006', 1370086580),
+		array(3, 'Štefan', '02.2', 1367667380),
+		array(7, 'něco', '10.11', 1372937780)
 	),
 	'columns' => array(
 		array('format' => 'int', 'func' => 'avg'),

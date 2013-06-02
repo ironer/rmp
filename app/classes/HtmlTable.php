@@ -38,7 +38,10 @@ class HtmlTable {
 		FORMAT_TEXT = 'text',
 		FORMAT_INTEGER = 'int',
 		FORMAT_FLOAT = 'float',
-		FORMAT_UT = 'ut';
+		FORMAT_UT = 'ut',
+
+		FLOAT_DECIMALS = 'decs',
+		DATE_FORMAT = 'date';
 
 
 	public $id;
@@ -56,6 +59,8 @@ class HtmlTable {
 	private $odd = '';
 	private $even = ' bgcolor="#ddeeff"';
 	private $tfoot = ' bgcolor="#ffeecc"';
+	private $decimals = 2;
+	private $dform = 'j.n.Y G:i:s';
 
 
 	public function __construct($id, $container) {
@@ -89,6 +94,9 @@ class HtmlTable {
 		if (!empty($options[self::T_BODY_TR_EVEN_ATTRIBUTES])) $this->even = ' ' . $options[self::T_BODY_TR_EVEN_ATTRIBUTES];
 
 		if (!empty($options[self::T_FOOT_ATTRIBUTES])) $this->tfoot = ' ' . $options[self::T_FOOT_ATTRIBUTES];
+
+		if (!empty($options[self::FLOAT_DECIMALS])) $this->decimals = $options[self::FLOAT_DECIMALS];
+		if (!empty($options[self::DATE_FORMAT])) $this->dform = $options[self::DATE_FORMAT];
 
 		if (DEBUG === TRUE) App::lg('Nactena konfigurace', $this);
 	}
@@ -166,11 +174,10 @@ class HtmlTable {
 			$func = $col[self::COLUMN_FUNCTION] = strtolower(strval($col[self::COLUMN_FUNCTION]));
 
 			$col['_prePostLen'] = strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
-			$num = $col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER
-				|| $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT;
-			$avg = $num || $col[self::COLUMN_FORMAT] === self::FORMAT_UT;
-			if (!$num && $func === 'sum') $col[self::COLUMN_FUNCTION] = '';
-			if (!$avg && $func === 'avg') $col[self::COLUMN_FUNCTION] = '';
+			$col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER || $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT
+				|| $col[self::COLUMN_FORMAT] === self::FORMAT_UT;;
+
+			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
 		} unset($col);
 
 		return $columns;
@@ -179,7 +186,7 @@ class HtmlTable {
 
 	private function getTableHeader(&$columns) {
 		for ($header = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			$header .= "<td$this->thead><b>" . $columns[$i][self::COLUMN_HEADER] . '</b></td>';
+			$header .= "<th$this->thead>" . $columns[$i][self::COLUMN_HEADER] . '</th>';
 		}
 
 		return "<tr>" . $header . "</tr>\n";
@@ -199,7 +206,7 @@ class HtmlTable {
 					$value = $var = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i]));
 					break;
 				case self::FORMAT_UT:
-					$var = date('%d.%m.%Y %H:%i:%s', $value = $row[$i]);
+					$var = date($this->dform, $value = $row[$i]);
 					break;
 				default:
 					$value = $var = strval($row[$i]);
@@ -208,11 +215,11 @@ class HtmlTable {
 			switch($col[self::COLUMN_FUNCTION]) {
 				case 'min':
 					if (!isset($col['_calc'])) {
-						$col['_calc'] = $col['_num'] ? $value : iconv('UTF-8', 'ASCII//TRANSLIT', $value);
-						$col['_value'] = $value;
+						if ($col['_num']) $col['_calc'] = $col['_value'] = $value;
+						else $col['_calc'] = iconv('UTF-8', 'ASCII//TRANSLIT', $col['_value'] = $value);
 					} elseif ($col['_num'] && $value < $col['_calc']) {
 						$col['_calc'] = $col['_value'] = $value;
-					} elseif (!$col['_num']) {
+					} else {
 						$calc = iconv('UTF-8', 'ASCII//TRANSLIT', $value);
 						if (strcasecmp($value, $col['_calc']) < 0) {
 							$col['_calc'] = $calc;
@@ -222,11 +229,11 @@ class HtmlTable {
 					break;
 				case 'max':
 					if (!isset($col['_calc'])) {
-						$col['_calc'] = $col['_num'] ? $value : iconv('UTF-8', 'ASCII//TRANSLIT', $value);
-						$col['_value'] = $value;
+						if ($col['_num']) $col['_calc'] = $col['_value'] = $value;
+						else $col['_calc'] = iconv('UTF-8', 'ASCII//TRANSLIT', $col['_value'] = $value);
 					} elseif ($col['_num'] && $value > $col['_calc']) {
 						$col['_calc'] = $col['_value'] = $value;
-					} elseif (!$col['_num']) {
+					} else {
 						$calc = iconv('UTF-8', 'ASCII//TRANSLIT', $value);
 						if (strcasecmp($value, $col['_calc']) > 0) {
 							$col['_calc'] = $calc;
@@ -263,25 +270,25 @@ class HtmlTable {
 				case 'min':
 					if (isset($col['_calc'])) {
 						$result = $col['_value'];
-						$label = 'Minimum';
+						$label = 'min';
 					}
 					break;
 				case 'max':
 					if (isset($col['_calc'])) {
 						$result = $col['_value'];
-						$label = 'Maximum';
+						$label = 'max';
 					}
 					break;
 				case 'avg':
 					if (isset($col['_calc'])) {
-						$result = $rowNum ? $col['_calc'] / $rowNum : 0 ;
-						$label = 'Prumer';
+						$result = $rowNum ? round($col['_calc'] / $rowNum, $this->decimals) : 0;
+						$label = 'ø';
 					}
 					break;
 				case 'sum':
 					if (isset($col['_calc'])) {
 						$result = $col['_calc'];
-						$label = 'Suma';
+						$label = 'Σ';
 					}
 			}
 
@@ -298,7 +305,7 @@ class HtmlTable {
 						$var = is_float($result) ? $result : floatval(strval($result));
 						break;
 					case self::FORMAT_UT:
-						$var = date('%d.%m.%Y %H:%i:%s', $result);
+						$var = date($this->dform, $result);
 						break;
 					default:
 						$var = strval($result);
@@ -308,8 +315,8 @@ class HtmlTable {
 				else $num = $col['_num'];
 			} else $var = '';
 
-			$results .= "<td$this->tfoot><b>" . $var . '</b></td>';
-			$labels .=  "<td$this->tfoot><b>" . $label . '</b></td>';
+			$results .= "<td$this->tfoot>" . $var . '</td>';
+			$labels .=  "<th$this->tfoot>" . $label . '</th>';
 		} unset($col);
 
 		return "<tr>" . $results . "</tr>\n<tr>" . $labels . "</tr>\n";

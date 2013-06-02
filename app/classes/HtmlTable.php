@@ -149,8 +149,8 @@ class HtmlTable {
 			}
 		}
 		if (isset($this->resource)) {
-			while ($row = mysql_fetch_row($this->resource)) {
-				$retText .= $this->printOneRow($row, ++$rowNum, $columns);
+			while ($row = mysql_fetch_assoc($this->resource)) {
+				$retText .= $this->printOneRow(array_values($row), ++$rowNum, $columns);
 			}
 		}
 
@@ -172,7 +172,7 @@ class HtmlTable {
 				self::COLUMN_FUNCTION => '',
 				self::COLUMN_ALIGN => 'left'
 			);
-			
+
 			$func = $col[self::COLUMN_FUNCTION] = strtolower(strval($col[self::COLUMN_FUNCTION]));
 
 			$col['_prePostLen'] = strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);

@@ -7,12 +7,8 @@
  * 	header: header of column
  * 	pre: prefix of every data in given column
  * 	post: postfix of every data in given column
- * 	funct: PHP aggregate function (min, max, avg, sum), which is calculated on all data in column, or string
+ * 	funct: PHP aggregate function (min, max, avg, sum), which is calculated on all data in column
  * 	align: align of text in cell (right, center, defaults to left)
- * 	halign: align of header in cell (right, center, defaults to left)
- * 	falign: align of footer in cell (right, center, defaults to left)
- * 	hback: background of header cell
- * 	fback: background of footer cell
  */
 
 class HtmlTable {
@@ -44,6 +40,7 @@ class HtmlTable {
 		FORMAT_FLOAT = 'float',
 		FORMAT_UT = 'ut';
 
+
 	public $id;
 	public $container;
 
@@ -58,7 +55,8 @@ class HtmlTable {
 	private $thead = ' bgcolor="#88ccff"';
 	private $odd = '';
 	private $even = ' bgcolor="#ddeeff"';
-	private $tfoot = ' bgcolor="#ffeebb"';
+	private $tfoot = ' bgcolor="#ffeecc"';
+
 
 	public function __construct($id, $container) {
 		if ($container instanceof App) {
@@ -74,7 +72,7 @@ class HtmlTable {
 	public function config($options = array()) {
 		if (!is_array($options)) throw new Exception("Konfigurator exporteru pro Excel ocekava pole s konfiguraci.");
 
-		if (!empty($options[self::TABLE_TYPE]) && !DEBUG) $this->type = strtolower($options[self::TABLE_TYPE]);
+		if (!empty($options[self::TABLE_TYPE]) && !(DEBUG === TRUE)) $this->type = strtolower($options[self::TABLE_TYPE]);
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
 
 		if (!empty($options[self::TABLE_SOURCE])) {
@@ -92,7 +90,7 @@ class HtmlTable {
 
 		if (!empty($options[self::T_FOOT_ATTRIBUTES])) $this->tfoot = ' ' . $options[self::T_FOOT_ATTRIBUTES];
 
-		App::lg('Nactena konfigurace', $this);
+		if (DEBUG === TRUE) App::lg('Nactena konfigurace', $this);
 	}
 
 	public function go() {
@@ -104,7 +102,7 @@ class HtmlTable {
 		if (($i = count($this->columns)) > ($j = count($this->data[0]))) array_splice($this->columns, $j);
 		elseif ($i < $j) for (; $i < $j; ++$i) $this->columns[$i] = array();
 
-		if (DEBUG) App::lg('Tabulka pripravena pro export', $this);
+		if (DEBUG === TRUE) App::lg('Tabulka pripravena pro export', $this);
 		else $this->sendHead();
 
 		echo $this->getTable();
@@ -112,7 +110,7 @@ class HtmlTable {
 		if ($this->type === self::TYPE_EXCEL) die;
 		else if ($this->container) $this->container->stop = TRUE;
 
-		App::lg('Tabulka vyexportovana', $this);
+		if (DEBUG === TRUE) App::lg('Tabulka vyexportovana', $this);
 	}
 
 
@@ -209,19 +207,37 @@ class HtmlTable {
 
 			switch($col[self::COLUMN_FUNCTION]) {
 				case 'min':
-					if (!isset($col['_calc']) || ($col['_num'] ? $value < $col['_calc'] : strcasecmp($value, $col['_calc']) < 0)) {
-						$col['_calc'] = $value;
+					if (!isset($col['_calc'])) {
+						$col['_calc'] = $col['_num'] ? $value : iconv('UTF-8', 'ASCII//TRANSLIT', $value);
+						$col['_value'] = $value;
+					} elseif ($col['_num'] && $value < $col['_calc']) {
+						$col['_calc'] = $col['_value'] = $value;
+					} elseif (!$col['_num']) {
+						$calc = iconv('UTF-8', 'ASCII//TRANSLIT', $value);
+						if (strcasecmp($value, $col['_calc']) < 0) {
+							$col['_calc'] = $calc;
+							$col['_value'] = $value;
+						}
 					}
 					break;
 				case 'max':
-					if (!isset($col['_calc']) || ($col['_num'] ? $value > $col['_calc'] : strcasecmp($value, $col['_calc']) > 0)) {
-						$col['_calc'] = $value;
+					if (!isset($col['_calc'])) {
+						$col['_calc'] = $col['_num'] ? $value : iconv('UTF-8', 'ASCII//TRANSLIT', $value);
+						$col['_value'] = $value;
+					} elseif ($col['_num'] && $value > $col['_calc']) {
+						$col['_calc'] = $col['_value'] = $value;
+					} elseif (!$col['_num']) {
+						$calc = iconv('UTF-8', 'ASCII//TRANSLIT', $value);
+						if (strcasecmp($value, $col['_calc']) > 0) {
+							$col['_calc'] = $calc;
+							$col['_value'] = $value;
+						}
 					}
 					break;
 				case 'avg':
 				case 'sum':
-					if (!isset($col['_calc'])) $col['_calc'] = $value;
-					else $col['_calc'] += $value;
+					if (!isset($col['_calc'])) $col['_calc'] = $col['_value'] = $value;
+					else $col['_calc'] = $col['_value'] += $value;
 			}
 
 			$num = FALSE;
@@ -246,13 +262,13 @@ class HtmlTable {
 			switch ($col[self::COLUMN_FUNCTION]) {
 				case 'min':
 					if (isset($col['_calc'])) {
-						$result = $col['_calc'];
+						$result = $col['_value'];
 						$label = 'Minimum';
 					}
 					break;
 				case 'max':
 					if (isset($col['_calc'])) {
-						$result = $col['_calc'];
+						$result = $col['_value'];
 						$label = 'Maximum';
 					}
 					break;

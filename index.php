@@ -1,6 +1,6 @@
 <?php
 
-define('DEBUG', TRUE);
+define('DEBUG', FALSE);
 define('ADVANCEDLOG', TRUE);
 define('LOCAL', $_SERVER['SERVER_NAME'] == 'localhost');
 define('NOW', microtime(TRUE));

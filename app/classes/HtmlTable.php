@@ -119,20 +119,14 @@ class HtmlTable {
 		if ($this->debug) App::lg('Tabulka pripravena pro export', $this);
 		elseif ($this->type !== self::TYPE_SCREEN) $this->sendHead();
 
-		$html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"'
-			. ' xmlns="http://www.w3.org/TR/REC-html40">' . "\n\n<head>\n" . '<meta http-equiv=Content-Type content="text/html; charset=utf-8">'
-			. "\n</meta>" . '<meta name=ProgId content=Excel.Sheet>' . "\n</meta>" . '<meta name=Generator content="Microsoft Excel 11">' . "\n\n";
-
-		//$html .= '<!--[if gte mso 9]><xml><x:excelworkbook><x:excelworksheets><x:excelworksheet><x:name>**WORKSHEETNAME**</x:name><x:worksheetoptions><x:selected/><x:freezepanes/><x:frozennosplit/><x:splithorizontal>2</x:splithorizontal><x:toprowbottompane>2</x:toprowbottompane><x:activepane>0</x:activepane><x:panes><x:pane><x:number>3</x:number></x:pane><x:pane><x:number>1</x:number></x:pane><x:pane><x:number>2</x:number></x:pane><x:pane><x:number>0</x:number></x:pane></x:panes><x:protectcontents>False</x:protectcontents><x:protectobjects>False</x:protectobjects><x:protectscenarios>False</x:protectscenarios></x:worksheetoptions></x:excelworksheet></x:excelworksheets><x:protectstructure>False</x:protectstructure><x:protectwindows>False</x:protectwindows></x:excelworkbook></xml><![endif]-->';
-
-		$html .= "</meta></head>\n<body>\n\n";
-
-		$html .= $table = $this->getTable();
-
-		$html .= "\n</body>\n</html>";
+		$table = $this->getTable();
 
 		if ($this->type !== self::TYPE_SCREEN) {
-			echo $html;//"\xFF\xFE" . mb_convert_encoding($html, 'UTF-16LE', 'UTF-8');
+			$html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"'
+				. ' xmlns="http://www.w3.org/TR/REC-html40">' . "\n\n<head>\n\t"
+				. '<meta http-equiv=Content-Type content="application/vnd.ms-excel; charset=utf-8">' . "\n</head>\n\n<body>\n";
+
+			echo $html . $table . "</body>\n\n</html>";
 			die;
 		} else {
 			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
@@ -147,7 +141,7 @@ class HtmlTable {
 			header("Expires: 0");
 			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 			header("Content-Disposition: attachment; filename=$this->filename.xls");
-			header("Content-Type: application/msexcel; charset=utf-8");
+			header("Content-Type: application/vnd.ms-excel; charset=utf-8");
 		}
 	}
 

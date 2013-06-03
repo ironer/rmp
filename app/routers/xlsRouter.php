@@ -7,7 +7,7 @@ $export = new HtmlTable('exportXLS');
 $export->config(array(
 	'type' => 'xls',
 	'source' => array(
-		array(1, 'žluva', '006', 1370086580),
+		array(1, 'ΚΑΛΛΙΟΠΗ ΧΟΝΔΡΟΣΠ', '006', 1370086580),
 		array(3, '<td>zluvik</td>', '\'007', 1367667380),
 		array(7, 'něco', '10.11', 1372937780)
 	),

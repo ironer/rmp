@@ -60,6 +60,7 @@ class HtmlTable {
 	private $even = ' bgcolor="#ddeeff"';
 	private $tfoot = ' bgcolor="#ffeecc"';
 	private $decimals = 2;
+	private $xlsDecs = '00';
 	private $dateFormat = 'j.n.Y G:i:s';
 	private $debug = FALSE;
 
@@ -96,7 +97,10 @@ class HtmlTable {
 
 		if (!empty($options[self::T_FOOT_ATTRIBUTES])) $this->tfoot = ' ' . $options[self::T_FOOT_ATTRIBUTES];
 
-		if (!empty($options[self::FLOAT_DECIMALS])) $this->decimals = $options[self::FLOAT_DECIMALS];
+		if (!empty($options[self::FLOAT_DECIMALS])) {
+			$this->decimals = $options[self::FLOAT_DECIMALS];
+			$this->xlsDecs = str_pad('', $this->decimals, '0');
+		}
 		if (!empty($options[self::DATE_FORMAT])) $this->dateFormat = $options[self::DATE_FORMAT];
 
 		if ($this->debug) App::lg('Nactena konfigurace', $this);
@@ -114,24 +118,24 @@ class HtmlTable {
 		if ($this->debug) App::lg('Tabulka pripravena pro export', $this);
 		elseif ($this->type !== self::TYPE_SCREEN) $this->sendHead();
 
-		echo $this->getTable();
+		$table = $this->getTable();
 
-		if ($this->type !== self::TYPE_SCREEN) die;
-		else if ($this->container) $this->container->stop = TRUE;
-
-		if ($this->debug) App::lg('Tabulka vyexportovana', $this);
+		if ($this->type !== self::TYPE_SCREEN) {
+			echo "\xFF\xFE" . mb_convert_encoding($table, 'UTF-16LE', 'UTF-8');
+			die;
+		} else {
+			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
+			return $table;
+		}
 	}
 
 
 	private function sendHead() {
-		header("Pragma: no-cache");
-		header("Expires: 0");
-		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-		header("Content-Disposition: attachment; filename=$this->filename.xls");
-
-		if ($this->type === self::TYPE_SCREEN) {
-			header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-		} else {
+		if ($this->type !== self::TYPE_SCREEN) {
+			header("Pragma: no-cache");
+			header("Expires: 0");
+			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+			header("Content-Disposition: attachment; filename=$this->filename.xls");
 			header("Content-Type: application/vnd.ms-excel; charset=utf-16");
 		}
 	}
@@ -156,7 +160,7 @@ class HtmlTable {
 
 		$retText .= $this->getTableFooter($rowNum, $columns) . "</table>\n";
 
-		return $this->type === self::TYPE_SCREEN ? $retText : "\xFF\xFE" . mb_convert_encoding($retText, 'UTF-16LE', 'UTF-8');
+		return $retText;
 	}
 
 
@@ -188,11 +192,12 @@ class HtmlTable {
 
 	private function getTableHeader(&$columns) {
 		for ($header = $colgroup = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			$colgroup .= '<col' . ($columns[$i][self::COLUMN_ALIGN] ? ' align="' . $columns[$i][self::COLUMN_ALIGN] . '"' : '') . '>';
-			$header .= "<th$this->thead>" . $columns[$i][self::COLUMN_HEADER] . '</th>';
+			$colgroup .= "\t\t<col" . ($columns[$i][self::COLUMN_ALIGN] ? ' align="' . $columns[$i][self::COLUMN_ALIGN] . '"' : '') . ">\n";
+			$value = ($this->type === self::TYPE_OPENOFFICE ? "'" : "") . $columns[$i][self::COLUMN_HEADER];
+			$header .= "\t\t<th$this->thead" . ' style="mso-number-format: \'\@\'">' . htmlspecialchars($value, ENT_QUOTES) . "</th>\n";
 		}
 
-		return "<colgroup>" . $colgroup . "</colgroup>\n<tr>" . $header . "</tr>\n";
+		return "\t<colgroup>\n" . $colgroup . "\t</colgroup>\n\t<tr>\n" . $header . "\t</tr>\n";
 	}
 
 
@@ -213,7 +218,7 @@ class HtmlTable {
 					break;
 				default:
 					if (strlen($value = strval($row[$i]))) {
-						$var = $this->type === self::TYPE_OPENOFFICE ? "'$value" : $value;
+						$var = htmlspecialchars($this->type === self::TYPE_OPENOFFICE ? "'$value" : $value, ENT_QUOTES);
 					} else $var = $value = '';
 			}
 
@@ -239,13 +244,17 @@ class HtmlTable {
 			else $num = $col['_num'];
 
 			$attributes = $rowNum % 2 ? $this->odd : $this->even;
-			if (!$num) $attributes .= ' style="mso-number-format:\'\@\'"';
+			if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
+			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'d\.m\.yyyy h\:mm\:ss\'"';
+			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
+			else $attributes .= ' style="mso-number-format: \'0\'"';
+
 			if ($this->type !== self::TYPE_EXCEL && $col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
-			$rowText .= '<td' . $attributes . '>' . $var . '</td>';
+			$rowText .= "\t\t<td" . $attributes . '>' . $var . "</td>\n";
 		} unset($col);
 
-		return '<tr' . ($this->type !== self::TYPE_EXCEL ? ' align="left"' : '') . '>' . $rowText . "</tr>\n";
+		return "\t<tr" . ($this->type !== self::TYPE_EXCEL ? ' align="left"' : '') . ">\n" . $rowText . "\t</tr>\n";
 	}
 
 
@@ -284,12 +293,14 @@ class HtmlTable {
 			}
 
 			$num = FALSE;
+			$float = $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT;
 
 			if ($result !== NULL) {
 				switch($col[self::COLUMN_FORMAT]) {
 					case self::FORMAT_INTEGER:
 						if ($col[self::COLUMN_FUNCTION] === 'avg') {
 							$var = is_float($result) ? $result : floatval(strval($result));
+							$float = TRUE;
 						} else $var = is_int($result) ? $result : intval(strval($result));
 						break;
 					case self::FORMAT_FLOAT:
@@ -299,7 +310,7 @@ class HtmlTable {
 						$var = date($this->dateFormat, $result);
 						break;
 					default:
-						$var = strval($result);
+						$var = htmlspecialchars($this->type === self::TYPE_OPENOFFICE ? "'$result" : "$result", ENT_QUOTES);
 				}
 
 				if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $result . $col[self::COLUMN_POSTFIX];
@@ -307,14 +318,18 @@ class HtmlTable {
 			} else $var = '';
 
 			$attributes = '';
-			if (!$num) $attributes .= ' style="mso-number-format:\'\@\'"';
+			if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
+			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'d\.m\.yyyy h\:mm\:ss\'"';
+			elseif ($float) $attributes .= ' style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
+			else $attributes .= ' style="mso-number-format: \'0\'"';
+
 			if ($this->type !== self::TYPE_EXCEL && $col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
-			$results .= "<td$this->tfoot$attributes>" . $var . '</td>';
-			$labels .=  "<th$this->tfoot>" . $label . '</th>';
+			$results .= "\t\t<td$this->tfoot$attributes>" . $var . "</td>\n";
+			$labels .=  "\t\t<th$this->tfoot>" . $label . "</th>\n";
 		} unset($col);
 
-		return '<tr' . ($this->type !== self::TYPE_EXCEL ? ' align="left"' : '') . '>' . $results . "</tr>\n<tr>" . $labels . "</tr>\n";
+		return "\t<tr" . ($this->type !== self::TYPE_EXCEL ? ' align="left"' : '') . ">\n" . $results . "\t</tr>\n\t<tr>\n" . $labels . "\t</tr>\n";
 	}
 
 }

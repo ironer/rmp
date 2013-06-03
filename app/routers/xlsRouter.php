@@ -8,17 +8,17 @@ $export->config(array(
 	'type' => 'xls',
 	'source' => array(
 		array(1, 'žluva', '006', 1370086580),
-		array(3, 'Štefan', '02.2', 1367667380),
+		array(3, '<td>zluvik</td>', '\'007', 1367667380),
 		array(7, 'něco', '10.11', 1372937780)
 	),
 	'columns' => array(
 		array('format' => 'int', 'func' => 'avg'),
 		array('func' => 'min'),
-		array('func' => 'max'),
+		array('func' => 'min'),
 		array('format' => 'ut', 'func' => 'avg')
 	)
 ));
 
-$export->go();
+if ($table = $export->go()) echo $table;
 
 return $router;

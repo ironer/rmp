@@ -16,7 +16,6 @@ class HtmlTable {
 		TABLE_TYPE = 'type',
 		TYPE_SCREEN = 'screen', // default
 		TYPE_EXCEL = 'xls',
-		TYPE_OPENOFFICE = 'oo',
 
 		EXPORT_FILENAME = 'filename',
 		TABLE_SOURCE = 'source',
@@ -29,11 +28,9 @@ class HtmlTable {
 		COLUMN_FUNCTION = 'func',
 		COLUMN_ALIGN = 'align',
 
-		TABLE_ATTRIBUTES = 'table',
-		T_HEAD_ATTRIBUTES = 'thead',
-		T_BODY_TR_ODD_ATTRIBUTES = 'odd',
+		T_HEAD_TR_ATTRIBUTES = 'thead',
 		T_BODY_TR_EVEN_ATTRIBUTES = 'even',
-		T_FOOT_ATTRIBUTES = 'tfoot',
+		T_FOOT_TR_ATTRIBUTES = 'tfoot',
 
 		FORMAT_TEXT = 'text',
 		FORMAT_INTEGER = 'int',
@@ -54,14 +51,14 @@ class HtmlTable {
 	private $resource;
 	private $resColumns = array();
 
-	private $table = ' border="1" cellpadding="3px" cellspacing="0"';
-	private $thead = ' bgcolor="#88ccff"';
-	private $odd = '';
-	private $even = ' bgcolor="#ddeeff"';
-	private $tfoot = ' bgcolor="#ffeecc"';
+	private $headBg = '#88ccff';
+	private $evenBg = '#ddddff';
+	private $footBg = '#ffddbb';
+
 	private $decimals = 2;
 	private $xlsDecs = '00';
 	private $dateFormat = 'j.n.Y G:i:s';
+
 	private $debug = FALSE;
 
 
@@ -88,14 +85,12 @@ class HtmlTable {
 		}
 
 		if (!empty($options[self::TABLE_COLUMNS])) $this->columns = $options[self::TABLE_COLUMNS];
-		if (!empty($options[self::TABLE_ATTRIBUTES])) $this->table = ' ' . $options[self::TABLE_ATTRIBUTES];
 
-		if (!empty($options[self::T_HEAD_ATTRIBUTES])) $this->thead = ' ' . $options[self::T_HEAD_ATTRIBUTES];
+		if (!empty($options[self::T_HEAD_TR_ATTRIBUTES])) $this->headBg = ' ' . $options[self::T_HEAD_TR_ATTRIBUTES];
 
-		if (!empty($options[self::T_BODY_TR_ODD_ATTRIBUTES])) $this->odd = ' ' . $options[self::T_BODY_TR_ODD_ATTRIBUTES];
-		if (!empty($options[self::T_BODY_TR_EVEN_ATTRIBUTES])) $this->even = ' ' . $options[self::T_BODY_TR_EVEN_ATTRIBUTES];
+		if (!empty($options[self::T_BODY_TR_EVEN_ATTRIBUTES])) $this->evenBg = ' ' . $options[self::T_BODY_TR_EVEN_ATTRIBUTES];
 
-		if (!empty($options[self::T_FOOT_ATTRIBUTES])) $this->tfoot = ' ' . $options[self::T_FOOT_ATTRIBUTES];
+		if (!empty($options[self::T_FOOT_TR_ATTRIBUTES])) $this->footBg = ' ' . $options[self::T_FOOT_TR_ATTRIBUTES];
 
 		if (!empty($options[self::FLOAT_DECIMALS])) {
 			$this->decimals = $options[self::FLOAT_DECIMALS];
@@ -105,6 +100,7 @@ class HtmlTable {
 
 		if ($this->debug) App::lg('Nactena konfigurace', $this);
 	}
+
 
 	public function go() {
 		if (isset($this->resource) && $row = mysql_fetch_assoc($this->resource)) {
@@ -121,12 +117,70 @@ class HtmlTable {
 
 		$table = $this->getTable();
 
-		if ($this->type !== self::TYPE_SCREEN) {
-			$html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"'
-				. ' xmlns="http://www.w3.org/TR/REC-html40">' . "\n\n<head>\n\t"
-				. '<meta http-equiv=Content-Type content="application/vnd.ms-excel; charset=utf-8">' . "\n</head>\n\n<body>\n";
+		if ($this->type === self::TYPE_EXCEL) {
+			$html = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" . "<?mso-application progid=\"Excel.Sheet\"?>\n" . "<Workbook"
+				. " xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\""
+				. " xmlns:x=\"urn:schemas-microsoft-com:office:excel\""
+				. " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\""
+				. " xmlns:html=\"http://www.w3.org/TR/REC-html40\">" . "\n";
 
-			echo $html . $table . "</body>\n\n</html>";
+			$html .= "<Styles>\n"
+				. "\t<Style ss:ID=\"headRow\">\n"
+				. "\t\t<Borders>\n"
+				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#888888\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t</Borders>\n"
+				. "\t\t<Interior ss:Color=\"$this->headBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"1\" />\n"
+				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"oddRow\">\n"
+				. "\t\t<Borders>\n"
+				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t</Borders>\n"
+				. "\t\t<Alignment ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"evenRow\">\n"
+				. "\t\t<Borders>\n"
+				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t</Borders>\n"
+				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Alignment ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"resultRow\">\n"
+				. "\t\t<Borders>\n"
+				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#888888\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t</Borders>\n"
+				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t\t<Alignment ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"footRow\">\n"
+				. "\t\t<Borders>\n"
+				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#888888\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t</Borders>\n"
+				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+				. "</Styles>\n";
+
+			$html .= "<Worksheet ss:Name=\"Worksheet\">\n" . $table;
+
+			$html .= "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n";
+//			$html .= "\t\t<GridlineColor>\"#000000\"</GridlineColor>\n";
+			$html .= "\t\t<FrozenNoSplit />\n";
+			$html .= "\t\t<SplitHorizontal>1</SplitHorizontal>\n";
+			$html .= "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n";
+			$html .= "\t\t<ActivePane>2</ActivePane>\n";
+			$html .= "\t</WorksheetOptions>\n";
+			$html .= "</Worksheet>\n</Workbook>";
+
+			echo $html;
 			die;
 		} else {
 			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
@@ -140,8 +194,8 @@ class HtmlTable {
 			header("Pragma: no-cache");
 			header("Expires: 0");
 			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-			header("Content-Disposition: attachment; filename=$this->filename.xls");
 			header("Content-Type: application/vnd.ms-excel; charset=utf-8");
+			header("Content-Disposition: attachment; filename=$this->filename.xls");
 		}
 	}
 
@@ -149,21 +203,42 @@ class HtmlTable {
 	private function getTable() {
 		$columns = $this->prepareColumns();
 
-		$retText = "<table$this->table>\n" . $this->getTableHeader($columns);
+		$header = $this->getTableHeader($columns);
 
+		$body = '';
 		$rowNum = 0;
 		if (isset($this->data)) {
 			for ($j = count($this->data); $rowNum < $j; ++$rowNum) {
-				$retText .= $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns);
+				if ($this->type === self::TYPE_SCREEN) {
+					$body .= "\t\t<tr>\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</tr>\n";
+				} else {
+					$body .= "\t\t<Row ss:StyleID=\"" . ($rowNum % 2 ? 'evenRow' : 'oddRow') . "\">\n"
+						. $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</Row>\n";
+				}
 			}
 		}
 		if (isset($this->resource)) {
 			while ($row = mysql_fetch_assoc($this->resource)) {
-				$retText .= $this->printOneRow(array_values($row), ++$rowNum, $columns);
+				if ($this->type === self::TYPE_SCREEN) {
+					$body .= "\t\t<tr>\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</tr>\n";
+				} else {
+					$body .= "\t\t<Row ss:StyleID=\"" . ($rowNum % 2 ? 'evenRow' : 'oddRow') . "\">\n"
+						. $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</Row>\n";
+				}
 			}
 		}
 
-		$retText .= $this->getTableFooter($rowNum, $columns) . "</table>\n";
+		$footer = $this->getTableFooter($rowNum, $columns);
+
+		if ($this->type === self::TYPE_SCREEN) {
+			$retText = "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n\t\t<tr>\n" . $header . "\t\t</tr>\n"
+				. $body . "\t\t<tr>" . implode("\t\t</tr>\n\t\t<tr>\n", $footer) . "\t\t</tr>\n\t</table>\n";
+		} else {
+			$retText = "\t<Table>\n\t\t<Row ss:StyleID=\"headRow\">\n" . $header . "\t\t</Row>\n"
+				. $body . "\t\t<Row ss:StyleID=\"resultRow\">\n"
+				. $footer[0] . "\t\t</Row>\n\t\t<Row ss:StyleID=\"footRow\">\n"
+				. $footer[1] . "\t\t</Row>\n\t</Table>\n";
+		}
 
 		return $retText;
 	}
@@ -197,12 +272,15 @@ class HtmlTable {
 
 	private function getTableHeader(&$columns) {
 		for ($header = $colgroup = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
-			$colgroup .= "\t\t<col" . ($columns[$i][self::COLUMN_ALIGN] ? ' align="' . $columns[$i][self::COLUMN_ALIGN] . '"' : '') . ">\n";
-			$value = ($this->type === self::TYPE_OPENOFFICE ? "'" : "") . $columns[$i][self::COLUMN_HEADER];
-			$header .= "\t\t<th$this->thead" . ' style="mso-number-format: \'\@\'">' . htmlspecialchars($value, ENT_QUOTES) . "</th>\n";
+			$value = htmlspecialchars($columns[$i][self::COLUMN_HEADER], ENT_QUOTES);
+			if ($this->type === self::TYPE_SCREEN) {
+				$header .= "\t\t\t<th bgcolor=\"$this->headBg\"" . ' style="mso-number-format: \'\@\'">' . $value . "</th>\n";
+			} else {
+				$header .= "\t\t\t<Cell><Data ss:Type=\"String\">" . $value . "</Data></Cell>\n";
+			}
 		}
 
-		return "\t<colgroup>\n" . $colgroup . "\t</colgroup>\n\t<tr>\n" . $header . "\t</tr>\n";
+		return $header;
 	}
 
 
@@ -223,7 +301,7 @@ class HtmlTable {
 					break;
 				default:
 					if (strlen($value = strval($row[$i]))) {
-						$var = htmlspecialchars($this->type === self::TYPE_OPENOFFICE ? "'$value" : $value, ENT_QUOTES);
+						$var = htmlspecialchars($value, ENT_QUOTES);
 					} else $var = $value = '';
 			}
 
@@ -248,7 +326,7 @@ class HtmlTable {
 			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
 			else $num = $col['_num'];
 
-			$attributes = $rowNum % 2 ? $this->odd : $this->even;
+			$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
 			if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
 			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'d\.m\.yyyy h\:mm\:ss\'"';
 			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
@@ -256,10 +334,16 @@ class HtmlTable {
 
 			if ($this->type !== self::TYPE_EXCEL && $col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
-			$rowText .= "\t\t<td" . $attributes . '>' . $var . "</td>\n";
+			if ($this->type === self::TYPE_SCREEN) {
+				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
+			} else {
+				$rowText .= "\t\t\t<Cell><Data ss:Type=\"String\">"
+					. $var . "</Data></Cell>\n";
+			}
+
 		} unset($col);
 
-		return "\t<tr" . ($this->type !== self::TYPE_EXCEL ? ' align="left"' : '') . ">\n" . $rowText . "\t</tr>\n";
+		return $rowText;
 	}
 
 
@@ -315,26 +399,30 @@ class HtmlTable {
 						$var = date($this->dateFormat, intval(strval($result)));
 						break;
 					default:
-						$var = htmlspecialchars($this->type === self::TYPE_OPENOFFICE ? "'$result" : "$result", ENT_QUOTES);
+						$var = htmlspecialchars("$result", ENT_QUOTES);
 				}
 
 				if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $result . $col[self::COLUMN_POSTFIX];
 				else $num = $col['_num'];
 			} else $var = '';
 
-			$attributes = '';
-			if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
-			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'d\.m\.yyyy h\:mm\:ss\'"';
-			elseif ($float) $attributes .= ' style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
-			else $attributes .= ' style="mso-number-format: \'0\'"';
+			if (!$num) $attributes = 'style="mso-number-format: \'\@\'"';
+			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'d\.m\.yyyy h\:mm\:ss\'"';
+			elseif ($float) $attributes = 'style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
+			else $attributes = 'style="mso-number-format: \'0\'"';
 
-			if ($this->type !== self::TYPE_EXCEL && $col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
+			if ($this->type === self::TYPE_SCREEN) {
+				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
-			$results .= "\t\t<td$this->tfoot$attributes>" . $var . "</td>\n";
-			$labels .=  "\t\t<th$this->tfoot>" . $label . "</th>\n";
+				$results .= "\t\t\t<td bgcolor=\"$this->footBg\" $attributes><b>" . $var . "</b></td>\n";
+				$labels .=  "\t\t\t<th bgcolor=\"$this->footBg\">" . $label . "</th>\n";
+			} else {
+				$results .= "\t\t\t<Cell><Data ss:Type=\"String\">" . $var . "</Data></Cell>\n";
+				$labels .=  "\t\t\t<Cell><Data ss:Type=\"String\">" . $label . "</Data></Cell>\n";
+			}
 		} unset($col);
 
-		return "\t<tr" . ($this->type !== self::TYPE_EXCEL ? ' align="left"' : '') . ">\n" . $results . "\t</tr>\n\t<tr>\n" . $labels . "\t</tr>\n";
+		return array($results, $labels);
 	}
 
 }

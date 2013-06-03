@@ -108,11 +108,12 @@ class HtmlTable {
 
 	public function go() {
 		if (isset($this->resource) && $row = mysql_fetch_assoc($this->resource)) {
-			$this->resColumns = array_keys($row);
-			$this->data = array(array_values($row));
-		} elseif (empty($this->data)) $this->data = array(array());
+				$this->resColumns = array_keys($row);
+				$this->data = array(array_values($row));
+		} elseif (empty($this->data)) $this->data = array();
 
-		if (($i = count($this->columns)) > ($j = count($this->data[0]))) array_splice($this->columns, $j);
+		if (!isset($this->data[0])) {}
+		elseif (($i = count($this->columns)) > ($j = count($this->data[0]))) array_splice($this->columns, $j);
 		elseif ($i < $j) for (; $i < $j; ++$i) $this->columns[$i] = array();
 
 		if ($this->debug) App::lg('Tabulka pripravena pro export', $this);
@@ -214,7 +215,7 @@ class HtmlTable {
 					$value = $var = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i]));
 					break;
 				case self::FORMAT_UT:
-					$var = date($this->dateFormat, $value = $row[$i]);
+					$var = date($this->dateFormat, $value = intval(strval($row[$i])));
 					break;
 				default:
 					if (strlen($value = strval($row[$i]))) {
@@ -307,7 +308,7 @@ class HtmlTable {
 						$var = is_float($result) ? $result : floatval(strval($result));
 						break;
 					case self::FORMAT_UT:
-						$var = date($this->dateFormat, $result);
+						$var = date($this->dateFormat, intval(strval($result)));
 						break;
 					default:
 						$var = htmlspecialchars($this->type === self::TYPE_OPENOFFICE ? "'$result" : "$result", ENT_QUOTES);

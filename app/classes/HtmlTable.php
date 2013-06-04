@@ -28,9 +28,9 @@ class HtmlTable {
 		COLUMN_FUNCTION = 'func',
 		COLUMN_ALIGN = 'align',
 
-		T_HEAD_TR_ATTRIBUTES = 'thead',
-		T_BODY_TR_EVEN_ATTRIBUTES = 'even',
-		T_FOOT_TR_ATTRIBUTES = 'tfoot',
+		T_HEAD_TR_BACKGROUND = 'headbg',
+		T_BODY_TR_EVEN_BACKGROUND = 'evenbg',
+		T_FOOT_TR_BACKGROUND = 'footbg',
 
 		FORMAT_TEXT = 'text',
 		FORMAT_INTEGER = 'int',
@@ -40,6 +40,8 @@ class HtmlTable {
 		FLOAT_DECIMALS = 'decs',
 		DATE_FORMAT = 'date';
 
+	private static $date2excel = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
+		'G' => 'h', 'H' => 'hh', 'i' => 'mm', 's' => 'ss', '.' => '\.', '/' => '\/', '-' => '\-', ':' => '\:');
 
 	public $id;
 	public $container;
@@ -77,7 +79,9 @@ class HtmlTable {
 	public function config($options = array()) {
 		if (!is_array($options)) throw new Exception("Konfigurator exporteru pro Excel ocekava pole s konfiguraci.");
 
-		if (!empty($options[self::TABLE_TYPE]) && !$this->debug) $this->type = strtolower($options[self::TABLE_TYPE]);
+		if (!empty($options[self::TABLE_TYPE]) && $options[self::TABLE_TYPE] === self::TYPE_EXCEL && !$this->debug) {
+			$this->type = self::TYPE_EXCEL;
+		}
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
 
 		if (!empty($options[self::TABLE_SOURCE])) {
@@ -87,17 +91,22 @@ class HtmlTable {
 
 		if (!empty($options[self::TABLE_COLUMNS])) $this->columns = $options[self::TABLE_COLUMNS];
 
-		if (!empty($options[self::T_HEAD_TR_ATTRIBUTES])) $this->headBg = ' ' . $options[self::T_HEAD_TR_ATTRIBUTES];
+		if (!empty($options[self::T_HEAD_TR_BACKGROUND])) $this->headBg = $options[self::T_HEAD_TR_BACKGROUND];
 
-		if (!empty($options[self::T_BODY_TR_EVEN_ATTRIBUTES])) $this->evenBg = ' ' . $options[self::T_BODY_TR_EVEN_ATTRIBUTES];
+		if (!empty($options[self::T_BODY_TR_EVEN_BACKGROUND])) $this->evenBg = $options[self::T_BODY_TR_EVEN_BACKGROUND];
 
-		if (!empty($options[self::T_FOOT_TR_ATTRIBUTES])) $this->footBg = ' ' . $options[self::T_FOOT_TR_ATTRIBUTES];
+		if (!empty($options[self::T_FOOT_TR_BACKGROUND])) $this->footBg = $options[self::T_FOOT_TR_BACKGROUND];
 
 		if (!empty($options[self::FLOAT_DECIMALS])) {
 			$this->decimals = $options[self::FLOAT_DECIMALS];
 			$this->xlsDecs = str_pad('', $this->decimals, '0');
 		}
-		if (!empty($options[self::DATE_FORMAT])) $this->dateFormat = $options[self::DATE_FORMAT];
+		if (!empty($options[self::DATE_FORMAT])) {
+			if (FALSE !== preg_match('#^[djmnyY][\./-][djmnyY][\./-][djmnyY] [GH]:i(:s)?$#', $options[self::DATE_FORMAT])) {
+				$this->dateFormat = $options[self::DATE_FORMAT];
+				$this->xlsDate = strtr($this->dateFormat, self::$date2excel);
+			}
+		}
 
 		if ($this->debug) App::lg('Nactena konfigurace', $this);
 	}
@@ -245,6 +254,8 @@ class HtmlTable {
 
 
 	private function prepareColumns() {
+		//			if (in_array($format = $options[self::DATE_FORMAT], array('left', 'center', 'right')))
+
 		for ($columns = array(), $i = 0, $j = count($this->columns); $i < $j; ++$i) {
 			$col = &$columns[$i];
 

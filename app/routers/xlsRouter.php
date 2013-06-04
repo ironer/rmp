@@ -12,10 +12,10 @@ $export->config(array(
 		array(7, 'něco', '10.11', 1372937780)
 	),
 	'columns' => array(
-		array('format' => 'int', 'func' => 'avg'),
-		array('func' => 'min'),
-		array('func' => 'min'),
-		array('format' => 'ut', 'func' => 'avg')
+		array('format' => 'int', 'func' => 'avg', 'align' => 'right'),
+		array('func' => 'min', 'align' => 'right'),
+		array('func' => 'min', 'align' => 'right'),
+		array('format' => 'ut', 'func' => 'avg', 'align' => 'right')
 	)
 ));
 

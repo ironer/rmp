@@ -52,12 +52,13 @@ class HtmlTable {
 	private $resColumns = array();
 
 	private $headBg = '#88ccff';
-	private $evenBg = '#ddddff';
+	private $evenBg = '#ccffff';
 	private $footBg = '#ffddbb';
 
 	private $decimals = 2;
 	private $xlsDecs = '00';
-	private $dateFormat = 'j.n.Y G:i:s';
+	private $dateFormat = 'd.m.Y H:i:s'; //'j.n.Y G:i:s';
+	private $xlsDate = 'dd\.mm\.yyyy hh\:mm\:ss'; //'d\.m\.yyyy h\:mm\:ss';
 
 	private $debug = FALSE;
 
@@ -127,7 +128,7 @@ class HtmlTable {
 			$html .= "<Styles>\n"
 				. "\t<Style ss:ID=\"headRow\">\n"
 				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#888888\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->headBg\" ss:Pattern=\"Solid\" />\n"
 				. "\t\t<Font ss:Bold=\"1\" />\n"
@@ -137,7 +138,7 @@ class HtmlTable {
 				. "\t\t<Borders>\n"
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
-				. "\t\t<Alignment ss:Vertical=\"Center\" />\n"
+				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t</Style>\n"
 				. "\t<Style ss:ID=\"evenRow\">\n"
 				. "\t\t<Borders>\n"
@@ -146,22 +147,22 @@ class HtmlTable {
 				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Alignment ss:Vertical=\"Center\" />\n"
+				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t</Style>\n"
 				. "\t<Style ss:ID=\"resultRow\">\n"
 				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#888888\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 				. "\t\t<Font ss:Bold=\"1\" />\n"
-				. "\t\t<Alignment ss:Vertical=\"Center\" />\n"
+				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t</Style>\n"
 				. "\t<Style ss:ID=\"footRow\">\n"
 				. "\t\t<Borders>\n"
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#888888\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 				. "\t\t<Font ss:Bold=\"1\" />\n"
@@ -172,7 +173,6 @@ class HtmlTable {
 			$html .= "<Worksheet ss:Name=\"Worksheet\">\n" . $table;
 
 			$html .= "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n";
-//			$html .= "\t\t<GridlineColor>\"#000000\"</GridlineColor>\n";
 			$html .= "\t\t<FrozenNoSplit />\n";
 			$html .= "\t\t<SplitHorizontal>1</SplitHorizontal>\n";
 			$html .= "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n";
@@ -210,7 +210,7 @@ class HtmlTable {
 		if (isset($this->data)) {
 			for ($j = count($this->data); $rowNum < $j; ++$rowNum) {
 				if ($this->type === self::TYPE_SCREEN) {
-					$body .= "\t\t<tr>\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</tr>\n";
+					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</tr>\n";
 				} else {
 					$body .= "\t\t<Row ss:StyleID=\"" . ($rowNum % 2 ? 'evenRow' : 'oddRow') . "\">\n"
 						. $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</Row>\n";
@@ -220,7 +220,7 @@ class HtmlTable {
 		if (isset($this->resource)) {
 			while ($row = mysql_fetch_assoc($this->resource)) {
 				if ($this->type === self::TYPE_SCREEN) {
-					$body .= "\t\t<tr>\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</tr>\n";
+					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</tr>\n";
 				} else {
 					$body .= "\t\t<Row ss:StyleID=\"" . ($rowNum % 2 ? 'evenRow' : 'oddRow') . "\">\n"
 						. $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</Row>\n";
@@ -328,13 +328,12 @@ class HtmlTable {
 
 			$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
 			if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
-			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'d\.m\.yyyy h\:mm\:ss\'"';
+			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xlsDate . '\'"';
 			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
 			else $attributes .= ' style="mso-number-format: \'0\'"';
 
-			if ($this->type !== self::TYPE_EXCEL && $col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
-
 			if ($this->type === self::TYPE_SCREEN) {
+				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
 			} else {
 				$rowText .= "\t\t\t<Cell><Data ss:Type=\"String\">"
@@ -407,14 +406,14 @@ class HtmlTable {
 			} else $var = '';
 
 			if (!$num) $attributes = 'style="mso-number-format: \'\@\'"';
-			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'d\.m\.yyyy h\:mm\:ss\'"';
+			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xlsDate . '\'"';
 			elseif ($float) $attributes = 'style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
 			else $attributes = 'style="mso-number-format: \'0\'"';
 
 			if ($this->type === self::TYPE_SCREEN) {
-				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
+				if ($col[self::COLUMN_ALIGN] != 'center') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
-				$results .= "\t\t\t<td bgcolor=\"$this->footBg\" $attributes><b>" . $var . "</b></td>\n";
+				$results .= "\t\t\t<th bgcolor=\"$this->footBg\" $attributes>" . $var . "</td>\n";
 				$labels .=  "\t\t\t<th bgcolor=\"$this->footBg\">" . $label . "</th>\n";
 			} else {
 				$results .= "\t\t\t<Cell><Data ss:Type=\"String\">" . $var . "</Data></Cell>\n";

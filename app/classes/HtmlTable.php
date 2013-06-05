@@ -11,6 +11,10 @@
  * 	align: align of text in cell (right, center, defaults to left)
  */
 
+// TODO: nadefinovat columns pro tabulku
+// TODO: udelat pro excel typy bunky
+
+
 class HtmlTable {
 	const
 		TABLE_TYPE = 'type',
@@ -113,6 +117,8 @@ class HtmlTable {
 
 
 	public function go() {
+		mb_internal_encoding('UTF-8');
+
 		if (isset($this->resource) && $row = mysql_fetch_assoc($this->resource)) {
 				$this->resColumns = array_keys($row);
 				$this->data = array(array_values($row));
@@ -127,9 +133,17 @@ class HtmlTable {
 
 		$table = $this->getTable();
 
+		App::dump($this->columns);
+
 		if ($this->type === self::TYPE_EXCEL) {
-			$html = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" . "<?mso-application progid=\"Excel.Sheet\"?>\n" . "<Workbook"
-				. " xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\""
+			for ($columns = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
+				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . (10 * $this->columns[$i]['_maxLength']) . "\" />\n";
+			}
+
+			$table = "\t<Table>\n" . $columns . $table . "\t</Table>\n";
+
+			$html = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" . "<?mso-application progid=\"Excel.Sheet\"?>\n"
+				. "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\""
 				. " xmlns:x=\"urn:schemas-microsoft-com:office:excel\""
 				. " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\""
 				. " xmlns:html=\"http://www.w3.org/TR/REC-html40\">" . "\n";
@@ -179,27 +193,29 @@ class HtmlTable {
 				. "\t</Style>\n"
 				. "</Styles>\n";
 
-			$html .= "<Worksheet ss:Name=\"Worksheet\">\n" . $table;
-
-			$html .= "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n";
-			$html .= "\t\t<FrozenNoSplit />\n";
-			$html .= "\t\t<SplitHorizontal>1</SplitHorizontal>\n";
-			$html .= "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n";
-			$html .= "\t\t<ActivePane>2</ActivePane>\n";
-			$html .= "\t</WorksheetOptions>\n";
-			$html .= "</Worksheet>\n</Workbook>";
+			$html .= "<Worksheet ss:Name=\"Worksheet\">\n"
+				. $table
+				. "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n"
+				. "\t\t<FrozenNoSplit />\n"
+				. "\t\t<SplitHorizontal>1</SplitHorizontal>\n"
+				. "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n"
+				. "\t\t<ActivePane>2</ActivePane>\n"
+				. "\t</WorksheetOptions>\n"
+				. "</Worksheet>\n</Workbook>";
 
 			echo $html;
 			die;
 		} else {
 			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
+
+			$table = "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n" . $table . "\t</table>\n";
 			return $table;
 		}
 	}
 
 
 	private function sendHead() {
-		if ($this->type !== self::TYPE_SCREEN) {
+		if ($this->type === self::TYPE_EXCEL) {
 			header("Pragma: no-cache");
 			header("Expires: 0");
 			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
@@ -240,13 +256,12 @@ class HtmlTable {
 		$footer = $this->getTableFooter($rowNum, $columns);
 
 		if ($this->type === self::TYPE_SCREEN) {
-			$retText = "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n\t\t<tr>\n" . $header . "\t\t</tr>\n"
-				. $body . "\t\t<tr>" . implode("\t\t</tr>\n\t\t<tr>\n", $footer) . "\t\t</tr>\n\t</table>\n";
+			$retText = "\t\t<tr>\n" . $header . "\t\t</tr>\n" . $body . "\t\t<tr>\n" . implode("\t\t</tr>\n\t\t<tr>\n", $footer) . "\t\t</tr>\n";
 		} else {
-			$retText = "\t<Table>\n\t\t<Row ss:StyleID=\"headRow\">\n" . $header . "\t\t</Row>\n"
+			$retText = "\t\t<Row ss:StyleID=\"headRow\">\n" . $header . "\t\t</Row>\n"
 				. $body . "\t\t<Row ss:StyleID=\"resultRow\">\n"
 				. $footer[0] . "\t\t</Row>\n\t\t<Row ss:StyleID=\"footRow\">\n"
-				. $footer[1] . "\t\t</Row>\n\t</Table>\n";
+				. $footer[1] . "\t\t</Row>\n";
 		}
 
 		return $retText;
@@ -254,8 +269,6 @@ class HtmlTable {
 
 
 	private function prepareColumns() {
-		//			if (in_array($format = $options[self::DATE_FORMAT], array('left', 'center', 'right')))
-
 		for ($columns = array(), $i = 0, $j = count($this->columns); $i < $j; ++$i) {
 			$col = &$columns[$i];
 
@@ -265,12 +278,21 @@ class HtmlTable {
 				self::COLUMN_PREFIX => '',
 				self::COLUMN_POSTFIX => '',
 				self::COLUMN_FUNCTION => '',
-				self::COLUMN_ALIGN => 'left'
+				self::COLUMN_ALIGN => 'left',
+				'_maxLength' => 0
 			);
+
+			if (in_array($align = strtolower($col[self::COLUMN_ALIGN]), array('left', 'center', 'right'))) {
+				$col[self::COLUMN_ALIGN] = $align;
+				$col['_xlsAlign'] = strtoupper($align[0]) . substr($align,1);
+			} else {
+				$col[self::COLUMN_ALIGN] = 'left';
+				$col['_xlsAlign'] = 'Left';
+			}
 
 			$func = $col[self::COLUMN_FUNCTION] = strtolower(strval($col[self::COLUMN_FUNCTION]));
 
-			$col['_prePostLen'] = strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
+			$col['_prePostLen'] = mb_strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
 			$col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER || $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT
 				|| $col[self::COLUMN_FORMAT] === self::FORMAT_UT;;
 
@@ -303,17 +325,21 @@ class HtmlTable {
 			switch($col[self::COLUMN_FORMAT]) {
 				case self::FORMAT_INTEGER:
 					$value = $var = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i]));
+					if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 					break;
 				case self::FORMAT_FLOAT:
 					$value = $var = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i]));
+					if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 					break;
 				case self::FORMAT_UT:
 					$var = date($this->dateFormat, $value = intval(strval($row[$i])));
+					if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 					break;
 				default:
-					if (strlen($value = strval($row[$i]))) {
+					if (mb_strlen($value = strval($row[$i]))) {
 						$var = htmlspecialchars($value, ENT_QUOTES);
 					} else $var = $value = '';
+					if (($len = mb_strlen($value) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 			}
 
 			switch($col[self::COLUMN_FUNCTION]) {
@@ -350,7 +376,6 @@ class HtmlTable {
 				$rowText .= "\t\t\t<Cell><Data ss:Type=\"String\">"
 					. $var . "</Data></Cell>\n";
 			}
-
 		} unset($col);
 
 		return $rowText;
@@ -401,20 +426,26 @@ class HtmlTable {
 							$var = is_float($result) ? $result : floatval(strval($result));
 							$float = TRUE;
 						} else $var = is_int($result) ? $result : intval(strval($result));
+						if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 						break;
 					case self::FORMAT_FLOAT:
 						$var = is_float($result) ? $result : floatval(strval($result));
+						if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 						break;
 					case self::FORMAT_UT:
 						$var = date($this->dateFormat, intval(strval($result)));
+						if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 						break;
 					default:
-						$var = htmlspecialchars("$result", ENT_QUOTES);
+						$var = htmlspecialchars(strval($result), ENT_QUOTES);
+						if (($len = mb_strlen(strval($result)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
 				}
 
 				if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $result . $col[self::COLUMN_POSTFIX];
 				else $num = $col['_num'];
 			} else $var = '';
+
+			$this->columns[$i]['_maxLength'] = $col['_maxLength'];
 
 			if (!$num) $attributes = 'style="mso-number-format: \'\@\'"';
 			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xlsDate . '\'"';

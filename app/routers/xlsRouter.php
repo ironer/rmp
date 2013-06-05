@@ -14,7 +14,7 @@ $export->config(array(
 	),
 	'columns' => array(
 		array('format' => 'int', 'func' => 'avg', 'align' => 'right'),
-		array('func' => 'min', 'align' => 'right'),
+		array('func' => 'min'),
 		array('func' => 'min', 'align' => 'right'),
 		array('format' => 'ut', 'func' => 'avg', 'align' => 'right')
 	)

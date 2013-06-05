@@ -133,11 +133,9 @@ class HtmlTable {
 
 		$table = $this->getTable();
 
-		App::dump($this->columns);
-
 		if ($this->type === self::TYPE_EXCEL) {
 			for ($columns = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
-				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . (10 * $this->columns[$i]['_maxLength']) . "\" />\n";
+				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . (10 * $this->columns[$i]['length']) . "\" />\n";
 			}
 
 			$table = "\t<Table>\n" . $columns . $table . "\t</Table>\n";
@@ -149,48 +147,69 @@ class HtmlTable {
 				. " xmlns:html=\"http://www.w3.org/TR/REC-html40\">" . "\n";
 
 			$html .= "<Styles>\n"
-				. "\t<Style ss:ID=\"headRow\">\n"
+
+				. "\t<Style ss:ID=\"head\">\n"
 				. "\t\t<Borders>\n"
+				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->headBg\" ss:Pattern=\"Solid\" />\n"
 				. "\t\t<Font ss:Bold=\"1\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"1\" />\n"
 				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"oddRow\">\n"
+				. "\t<Style ss:ID=\"foot\" ss:Parent=\"head\">\n"
+				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"0\" />\n"
+				. "\t</Style>\n"
+
+				. "\t<Style ss:ID=\"oddLeft\">\n"
 				. "\t\t<Borders>\n"
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"evenRow\">\n"
+				. "\t<Style ss:ID=\"evenLeft\" ss:Parent=\"oddLeft\">\n"
 				. "\t\t<Borders>\n"
 				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#dddddd\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"resultRow\">\n"
+				. "\t<Style ss:ID=\"oddCenter\" ss:Parent=\"oddLeft\">\n"
+				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"evenCenter\" ss:Parent=\"evenLeft\">\n"
+				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"oddRight\" ss:Parent=\"oddLeft\">\n"
+				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"evenRight\" ss:Parent=\"evenLeft\">\n"
+				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+
+				. "\t<Style ss:ID=\"resultLeft\" ss:Parent=\"oddLeft\">\n"
 				. "\t\t<Borders>\n"
 				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 				. "\t\t<Font ss:Bold=\"1\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"footRow\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#aaaaaa\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t<Style ss:ID=\"resultCenter\" ss:Parent=\"resultLeft\">\n"
 				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
 				. "\t</Style>\n"
+				. "\t<Style ss:ID=\"resultRight\" ss:Parent=\"resultLeft\">\n"
+				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
+				. "\t</Style>\n"
+
 				. "</Styles>\n";
 
 			$html .= "<Worksheet ss:Name=\"Worksheet\">\n"
@@ -237,7 +256,7 @@ class HtmlTable {
 				if ($this->type === self::TYPE_SCREEN) {
 					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</tr>\n";
 				} else {
-					$body .= "\t\t<Row ss:StyleID=\"" . ($rowNum % 2 ? 'evenRow' : 'oddRow') . "\">\n"
+					$body .= "\t\t<Row>\n"
 						. $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</Row>\n";
 				}
 			}
@@ -247,7 +266,7 @@ class HtmlTable {
 				if ($this->type === self::TYPE_SCREEN) {
 					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</tr>\n";
 				} else {
-					$body .= "\t\t<Row ss:StyleID=\"" . ($rowNum % 2 ? 'evenRow' : 'oddRow') . "\">\n"
+					$body .= "\t\t<Row>\n"
 						. $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</Row>\n";
 				}
 			}
@@ -258,9 +277,9 @@ class HtmlTable {
 		if ($this->type === self::TYPE_SCREEN) {
 			$retText = "\t\t<tr>\n" . $header . "\t\t</tr>\n" . $body . "\t\t<tr>\n" . implode("\t\t</tr>\n\t\t<tr>\n", $footer) . "\t\t</tr>\n";
 		} else {
-			$retText = "\t\t<Row ss:StyleID=\"headRow\">\n" . $header . "\t\t</Row>\n"
-				. $body . "\t\t<Row ss:StyleID=\"resultRow\">\n"
-				. $footer[0] . "\t\t</Row>\n\t\t<Row ss:StyleID=\"footRow\">\n"
+			$retText = "\t\t<Row>\n" . $header . "\t\t</Row>\n"
+				. $body . "\t\t<Row>\n"
+				. $footer[0] . "\t\t</Row>\n\t\t<Row>\n"
 				. $footer[1] . "\t\t</Row>\n";
 		}
 
@@ -306,10 +325,11 @@ class HtmlTable {
 	private function getTableHeader(&$columns) {
 		for ($header = $colgroup = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
 			$value = htmlspecialchars($columns[$i][self::COLUMN_HEADER], ENT_QUOTES);
+			if (($len = mb_strlen(strval($columns[$i][self::COLUMN_HEADER]))) > $columns[$i]['_maxLength']) $columns[$i]['_maxLength'] = $len;
 			if ($this->type === self::TYPE_SCREEN) {
 				$header .= "\t\t\t<th bgcolor=\"$this->headBg\"" . ' style="mso-number-format: \'\@\'">' . $value . "</th>\n";
 			} else {
-				$header .= "\t\t\t<Cell><Data ss:Type=\"String\">" . $value . "</Data></Cell>\n";
+				$header .= "\t\t\t<Cell ss:StyleID=\"head\"><Data ss:Type=\"String\">" . $value . "</Data></Cell>\n";
 			}
 		}
 
@@ -363,19 +383,20 @@ class HtmlTable {
 			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
 			else $num = $col['_num'];
 
-			$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
-			if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
-			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xlsDate . '\'"';
-			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
-			else $attributes .= ' style="mso-number-format: \'0\'"';
-
 			if ($this->type === self::TYPE_SCREEN) {
+				$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
+				if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xlsDate . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
+				else $attributes .= ' style="mso-number-format: \'0\'"';
+
 				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
 			} else {
-				$rowText .= "\t\t\t<Cell><Data ss:Type=\"String\">"
-					. $var . "</Data></Cell>\n";
+				$styleId = ($rowNum % 2 ? 'odd' : 'even') . $col['_xlsAlign'];
+				$rowText .= "\t\t\t<Cell ss:StyleID=\"$styleId\"><Data ss:Type=\"String\">" . $var . "</Data></Cell>\n";
 			}
+
 		} unset($col);
 
 		return $rowText;
@@ -445,7 +466,7 @@ class HtmlTable {
 				else $num = $col['_num'];
 			} else $var = '';
 
-			$this->columns[$i]['_maxLength'] = $col['_maxLength'];
+			$this->columns[$i]['length'] = $col['_maxLength'];
 
 			if (!$num) $attributes = 'style="mso-number-format: \'\@\'"';
 			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xlsDate . '\'"';
@@ -458,8 +479,8 @@ class HtmlTable {
 				$results .= "\t\t\t<th bgcolor=\"$this->footBg\" $attributes>" . $var . "</td>\n";
 				$labels .=  "\t\t\t<th bgcolor=\"$this->footBg\">" . $label . "</th>\n";
 			} else {
-				$results .= "\t\t\t<Cell><Data ss:Type=\"String\">" . $var . "</Data></Cell>\n";
-				$labels .=  "\t\t\t<Cell><Data ss:Type=\"String\">" . $label . "</Data></Cell>\n";
+				$results .= "\t\t\t<Cell ss:StyleID=\"result$col[align]\"><Data ss:Type=\"String\">" . $var . "</Data></Cell>\n";
+				$labels .=  "\t\t\t<Cell ss:StyleID=\"foot\"><Data ss:Type=\"String\">" . $label . "</Data></Cell>\n";
 			}
 		} unset($col);
 

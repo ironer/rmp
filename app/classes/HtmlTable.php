@@ -256,8 +256,7 @@ class HtmlTable {
 				if ($this->type === self::TYPE_SCREEN) {
 					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</tr>\n";
 				} else {
-					$body .= "\t\t<Row>\n"
-						. $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</Row>\n";
+					$body .= "\t\t<Row>\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</Row>\n";
 				}
 			}
 		}
@@ -266,8 +265,7 @@ class HtmlTable {
 				if ($this->type === self::TYPE_SCREEN) {
 					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</tr>\n";
 				} else {
-					$body .= "\t\t<Row>\n"
-						. $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</Row>\n";
+					$body .= "\t\t<Row>\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</Row>\n";
 				}
 			}
 		}
@@ -394,7 +392,13 @@ class HtmlTable {
 				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
 			} else {
 				$styleId = ($rowNum % 2 ? 'odd' : 'even') . $col['_xlsAlign'];
-				$rowText .= "\t\t\t<Cell ss:StyleID=\"$styleId\"><Data ss:Type=\"String\">" . $var . "</Data></Cell>\n";
+
+				if (!$num) $type = 'String';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $type = 'String';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $type = 'Number';
+				else $type = 'Number';
+				
+				$rowText .= "\t\t\t<Cell ss:StyleID=\"$styleId\"><Data ss:Type=\"$type\">" . $var . "</Data></Cell>\n";
 			}
 
 		} unset($col);
@@ -468,18 +472,23 @@ class HtmlTable {
 
 			$this->columns[$i]['length'] = $col['_maxLength'];
 
-			if (!$num) $attributes = 'style="mso-number-format: \'\@\'"';
-			elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xlsDate . '\'"';
-			elseif ($float) $attributes = 'style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
-			else $attributes = 'style="mso-number-format: \'0\'"';
-
 			if ($this->type === self::TYPE_SCREEN) {
+				if (!$num) $attributes = 'style="mso-number-format: \'\@\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xlsDate . '\'"';
+				elseif ($float) $attributes = 'style="mso-number-format: \'0\.' . $this->xlsDecs . '\'"';
+				else $attributes = 'style="mso-number-format: \'0\'"';
+
 				if ($col[self::COLUMN_ALIGN] != 'center') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
 				$results .= "\t\t\t<th bgcolor=\"$this->footBg\" $attributes>" . $var . "</td>\n";
 				$labels .=  "\t\t\t<th bgcolor=\"$this->footBg\">" . $label . "</th>\n";
 			} else {
-				$results .= "\t\t\t<Cell ss:StyleID=\"result$col[align]\"><Data ss:Type=\"String\">" . $var . "</Data></Cell>\n";
+				if (!$num) $type = 'String';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $type = 'String';
+				elseif ($float) $type = 'Number';
+				else $type = 'Number';
+			
+				$results .= "\t\t\t<Cell ss:StyleID=\"result$col[_xlsAlign]\"><Data ss:Type=\"$type\">" . $var . "</Data></Cell>\n";
 				$labels .=  "\t\t\t<Cell ss:StyleID=\"foot\"><Data ss:Type=\"String\">" . $label . "</Data></Cell>\n";
 			}
 		} unset($col);

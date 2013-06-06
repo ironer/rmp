@@ -2,11 +2,11 @@
 
 $router = new Router($this->router, $this);
 
-$export = new HtmlTable('exportXLS');
+$export = new Table('exportXLS');
 
 $export->config(array(
 	'type' => 'xls',
-	'date' => 'y-n-j G:m',
+	'date' => 'y-n-j G:i',
 	'source' => array(
 		array(1, 'ΚΑΛΛΙΟΠΗ ΧΟΝΔΡΟΣΠ', '006', 1370086580),
 		array(3, '<td>zluvik</td>', '+420777367753', 1367667380),
@@ -15,7 +15,7 @@ $export->config(array(
 	'columns' => array(
 		array('format' => 'int', 'func' => 'avg', 'align' => 'right'),
 		array('func' => 'min'),
-		array('func' => 'min', 'align' => 'right'),
+		array('func' => 'min', 'align' => 'center'),
 		array('format' => 'ut', 'func' => 'avg', 'align' => 'right')
 	)
 ));

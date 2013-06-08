@@ -18,6 +18,8 @@ class Table {
 		TYPE_HTML = 'html', // default
 		TYPE_XML = 'xml',
 
+		OUTPUT_STREAM = 'stream',
+
 		EXPORT_FILENAME = 'filename',
 		TABLE_SOURCE = 'source',
 		TABLE_COLUMNS = 'columns',
@@ -49,6 +51,8 @@ class Table {
 	public $container;
 
 	private $type = self::TYPE_HTML;
+	private $stream = FALSE;
+
 	private $filename = 'document';
 	private $columns = array();
 	private $data;
@@ -84,6 +88,9 @@ class Table {
 		if (!empty($options[self::TABLE_TYPE]) && $options[self::TABLE_TYPE] === self::TYPE_XML && !$this->debug) {
 			$this->type = self::TYPE_XML;
 		}
+
+		if (isset($options[self::OUTPUT_STREAM])) $this->stream = !!$options[self::OUTPUT_STREAM];
+
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
 
 		if (!empty($options[self::TABLE_SOURCE])) {
@@ -103,6 +110,7 @@ class Table {
 			$this->decimals = $options[self::FLOAT_DECIMALS];
 			$this->xmlDecs = str_pad('', $this->decimals, '0');
 		}
+
 		if (!empty($options[self::DATE_FORMAT])) {
 			if (1 === preg_match('#^[djmnyY][\./-][djmnyY][\./-][djmnyY] [GH]:i(:s)?$#', $options[self::DATE_FORMAT])) {
 				$this->dateFormat = $options[self::DATE_FORMAT];
@@ -127,11 +135,14 @@ class Table {
 		elseif ($i < $j) for (; $i < $j; ++$i) $this->columns[$i] = array();
 
 		if ($this->debug) App::lg('Tabulka pripravena pro export', $this);
+		elseif ($this->type === self::TYPE_XML) {
+			$this->sendHead();
+//			if ($this)
+		}
 
 		$table = $this->getTable();
 
 		if ($this->type === self::TYPE_XML) {
-			$this->sendHead();
 
 			for ($columns = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
 				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . min(500, 10 * $this->columns[$i]['length']) . "\" />\n";
@@ -139,166 +150,9 @@ class Table {
 
 			$table = "\t<Table>\n" . $columns . $table . "\t</Table>\n";
 
-			$xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" . "<?mso-application progid=\"Excel.Sheet\"?>\n"
-				. "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\""
-				. " xmlns:x=\"urn:schemas-microsoft-com:office:excel\""
-				. " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\""
-				. " xmlns:html=\"http://www.w3.org/TR/REC-html40\">" . "\n";
+			$xml = self::XML_HEAD;
 
-			$xml .= "<Styles>\n"
-
-				. "\t<Style ss:ID=\"h\" ss:Name=\"h\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->headBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"1\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"f\" ss:Parent=\"h\">\n"
-				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"0\" />\n"
-				. "\t</Style>\n"
-
-				. "\t<Style ss:ID=\"olt\" ss:Name=\"olt\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"elt\" ss:Name=\"elt\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"oct\" ss:Name=\"oct\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"ect\" ss:Name=\"ect\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"ort\" ss:Name=\"ort\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"ert\" ss:Name=\"ert\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-
-				. "\t<Style ss:ID=\"oli\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"eli\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"oci\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"eci\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ori\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"eri\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-
-				. "\t<Style ss:ID=\"olf\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"elf\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ocf\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ecf\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"orf\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"erf\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-
-				. "\t<Style ss:ID=\"olu\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"elu\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ocu\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ecu\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"oru\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"eru\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-
-				. "\t<Style ss:ID=\"rlt\" ss:Name=\"rlt\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"rct\" ss:Name=\"rct\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-				. "\t<Style ss:ID=\"rrt\" ss:Name=\"rrt\">\n"
-				. "\t\t<Borders>\n"
-				. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-				. "\t\t</Borders>\n"
-				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
-				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
-				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
-				. "\t</Style>\n"
-
-				. "\t<Style ss:ID=\"rli\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rci\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rri\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-
-				. "\t<Style ss:ID=\"rlf\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rcf\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rrf\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-
-				. "\t<Style ss:ID=\"rlu\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rcu\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rru\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
-
-				. "</Styles>\n";
+			$xml .= $this->getXmlStyles();
 
 			$xml .= "<Worksheet ss:Name=\"$this->id\">\n"
 				. $table
@@ -592,5 +446,164 @@ class Table {
 		return array($results, $labels);
 	}
 
+	const XML_HEAD = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?mso-application progid=\"Excel.Sheet\"?>\n<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n";
+
+	private function getXmlStyles() {
+		return "<Styles>\n"
+
+			. "\t<Style ss:ID=\"h\" ss:Name=\"h\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Interior ss:Color=\"$this->headBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"1\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"f\" ss:Parent=\"h\">\n"
+			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"0\" />\n"
+			. "\t</Style>\n"
+
+			. "\t<Style ss:ID=\"olt\" ss:Name=\"olt\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"elt\" ss:Name=\"elt\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"oct\" ss:Name=\"oct\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"ect\" ss:Name=\"ect\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"ort\" ss:Name=\"ort\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"ert\" ss:Name=\"ert\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+
+			. "\t<Style ss:ID=\"oli\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"eli\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"oci\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"eci\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ori\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"eri\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+
+			. "\t<Style ss:ID=\"olf\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"elf\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ocf\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ecf\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"orf\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"erf\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+
+			. "\t<Style ss:ID=\"olu\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"elu\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ocu\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ecu\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"oru\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"eru\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+
+			. "\t<Style ss:ID=\"rlt\" ss:Name=\"rlt\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"rct\" ss:Name=\"rct\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+			. "\t<Style ss:ID=\"rrt\" ss:Name=\"rrt\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
+			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
+			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
+			. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t</Style>\n"
+
+			. "\t<Style ss:ID=\"rli\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rci\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rri\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+
+			. "\t<Style ss:ID=\"rlf\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rcf\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rrf\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+
+			. "\t<Style ss:ID=\"rlu\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rcu\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rru\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+
+			. "</Styles>\n";
+	}
+	
 }
 

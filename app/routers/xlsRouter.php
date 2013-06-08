@@ -2,10 +2,10 @@
 
 $router = new Router($this->router, $this);
 
-$export = new Table('exportXLS');
+$export = new Table('testTable');
 
 $export->config(array(
-	'type' => 'xls',
+	'type' => 'xml',
 	'date' => 'y-n-j G:i',
 	'source' => array(
 		array(1, 'ΚΑΛΛΙΟΠΗ ΧΟΝΔΡΟΣΠ', '006', 1370086580),

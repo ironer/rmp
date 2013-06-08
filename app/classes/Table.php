@@ -11,15 +11,12 @@
  * 	align: align of text in cell (right, center, defaults to left)
  */
 
-// TODO: nadefinovat columns pro tabulku
-// TODO: udelat pro excel typy bunky
-
 
 class Table {
 	const
 		TABLE_TYPE = 'type',
-		TYPE_SCREEN = 'screen', // default
-		TYPE_EXCEL = 'xls',
+		TYPE_HTML = 'html', // default
+		TYPE_XML = 'xml',
 
 		EXPORT_FILENAME = 'filename',
 		TABLE_SOURCE = 'source',
@@ -43,15 +40,15 @@ class Table {
 
 		FLOAT_DECIMALS = 'decs',
 		DATE_FORMAT = 'date',
-		EXCEL_DATE_STRING = 'Y-m-d\TH:i:s.000';
+		XML_DATE_STRING = 'Y-m-d\TH:i:s.000';
 
-	private static $date2excel = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
+	private static $date2xml = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
 		'G' => 'h', 'H' => 'hh', 'i' => 'mm', 's' => 'ss', ' ' => '\ ', '.' => '\.', '/' => '\/', '-' => '\-', ':' => '\:');
 
 	public $id;
 	public $container;
 
-	private $type = self::TYPE_SCREEN;
+	private $type = self::TYPE_HTML;
 	private $filename = 'document';
 	private $columns = array();
 	private $data;
@@ -63,29 +60,29 @@ class Table {
 	private $footBg = '#CCFFCC';
 
 	private $decimals = 2;
-	private $xlsDecs = '00';
+	private $xmlDecs = '00';
 	private $dateFormat = 'd.m.Y H:i:s';
-	private $xlsDate = 'dd\.mm\.yyyy\ hh\:mm\:ss';
+	private $xmlDate = 'dd\.mm\.yyyy\ hh\:mm\:ss';
 
 	private $debug = FALSE;
 
 
-	public function __construct($id = NULL, $container = NULL) {
+	public function __construct($id = '', $container = NULL) {
 		$this->debug = defined('DEBUG') ? DEBUG : FALSE;
 
-		if ($container instanceof App) {
-			$this->id = $id;
-			$this->container = $container;
-			if ($this->debug) App::lg("Vytvoren exporter pro Excel '$this->id'", $this);
-		}
+		$this->id = strval($id) ?: 'worksheet';
+
+		if ($container instanceof App) $this->container = $container;
+
+		if ($this->debug) App::lg("Vytvoren exporter tabulky '$this->id'", $this);
 	}
 
 
 	public function config($options = array()) {
-		if (!is_array($options)) throw new Exception("Konfigurator exporteru pro Excel ocekava pole s konfiguraci.");
+		if (!is_array($options)) throw new Exception("Konfigurator exporteru tabulky ocekava pole s konfiguraci.");
 
-		if (!empty($options[self::TABLE_TYPE]) && $options[self::TABLE_TYPE] === self::TYPE_EXCEL && !$this->debug) {
-			$this->type = self::TYPE_EXCEL;
+		if (!empty($options[self::TABLE_TYPE]) && $options[self::TABLE_TYPE] === self::TYPE_XML && !$this->debug) {
+			$this->type = self::TYPE_XML;
 		}
 		if (!empty($options[self::EXPORT_FILENAME])) $this->filename = $options[self::EXPORT_FILENAME];
 
@@ -104,12 +101,12 @@ class Table {
 
 		if (!empty($options[self::FLOAT_DECIMALS])) {
 			$this->decimals = $options[self::FLOAT_DECIMALS];
-			$this->xlsDecs = str_pad('', $this->decimals, '0');
+			$this->xmlDecs = str_pad('', $this->decimals, '0');
 		}
 		if (!empty($options[self::DATE_FORMAT])) {
 			if (1 === preg_match('#^[djmnyY][\./-][djmnyY][\./-][djmnyY] [GH]:i(:s)?$#', $options[self::DATE_FORMAT])) {
 				$this->dateFormat = $options[self::DATE_FORMAT];
-				$this->xlsDate = strtr($this->dateFormat, self::$date2excel);
+				$this->xmlDate = strtr($this->dateFormat, self::$date2xml);
 			}
 		}
 
@@ -130,24 +127,27 @@ class Table {
 		elseif ($i < $j) for (; $i < $j; ++$i) $this->columns[$i] = array();
 
 		if ($this->debug) App::lg('Tabulka pripravena pro export', $this);
-		elseif ($this->type !== self::TYPE_SCREEN) $this->sendHead();
 
 		$table = $this->getTable();
 
-		if ($this->type === self::TYPE_EXCEL) {
+		if ($this->type === self::TYPE_XML) {
+			$this->sendHead();
+
 			for ($columns = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
-				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . (10 * $this->columns[$i]['length']) . "\" />\n";
+				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . (7 * $this->columns[$i]['length']) . "\" />\n";
 			}
+
+			//<Font ss:FontName=”Comic Sans MS” x:Family=”Swiss” ss:Size=”12″/>
 
 			$table = "\t<Table>\n" . $columns . $table . "\t</Table>\n";
 
-			$html = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" . "<?mso-application progid=\"Excel.Sheet\"?>\n"
+			$xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" . "<?mso-application progid=\"Excel.Sheet\"?>\n"
 				. "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\""
 				. " xmlns:x=\"urn:schemas-microsoft-com:office:excel\""
 				. " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\""
 				. " xmlns:html=\"http://www.w3.org/TR/REC-html40\">" . "\n";
 
-			$html .= "<Styles>\n"
+			$xml .= "<Styles>\n"
 
 				. "\t<Style ss:ID=\"h\" ss:Name=\"h\">\n"
 				. "\t\t<Borders>\n"
@@ -231,19 +231,19 @@ class Table {
 				. "\t<Style ss:ID=\"ori\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
 				. "\t<Style ss:ID=\"eri\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
 
-				. "\t<Style ss:ID=\"olf\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"elf\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ocf\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ecf\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"orf\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"erf\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"olf\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"elf\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"ocf\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"ecf\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"orf\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"erf\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
 
-				. "\t<Style ss:ID=\"olu\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"elu\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ocu\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"ecu\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"oru\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"eru\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"olu\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"elu\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"ocu\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"ecu\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"oru\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"eru\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
 
 				. "\t<Style ss:ID=\"rlt\" ss:Name=\"rlt\">\n"
 				. "\t\t<Borders>\n"
@@ -286,17 +286,17 @@ class Table {
 				. "\t<Style ss:ID=\"rci\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
 				. "\t<Style ss:ID=\"rri\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
 
-				. "\t<Style ss:ID=\"rlf\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rcf\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rrf\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xlsDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"rlf\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"rcf\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"rrf\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
 
-				. "\t<Style ss:ID=\"rlu\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rcu\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
-				. "\t<Style ss:ID=\"rru\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"$this->xlsDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"rlu\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"rcu\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
+				. "\t<Style ss:ID=\"rru\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
 
 				. "</Styles>\n";
 
-			$html .= "<Worksheet ss:Name=\"Worksheet\">\n"
+			$xml .= "<Worksheet ss:Name=\"$this->id\">\n"
 				. $table
 				. "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n"
 				. "\t\t<FrozenNoSplit />\n"
@@ -306,7 +306,7 @@ class Table {
 				. "\t</WorksheetOptions>\n"
 				. "</Worksheet>\n</Workbook>";
 
-			echo $html;
+			echo $xml;
 			die;
 		} else {
 			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
@@ -318,12 +318,12 @@ class Table {
 
 
 	private function sendHead() {
-		if ($this->type === self::TYPE_EXCEL) {
+		if ($this->type === self::TYPE_XML) {
 			header("Pragma: no-cache");
 			header("Expires: 0");
 			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 			header("Content-Type: application/vnd.ms-excel; charset=utf-8");
-			header("Content-Disposition: attachment; filename=$this->filename.xls");
+			header("Content-Disposition: attachment; filename=$this->filename.xml");
 		}
 	}
 
@@ -337,7 +337,7 @@ class Table {
 		$rowNum = 0;
 		if (isset($this->data)) {
 			for ($j = count($this->data); $rowNum < $j; ++$rowNum) {
-				if ($this->type === self::TYPE_SCREEN) {
+				if ($this->type === self::TYPE_HTML) {
 					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</tr>\n";
 				} else {
 					$body .= "\t\t<Row>\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</Row>\n";
@@ -346,7 +346,7 @@ class Table {
 		}
 		if (isset($this->resource)) {
 			while ($row = mysql_fetch_assoc($this->resource)) {
-				if ($this->type === self::TYPE_SCREEN) {
+				if ($this->type === self::TYPE_HTML) {
 					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</tr>\n";
 				} else {
 					$body .= "\t\t<Row>\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</Row>\n";
@@ -356,7 +356,7 @@ class Table {
 
 		$footer = $this->getTableFooter($rowNum, $columns);
 
-		if ($this->type === self::TYPE_SCREEN) {
+		if ($this->type === self::TYPE_HTML) {
 			$retText = "\t\t<tr>\n" . $header . "\t\t</tr>\n" . $body . "\t\t<tr>\n" . implode("\t\t</tr>\n\t\t<tr>\n", $footer) . "\t\t</tr>\n";
 		} else {
 			$retText = "\t\t<Row>\n" . $header . "\t\t</Row>\n"
@@ -411,7 +411,7 @@ class Table {
 		for ($header = $colgroup = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
 			$value = htmlspecialchars($columns[$i][self::COLUMN_HEADER], ENT_QUOTES);
 			if (($len = mb_strlen(strval($columns[$i][self::COLUMN_HEADER]))) > $columns[$i]['_maxLength']) $columns[$i]['_maxLength'] = $len;
-			if ($this->type === self::TYPE_SCREEN) {
+			if ($this->type === self::TYPE_HTML) {
 				$header .= "\t\t\t<th bgcolor=\"$this->headBg\"" . ' style="mso-number-format: \'@\'">' . $value . "</th>\n";
 			} else {
 				$header .= "\t\t\t<Cell ss:StyleID=\"h\"><Data ss:Type=\"String\">" . $value . "</Data></Cell>\n";
@@ -438,7 +438,7 @@ class Table {
 					break;
 				case self::FORMAT_UT:
 					$len = mb_strlen($var = date($this->dateFormat, $value = intval(strval($row[$i])))) + $col['_prePostLen'];
-					if ($this->type === self::TYPE_EXCEL) $var = date(self::EXCEL_DATE_STRING, $value);
+					if ($this->type === self::TYPE_XML) $var = date(self::XML_DATE_STRING, $value);
 					if ($len > $col['_maxLength']) $col['_maxLength'] = $len;
 					break;
 				default:
@@ -469,11 +469,11 @@ class Table {
 			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
 			else $num = $col['_num'];
 
-			if ($this->type === self::TYPE_SCREEN) {
+			if ($this->type === self::TYPE_HTML) {
 				$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
 				if (!$num) $attributes .= ' style="mso-number-format: \'@\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xlsDate . '\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0.' . $this->xlsDecs . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xmlDate . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0.' . $this->xmlDecs . '\'"';
 				else $attributes .= ' style="mso-number-format: \'0\'"';
 
 				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
@@ -549,7 +549,7 @@ class Table {
 						break;
 					case self::FORMAT_UT:
 						$len = mb_strlen($var = date($this->dateFormat, $value = intval(strval($result)))) + $col['_prePostLen'];
-						if ($this->type === self::TYPE_EXCEL) $var = date(self::EXCEL_DATE_STRING, $value);
+						if ($this->type === self::TYPE_XML) $var = date(self::XML_DATE_STRING, $value);
 						if ($len > $col['_maxLength']) $col['_maxLength'] = $len;
 						break;
 					default:
@@ -563,10 +563,10 @@ class Table {
 
 			$this->columns[$i]['length'] = $col['_maxLength'];
 
-			if ($this->type === self::TYPE_SCREEN) {
+			if ($this->type === self::TYPE_HTML) {
 				if (!$num) $attributes = 'style="mso-number-format: \'@\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xlsDate . '\'"';
-				elseif ($float) $attributes = 'style="mso-number-format: \'0.' . $this->xlsDecs . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xmlDate . '\'"';
+				elseif ($float) $attributes = 'style="mso-number-format: \'0.' . $this->xmlDecs . '\'"';
 				else $attributes = 'style="mso-number-format: \'0\'"';
 
 				if ($col[self::COLUMN_ALIGN] != 'center') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';

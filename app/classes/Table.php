@@ -134,10 +134,8 @@ class Table {
 			$this->sendHead();
 
 			for ($columns = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
-				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . (7 * $this->columns[$i]['length']) . "\" />\n";
+				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . min(500, 10 * $this->columns[$i]['length']) . "\" />\n";
 			}
-
-			//<Font ss:FontName=”Comic Sans MS” x:Family=”Swiss” ss:Size=”12″/>
 
 			$table = "\t<Table>\n" . $columns . $table . "\t</Table>\n";
 
@@ -157,7 +155,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->headBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"1\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -171,6 +169,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
+				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -182,6 +181,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -190,6 +190,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
+				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -201,6 +202,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -209,6 +211,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
+				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -220,6 +223,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
+				. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -253,7 +257,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -265,7 +269,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -277,7 +281,7 @@ class Table {
 				. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 				. "\t\t</Borders>\n"
 				. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
-				. "\t\t<Font ss:Bold=\"1\" />\n"
+				. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 				. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
 				. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 				. "\t</Style>\n"
@@ -299,6 +303,7 @@ class Table {
 			$xml .= "<Worksheet ss:Name=\"$this->id\">\n"
 				. $table
 				. "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n"
+				. "\t\t<Zoom>125</Zoom>\n"
 				. "\t\t<FrozenNoSplit />\n"
 				. "\t\t<SplitHorizontal>1</SplitHorizontal>\n"
 				. "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n"

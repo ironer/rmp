@@ -43,7 +43,7 @@ class Table {
 
 		FLOAT_DECIMALS = 'decs',
 		DATE_FORMAT = 'date',
-		XML_DATE_STRING = 'Y-m-d\TH:i:s';
+		XML_DATE_STRING = 'Y-m-d\TH:i:s.000';
 
 	private static $date2xml = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
 		'G' => 'h', 'H' => 'hh', 'i' => 'mm', 's' => 'ss', ' ' => '\ ', '.' => '\.', '/' => '\/', '-' => '\-', ':' => '\:');
@@ -461,7 +461,7 @@ class Table {
 			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
 
 			if (strtolower($col[self::COLUMN_CHAR_WIDTH]) === 'auto') {
-				$col[self::COLUMN_CHAR_WIDTH] = $this->stream ? 'default' : 'auto'; // $this->type === self::TYPE_HTML ||
+				$col[self::COLUMN_CHAR_WIDTH] = $this->type === self::TYPE_HTML || $this->stream ? 'default' : 'auto';
 			} else $col[self::COLUMN_CHAR_WIDTH] = intval(strval($col[self::COLUMN_CHAR_WIDTH]));
 
 		} unset($col);

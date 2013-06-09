@@ -30,6 +30,7 @@ class Table {
 		COLUMN_POSTFIX = 'post',
 		COLUMN_FUNCTION = 'func',
 		COLUMN_ALIGN = 'align',
+		COLUMN_CHAR_WIDTH = 'width',
 
 		T_HEAD_TR_BACKGROUND = 'headbg',
 		T_BODY_TR_EVEN_BACKGROUND = 'evenbg',
@@ -135,48 +136,38 @@ class Table {
 		elseif ($i < $j) for (; $i < $j; ++$i) $this->columns[$i] = array();
 
 		if ($this->debug) App::lg('Tabulka pripravena pro export', $this);
-		elseif ($this->type === self::TYPE_XML) {
-			$this->sendHead();
-//			if ($this)
-		}
 
-		$table = $this->getTable();
+		$columns = $this->prepareColumns();
 
 		if ($this->type === self::TYPE_XML) {
+			$this->sendHeaders();
+			echo $this->getXmlHead() . $this->getXmlStyles() . "<Worksheet ss:Name=\"$this->id\">\n\t<Table>\n";
 
-			for ($columns = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
-				$columns .= "\t\t<Column ss:AutoFitWidth=\"0\" ss:Width=\"" . min(500, 10 * $this->columns[$i]['length']) . "\" />\n";
+			if ($this->stream) {
+				echo $this->getXmlColumns();
+				$this->getTable($columns);
+			} else {
+				$xmlTable = $this->getTable($columns);
+				echo $this->getXmlColumns() . $xmlTable;
 			}
 
-			$table = "\t<Table>\n" . $columns . $table . "\t</Table>\n";
-
-			$xml = self::XML_HEAD;
-
-			$xml .= $this->getXmlStyles();
-
-			$xml .= "<Worksheet ss:Name=\"$this->id\">\n"
-				. $table
-				. "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n"
-				. "\t\t<Zoom>125</Zoom>\n"
-				. "\t\t<FrozenNoSplit />\n"
-				. "\t\t<SplitHorizontal>1</SplitHorizontal>\n"
-				. "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n"
-				. "\t\t<ActivePane>2</ActivePane>\n"
-				. "\t</WorksheetOptions>\n"
-				. "</Worksheet>\n</Workbook>";
-
-			echo $xml;
+			echo "\t</Table>\n</Worksheet>\n</Workbook>";
 			die;
-		} else {
+		} elseif ($this->stream) {
+			echo "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n";
+			$this->getTable($columns);
+			echo "\t</table>\n";
 			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
-
-			$table = "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n" . $table . "\t</table>\n";
-			return $table;
+		} else {
+			$htmlTable = $this->getTable($columns);
+			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
+			return "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n" . $htmlTable . "\t</table>\n";
 		}
+		return FALSE;
 	}
 
 
-	private function sendHead() {
+	private function sendHeaders() {
 		if ($this->type === self::TYPE_XML) {
 			header("Pragma: no-cache");
 			header("Expires: 0");
@@ -187,9 +178,7 @@ class Table {
 	}
 
 
-	private function getTable() {
-		$columns = $this->prepareColumns();
-
+	private function getTable(&$columns) {
 		$header = $this->getTableHeader($columns);
 
 		$body = '';
@@ -228,48 +217,13 @@ class Table {
 	}
 
 
-	private function prepareColumns() {
-		for ($columns = array(), $i = 0, $j = count($this->columns); $i < $j; ++$i) {
-			$col = &$columns[$i];
-
-			$col = (array) $this->columns[$i] + array(
-				self::COLUMN_FORMAT => self::FORMAT_TEXT,
-				self::COLUMN_HEADER => isset($this->resColumns[$i]) ? $this->resColumns[$i] : 'Sloupec ' . ($i + 1),
-				self::COLUMN_PREFIX => '',
-				self::COLUMN_POSTFIX => '',
-				self::COLUMN_FUNCTION => '',
-				self::COLUMN_ALIGN => 'left',
-				'_maxLength' => 0
-			);
-
-			$col['_prePostLen'] = mb_strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
-			$col[self::COLUMN_PREFIX] = htmlspecialchars($col[self::COLUMN_PREFIX], ENT_QUOTES);
-			$col[self::COLUMN_POSTFIX] = htmlspecialchars($col[self::COLUMN_POSTFIX], ENT_QUOTES);
-
-			$func = $col[self::COLUMN_FUNCTION] = strtolower(strval($col[self::COLUMN_FUNCTION]));
-
-			if (in_array($align = strtolower($col[self::COLUMN_ALIGN]), array('left', 'center', 'right'))) {
-				$col[self::COLUMN_ALIGN] = $align;
-				$col['_xlsAlign'] = $align[0];
-			} else {
-				$col[self::COLUMN_ALIGN] = 'left';
-				$col['_xlsAlign'] = 'l';
-			}
-
-			$col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER || $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT
-				|| $col[self::COLUMN_FORMAT] === self::FORMAT_UT;;
-
-			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
-		} unset($col);
-
-		return $columns;
-	}
-
-
 	private function getTableHeader(&$columns) {
 		for ($header = $colgroup = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
 			$value = htmlspecialchars($columns[$i][self::COLUMN_HEADER], ENT_QUOTES);
-			if (($len = mb_strlen(strval($columns[$i][self::COLUMN_HEADER]))) > $columns[$i]['_maxLength']) $columns[$i]['_maxLength'] = $len;
+			
+			if ($columns[$i][self::COLUMN_CHAR_WIDTH] === 'auto'
+				&& ($len = mb_strlen(strval($columns[$i][self::COLUMN_HEADER]))) > $columns[$i]['_maxLength']) $columns[$i]['_maxLength'] = $len;
+			
 			if ($this->type === self::TYPE_HTML) {
 				$header .= "\t\t\t<th bgcolor=\"$this->headBg\"" . ' style="mso-number-format: \'@\'">' . $value . "</th>\n";
 			} else {
@@ -289,22 +243,28 @@ class Table {
 			switch($col[self::COLUMN_FORMAT]) {
 				case self::FORMAT_INTEGER:
 					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0);
-					if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
+					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+						$col['_maxLength'] = $len;
+					}
 					break;
 				case self::FORMAT_FLOAT:
 					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals);
-					if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
+					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+						$col['_maxLength'] = $len;
+					}
 					break;
 				case self::FORMAT_UT:
-					$len = mb_strlen($var = date($this->dateFormat, $value = intval(strval($row[$i])))) + $col['_prePostLen'];
+					$var = date($this->dateFormat, $value = intval(strval($row[$i])));
+					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+						$col['_maxLength'] = $len;
+					}
 					if ($this->type === self::TYPE_XML) $var = date(self::XML_DATE_STRING, $value);
-					if ($len > $col['_maxLength']) $col['_maxLength'] = $len;
 					break;
 				default:
-					if (mb_strlen($value = strval($row[$i]))) {
-						$var = htmlspecialchars($value, ENT_QUOTES);
-					} else $var = $value = '';
-					if (($len = mb_strlen($value) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
+					$var = htmlspecialchars($value = strval($row[$i]), ENT_QUOTES);
+					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+						$col['_maxLength'] = $len;
+					}
 			}
 
 			switch($col[self::COLUMN_FUNCTION]) {
@@ -343,7 +303,7 @@ class Table {
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $type = array('Number', 'f');
 				else $type = array('Number', 'i');
 
-				$styleId = ($rowNum % 2 ? 'o' : 'e') . $col['_xlsAlign'] . $type[1];
+				$styleId = ($rowNum % 2 ? 'o' : 'e') . $col['_xmlAlign'] . $type[1];
 
 				$rowText .= "\t\t\t<Cell ss:StyleID=\"$styleId\"><Data ss:Type=\"$type[0]\">" . $var . "</Data></Cell>\n";
 			}
@@ -400,27 +360,44 @@ class Table {
 						} else {
 							$var = number_format(is_int($result) ? $result : intval(strval($result)), 0);
 						}
-						if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
 						break;
 					case self::FORMAT_FLOAT:
 						$var = number_format(is_float($result) ? $result : floatval(strval($result)), $this->decimals);
-						if (($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
 						break;
 					case self::FORMAT_UT:
-						$len = mb_strlen($var = date($this->dateFormat, $value = intval(strval($result)))) + $col['_prePostLen'];
+						$var = date($this->dateFormat, $value = intval(strval($result)));
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
 						if ($this->type === self::TYPE_XML) $var = date(self::XML_DATE_STRING, $value);
-						if ($len > $col['_maxLength']) $col['_maxLength'] = $len;
 						break;
 					default:
 						$var = htmlspecialchars(strval($result), ENT_QUOTES);
-						if (($len = mb_strlen(strval($result)) + $col['_prePostLen']) > $col['_maxLength']) $col['_maxLength'] = $len;
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($result)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;	
+						} 
 				}
 
 				if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
 				else $num = $col['_num'];
 			} else $var = '';
 
-			$this->columns[$i]['length'] = $col['_maxLength'];
+			switch ($col[self::COLUMN_CHAR_WIDTH]) {
+				case 'default':
+					$this->columns[$i][self::COLUMN_CHAR_WIDTH] = 'default';
+					break;
+				case 'auto':
+					$this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col['_maxLength'] ?: 'default';
+					break;
+				default:
+					$this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col[self::COLUMN_CHAR_WIDTH];
+			}
 
 			if ($this->type === self::TYPE_HTML) {
 				if (!$num) $attributes = 'style="mso-number-format: \'@\'"';
@@ -438,7 +415,7 @@ class Table {
 				elseif ($float) $type = array('Number', 'f');
 				else $type = array('Number', 'i');
 
-				$results .= "\t\t\t<Cell ss:StyleID=\"r$col[_xlsAlign]$type[1]\"><Data ss:Type=\"$type[0]\">" . $var . "</Data></Cell>\n";
+				$results .= "\t\t\t<Cell ss:StyleID=\"r$col[_xmlAlign]$type[1]\"><Data ss:Type=\"$type[0]\">" . $var . "</Data></Cell>\n";
 				$labels .=  "\t\t\t<Cell ss:StyleID=\"f\"><Data ss:Type=\"String\">" . $label . "</Data></Cell>\n";
 			}
 		} unset($col);
@@ -446,7 +423,83 @@ class Table {
 		return array($results, $labels);
 	}
 
-	const XML_HEAD = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?mso-application progid=\"Excel.Sheet\"?>\n<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\" xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\" xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n";
+
+	private function prepareColumns() {
+		for ($columns = array(), $i = 0, $j = count($this->columns); $i < $j; ++$i) {
+			$col = &$columns[$i];
+
+			$col = (array) $this->columns[$i] + array(
+				self::COLUMN_FORMAT => self::FORMAT_TEXT,
+				self::COLUMN_HEADER => isset($this->resColumns[$i]) ? $this->resColumns[$i] : 'Sloupec ' . ($i + 1),
+				self::COLUMN_PREFIX => '',
+				self::COLUMN_POSTFIX => '',
+				self::COLUMN_FUNCTION => '',
+				self::COLUMN_ALIGN => 'left',
+				self::COLUMN_CHAR_WIDTH => 'auto',
+				'_maxLength' => 0
+			);
+
+			$col['_prePostLen'] = mb_strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
+			$col[self::COLUMN_PREFIX] = htmlspecialchars($col[self::COLUMN_PREFIX], ENT_QUOTES);
+			$col[self::COLUMN_POSTFIX] = htmlspecialchars($col[self::COLUMN_POSTFIX], ENT_QUOTES);
+
+			$func = $col[self::COLUMN_FUNCTION] = strtolower(strval($col[self::COLUMN_FUNCTION]));
+
+			if (in_array($align = strtolower($col[self::COLUMN_ALIGN]), array('left', 'center', 'right'))) {
+				$col[self::COLUMN_ALIGN] = $align;
+				$col['_xmlAlign'] = $align[0];
+			} else {
+				$col[self::COLUMN_ALIGN] = 'left';
+				$col['_xmlAlign'] = 'l';
+			}
+
+			$col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER || $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT
+				|| $col[self::COLUMN_FORMAT] === self::FORMAT_UT;;
+
+			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
+
+			if (strtolower($col[self::COLUMN_CHAR_WIDTH]) === 'auto') $col[self::COLUMN_CHAR_WIDTH] = $this->stream ? 'default' : 'auto';
+			else $col[self::COLUMN_CHAR_WIDTH] = intval(strval($col[self::COLUMN_CHAR_WIDTH]));
+
+		} unset($col);
+
+		return $columns;
+	}
+	
+
+	private function getXmlHead() {
+		return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?mso-application progid=\"Excel.Sheet\"?>"
+			. "\n<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\""
+			. " xmlns:x=\"urn:schemas-microsoft-com:office:excel\""
+			. " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\""
+			. " xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n";
+	}
+
+
+	private function getXmlWorksheetOptions() {
+		return "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n"
+			. "\t\t<Zoom>125</Zoom>\n"
+			. "\t\t<FrozenNoSplit />\n"
+			. "\t\t<SplitHorizontal>1</SplitHorizontal>\n"
+			. "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n"
+			. "\t\t<ActivePane>2</ActivePane>\n"
+			. "\t</WorksheetOptions>\n";
+	}
+
+
+	private function getXmlColumns() {
+		for ($colsXml = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
+			$colsXml .= "\t\t<Column ss:AutoFitWidth=\"0\"";
+			switch ($this->columns[$i][self::COLUMN_CHAR_WIDTH]) {
+				case 'default';
+				case 'auto': break;
+				default: $colsXml .= " ss:Width=\"" . min(500, 10 * $this->columns[$i]['length']) . "\"";
+			}
+			$colsXml .= " />\n";
+		}
+		return $colsXml;
+	}
+
 
 	private function getXmlStyles() {
 		return "<Styles>\n"
@@ -604,6 +657,6 @@ class Table {
 
 			. "</Styles>\n";
 	}
-	
+
 }
 

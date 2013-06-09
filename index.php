@@ -1,7 +1,7 @@
 <?php
 mb_internal_encoding('UTF-8');
 
-define('DEBUG', TRUE);
+define('DEBUG', FALSE);
 define('ADVANCEDLOG', TRUE);
 define('LOCAL', $_SERVER['SERVER_NAME'] == 'localhost');
 define('NOW', microtime(TRUE));

@@ -4,8 +4,11 @@ $router = new Router($this->router, $this);
 
 $export = new Table('testTable');
 
+// opravit cas v oo
+
 $export->config(array(
 	'type' => 'xml',
+//	'stream' => TRUE,
 	'date' => 'y-n-j G:i',
 	'source' => array(
 		array(1, 'ΚΑΛΛΙΟΠΗ ΧΟΝΔΡΟΣΠ', '006', 1370086580),

@@ -43,7 +43,7 @@ class Table {
 
 		FLOAT_DECIMALS = 'decs',
 		DATE_FORMAT = 'date',
-		XML_DATE_STRING = 'Y-m-d\TH:i:s.000';
+		XML_DATE_STRING = 'Y-m-d\TH:i:s';
 
 	private static $date2xml = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
 		'G' => 'h', 'H' => 'hh', 'i' => 'mm', 's' => 'ss', ' ' => '\ ', '.' => '\.', '/' => '\/', '-' => '\-', ':' => '\:');
@@ -144,14 +144,14 @@ class Table {
 			echo $this->getXmlHead() . $this->getXmlStyles() . "<Worksheet ss:Name=\"$this->id\">\n\t<Table>\n";
 
 			if ($this->stream) {
-				echo $this->getXmlColumns();
+				echo $this->getXmlColumns($columns);
 				$this->getTable($columns);
 			} else {
 				$xmlTable = $this->getTable($columns);
-				echo $this->getXmlColumns() . $xmlTable;
+				echo $this->getXmlColumns($this->columns) . $xmlTable;
 			}
 
-			echo "\t</Table>\n</Worksheet>\n</Workbook>";
+			echo "\t</Table>\n" . $this->getXmlWorksheetOptions() . "</Worksheet>\n</Workbook>";
 			die;
 		} elseif ($this->stream) {
 			echo "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n";
@@ -179,41 +179,43 @@ class Table {
 
 
 	private function getTable(&$columns) {
-		$header = $this->getTableHeader($columns);
+		$rowEls = array(self::TYPE_HTML => array('_tr' => "\t\t<tr>\n", '_/tr' => "\t\t</tr>\n", '_trLeft' => "\t\t<tr align=\"left\">\n"),
+			self::TYPE_XML => array('_tr' => "\t\t<Row>\n", '_/tr' => "\t\t</Row>\n", '_trLeft' => "\t\t<Row>\n"));
 
+		$header = $rowEls[$this->type]['_tr'] . $this->getTableHeader($columns) . $rowEls[$this->type]['_/tr'];
+		if ($this->stream) echo $header;
+		
 		$body = '';
 		$rowNum = 0;
 		if (isset($this->data)) {
 			for ($j = count($this->data); $rowNum < $j; ++$rowNum) {
-				if ($this->type === self::TYPE_HTML) {
-					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</tr>\n";
-				} else {
-					$body .= "\t\t<Row>\n" . $this->printOneRow($this->data[$rowNum], $rowNum + 1, $columns) . "\t\t</Row>\n";
+				$body .= $rowEls[$this->type]['_trLeft'] . $this->getRow($this->data[$rowNum], $rowNum + 1, $columns) . $rowEls[$this->type]['_/tr'];
+				if ($this->stream) {
+					echo $body;
+					$body = '';
 				}
 			}
 		}
 		if (isset($this->resource)) {
 			while ($row = mysql_fetch_assoc($this->resource)) {
-				if ($this->type === self::TYPE_HTML) {
-					$body .= "\t\t<tr align=\"left\">\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</tr>\n";
-				} else {
-					$body .= "\t\t<Row>\n" . $this->printOneRow(array_values($row), ++$rowNum, $columns) . "\t\t</Row>\n";
+				$body .= $rowEls[$this->type]['_trLeft'] . $this->getRow(array_values($row), ++$rowNum, $columns) . $rowEls[$this->type]['_/tr'];
+				if ($this->stream) {
+					echo $body;
+					$body = '';
 				}
 			}
 		}
 
 		$footer = $this->getTableFooter($rowNum, $columns);
+		$footer = $rowEls[$this->type]['_tr'] . $footer[0] . $rowEls[$this->type]['_/tr']
+			. $rowEls[$this->type]['_tr'] . $footer[1] . $rowEls[$this->type]['_/tr'];
 
-		if ($this->type === self::TYPE_HTML) {
-			$retText = "\t\t<tr>\n" . $header . "\t\t</tr>\n" . $body . "\t\t<tr>\n" . implode("\t\t</tr>\n\t\t<tr>\n", $footer) . "\t\t</tr>\n";
-		} else {
-			$retText = "\t\t<Row>\n" . $header . "\t\t</Row>\n"
-				. $body . "\t\t<Row>\n"
-				. $footer[0] . "\t\t</Row>\n\t\t<Row>\n"
-				. $footer[1] . "\t\t</Row>\n";
+		if ($this->stream) {
+			echo $footer;
+			return TRUE;
 		}
 
-		return $retText;
+		return $header . $body . $footer;
 	}
 
 
@@ -235,7 +237,7 @@ class Table {
 	}
 
 
-	private function printOneRow($row, $rowNum, &$columns) {
+	private function getRow($row, $rowNum, &$columns) {
 		$rowText = '';
 		for ($i = 0, $j = count($row); $i < $j; ++$i) {
 			$col = &$columns[$i];
@@ -262,7 +264,7 @@ class Table {
 					break;
 				default:
 					$var = htmlspecialchars($value = strval($row[$i]), ENT_QUOTES);
-					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen($value) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
 			}
@@ -458,8 +460,9 @@ class Table {
 
 			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
 
-			if (strtolower($col[self::COLUMN_CHAR_WIDTH]) === 'auto') $col[self::COLUMN_CHAR_WIDTH] = $this->stream ? 'default' : 'auto';
-			else $col[self::COLUMN_CHAR_WIDTH] = intval(strval($col[self::COLUMN_CHAR_WIDTH]));
+			if (strtolower($col[self::COLUMN_CHAR_WIDTH]) === 'auto') {
+				$col[self::COLUMN_CHAR_WIDTH] = $this->stream ? 'default' : 'auto'; // $this->type === self::TYPE_HTML ||
+			} else $col[self::COLUMN_CHAR_WIDTH] = intval(strval($col[self::COLUMN_CHAR_WIDTH]));
 
 		} unset($col);
 
@@ -487,13 +490,16 @@ class Table {
 	}
 
 
-	private function getXmlColumns() {
-		for ($colsXml = '', $i = 0, $j = count($this->columns); $i < $j; ++$i) {
+	private function getXmlColumns(&$columns) {
+		for ($colsXml = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
 			$colsXml .= "\t\t<Column ss:AutoFitWidth=\"0\"";
-			switch ($this->columns[$i][self::COLUMN_CHAR_WIDTH]) {
+			switch ($columns[$i][self::COLUMN_CHAR_WIDTH]) {
 				case 'default';
-				case 'auto': break;
-				default: $colsXml .= " ss:Width=\"" . min(500, 10 * $this->columns[$i]['length']) . "\"";
+				case 'auto':
+					$colsXml .= " ss:Width=\"100\"";
+					break;
+				default:
+					$colsXml .= " ss:Width=\"" . min(500, 10 * $columns[$i][self::COLUMN_CHAR_WIDTH]) . "\"";
 			}
 			$colsXml .= " />\n";
 		}

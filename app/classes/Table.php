@@ -43,7 +43,8 @@ class Table {
 
 		FLOAT_DECIMALS = 'decs',
 		DATE_FORMAT = 'date',
-		XML_DATE_STRING = 'Y-m-d\TH:i:s.000';
+		XML_DATE_STRING = 'Y-m-d\TH:i:s.000',
+		XML_ZOOM = 'zoom';
 
 	private static $date2xml = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
 		'G' => 'h', 'H' => 'hh', 'i' => 'mm', 's' => 'ss', ' ' => '\ ', '.' => '\.', '/' => '\/', '-' => '\-', ':' => '\:');
@@ -68,6 +69,7 @@ class Table {
 	private $xmlDecs = '00';
 	private $dateFormat = 'd.m.Y H:i:s';
 	private $xmlDate = 'dd\.mm\.yyyy\ hh\:mm\:ss';
+	private $xmlZoom = 100;
 
 	private $debug = FALSE;
 
@@ -118,6 +120,8 @@ class Table {
 				$this->xmlDate = strtr($this->dateFormat, self::$date2xml);
 			}
 		}
+
+		if (!empty($options[self::XML_ZOOM])) $this->xmlZoom = intval(strval($options[self::XML_ZOOM]));
 
 		if ($this->debug) App::lg('Nactena konfigurace', $this);
 	}
@@ -390,16 +394,10 @@ class Table {
 				else $num = $col['_num'];
 			} else $var = '';
 
-			switch ($col[self::COLUMN_CHAR_WIDTH]) {
-				case 'default':
-					$this->columns[$i][self::COLUMN_CHAR_WIDTH] = 'default';
-					break;
-				case 'auto':
-					$this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col['_maxLength'] ?: 'default';
-					break;
-				default:
-					$this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col[self::COLUMN_CHAR_WIDTH];
-			}
+
+			if ($col[self::COLUMN_CHAR_WIDTH] === 'default') $this->columns[$i][self::COLUMN_CHAR_WIDTH] = 'default';
+			elseif ($col[self::COLUMN_CHAR_WIDTH] === 'auto') $this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col['_maxLength'] ?: 'default';
+			else $this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col[self::COLUMN_CHAR_WIDTH];
 
 			if ($this->type === self::TYPE_HTML) {
 				if (!$num) $attributes = 'style="mso-number-format: \'@\'"';
@@ -447,7 +445,7 @@ class Table {
 
 			$func = $col[self::COLUMN_FUNCTION] = strtolower(strval($col[self::COLUMN_FUNCTION]));
 
-			if (in_array($align = strtolower($col[self::COLUMN_ALIGN]), array('left', 'center', 'right'))) {
+			if (in_array($align = strtolower($col[self::COLUMN_ALIGN]), array('left', 'center', 'right'), TRUE)) {
 				$col[self::COLUMN_ALIGN] = $align;
 				$col['_xmlAlign'] = $align[0];
 			} else {
@@ -481,7 +479,7 @@ class Table {
 
 	private function getXmlWorksheetOptions() {
 		return "\t<WorksheetOptions xmlns=\"urn:schemas-microsoft-com:office:excel\">\n"
-			. "\t\t<Zoom>125</Zoom>\n"
+			. "\t\t<Zoom>$this->xmlZoom</Zoom>\n"
 			. "\t\t<FrozenNoSplit />\n"
 			. "\t\t<SplitHorizontal>1</SplitHorizontal>\n"
 			. "\t\t<TopRowBottomPane>1</TopRowBottomPane>\n"
@@ -493,14 +491,10 @@ class Table {
 	private function getXmlColumns(&$columns) {
 		for ($colsXml = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
 			$colsXml .= "\t\t<Column ss:AutoFitWidth=\"0\"";
-			switch ($columns[$i][self::COLUMN_CHAR_WIDTH]) {
-				case 'default';
-				case 'auto':
-					$colsXml .= " ss:Width=\"100\"";
-					break;
-				default:
-					$colsXml .= " ss:Width=\"" . min(500, 10 * $columns[$i][self::COLUMN_CHAR_WIDTH]) . "\"";
-			}
+
+			if (in_array($columns[$i][self::COLUMN_CHAR_WIDTH], array('default', 'auto'), TRUE)) $colsXml .= " ss:Width=\"asdsada\"";
+			else $colsXml .= " ss:Width=\"" . min(500, 10 * $columns[$i][self::COLUMN_CHAR_WIDTH]) . "\"";
+
 			$colsXml .= " />\n";
 		}
 		return $colsXml;

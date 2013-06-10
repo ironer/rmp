@@ -127,8 +127,8 @@ class Table {
 		mb_internal_encoding('UTF-8');
 
 		if (isset($this->resource) && $row = mysql_fetch_assoc($this->resource)) {
-				$this->resColumns = array_keys($row);
-				$this->data = array(array_values($row));
+			$this->resColumns = array_keys($row);
+			$this->data = array(array_values($row));
 		} elseif (empty($this->data)) $this->data = array();
 
 		if (!isset($this->data[0])) {}
@@ -184,7 +184,7 @@ class Table {
 
 		$header = $rowEls[$this->type]['_tr'] . $this->getTableHeader($columns) . $rowEls[$this->type]['_/tr'];
 		if ($this->stream) echo $header;
-		
+
 		$body = '';
 		$rowNum = 0;
 		if (isset($this->data)) {
@@ -222,10 +222,10 @@ class Table {
 	private function getTableHeader(&$columns) {
 		for ($header = $colgroup = '', $i = 0, $j = count($columns); $i < $j; ++$i) {
 			$value = htmlspecialchars($columns[$i][self::COLUMN_HEADER], ENT_QUOTES);
-			
+
 			if ($columns[$i][self::COLUMN_CHAR_WIDTH] === 'auto'
 				&& ($len = mb_strlen(strval($columns[$i][self::COLUMN_HEADER]))) > $columns[$i]['_maxLength']) $columns[$i]['_maxLength'] = $len;
-			
+
 			if ($this->type === self::TYPE_HTML) {
 				$header .= "\t\t\t<th bgcolor=\"$this->headBg\"" . ' style="mso-number-format: \'@\'">' . $value . "</th>\n";
 			} else {
@@ -244,13 +244,13 @@ class Table {
 
 			switch($col[self::COLUMN_FORMAT]) {
 				case self::FORMAT_INTEGER:
-					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0);
+					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0, '.', '');
 					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
 					break;
 				case self::FORMAT_FLOAT:
-					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals);
+					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals, '.', '');
 					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
@@ -357,17 +357,17 @@ class Table {
 				switch($col[self::COLUMN_FORMAT]) {
 					case self::FORMAT_INTEGER:
 						if ($col[self::COLUMN_FUNCTION] === 'avg') {
-							$var = number_format(is_float($result) ? $result : floatval(strval($result)), $this->decimals);
+							$var = number_format(is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', '');
 							$float = TRUE;
 						} else {
-							$var = number_format(is_int($result) ? $result : intval(strval($result)), 0);
+							$var = number_format(is_int($result) ? $result : intval(strval($result)), 0, '.', '');
 						}
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
 						}
 						break;
 					case self::FORMAT_FLOAT:
-						$var = number_format(is_float($result) ? $result : floatval(strval($result)), $this->decimals);
+						$var = number_format(is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', '');
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
 						}
@@ -382,8 +382,8 @@ class Table {
 					default:
 						$var = htmlspecialchars(strval($result), ENT_QUOTES);
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($result)) + $col['_prePostLen']) > $col['_maxLength']) {
-							$col['_maxLength'] = $len;	
-						} 
+							$col['_maxLength'] = $len;
+						}
 				}
 
 				if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
@@ -461,14 +461,14 @@ class Table {
 			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
 
 			if (strtolower($col[self::COLUMN_CHAR_WIDTH]) === 'auto') {
-				$col[self::COLUMN_CHAR_WIDTH] = $this->type === self::TYPE_HTML || $this->stream ? 'default' : 'auto';
+				$col[self::COLUMN_CHAR_WIDTH] = $this->type === $this->stream ? 'default' : 'auto';//self::TYPE_HTML ||
 			} else $col[self::COLUMN_CHAR_WIDTH] = intval(strval($col[self::COLUMN_CHAR_WIDTH]));
 
 		} unset($col);
 
 		return $columns;
 	}
-	
+
 
 	private function getXmlHead() {
 		return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<?mso-application progid=\"Excel.Sheet\"?>"

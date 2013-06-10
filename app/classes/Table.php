@@ -161,14 +161,14 @@ class Table {
 			echo "\t</Table>\n" . $this->getXmlWorksheetOptions() . "</Worksheet>\n</Workbook>";
 			die;
 		} elseif ($this->stream) {
-			echo "\t<table cellspacing=\"2\" cellpadding=\"3\" border=\"0\">\n";
+			echo "\t<table cellspacing=\"0\" cellpadding=\"3\" border=\"1\" bordercolor=\"#C0C0C0\">\n";
 			$this->getTable($columns);
 			echo "\t</table>\n";
 			if ($this->debug) App::lg('Tabulka vypsana', $this);
 		} else {
 			$htmlTable = $this->getTable($columns);
 			if ($this->debug) App::lg('Tabulka ulozena do promenne', $this);
-			return "\t<table cellspacing=\"2\" cellpadding=\"3\" border=\"0\">\n" . $htmlTable . "\t</table>\n";
+			return "\t<table cellspacing=\"0\" cellpadding=\"3\" border=\"1\" bordercolor=\"#C0C0C0\">\n" . $htmlTable . "\t</table>\n";
 		}
 		return FALSE;
 	}
@@ -524,6 +524,12 @@ class Table {
 			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"f\" ss:Parent=\"h\">\n"
+			. "\t\t<Borders>\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t</Borders>\n"
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"0\" />\n"
 			. "\t</Style>\n"
@@ -615,10 +621,10 @@ class Table {
 
 			. "\t<Style ss:ID=\"rlt\" ss:Name=\"rlt\">\n"
 			. "\t\t<Borders>\n"
-			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 			. "\t\t</Borders>\n"
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
@@ -627,10 +633,10 @@ class Table {
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"rct\" ss:Name=\"rct\">\n"
 			. "\t\t<Borders>\n"
-			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 			. "\t\t</Borders>\n"
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
@@ -639,10 +645,10 @@ class Table {
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"rrt\" ss:Name=\"rrt\">\n"
 			. "\t\t<Borders>\n"
-			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
-			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#969696\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Top\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Right\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Bottom\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
+			. "\t\t\t<Border ss:Position=\"Left\" ss:Color=\"#C0C0C0\" ss:LineStyle=\"Continuous\" ss:Weight=\"1\" />\n"
 			. "\t\t</Borders>\n"
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"

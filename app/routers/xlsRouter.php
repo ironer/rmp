@@ -4,8 +4,6 @@ $router = new Router($this->router, $this);
 
 $export = new Table('testTable');
 
-// opravit cas v oo
-
 $export->config(array(
 	'type' => 'xml',
 //	'stream' => TRUE,

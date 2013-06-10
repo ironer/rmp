@@ -157,10 +157,10 @@ class Table {
 			echo "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n";
 			$this->getTable($columns);
 			echo "\t</table>\n";
-			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
+			if ($this->debug) App::lg('Tabulka vypsana', $this);
 		} else {
 			$htmlTable = $this->getTable($columns);
-			if ($this->debug) App::lg('Tabulka vyexportovana', $this);
+			if ($this->debug) App::lg('Tabulka ulozena do promenne', $this);
 			return "\t<table border=\"1\" cellpadding=\"3\" cellspacing=\"0\">\n" . $htmlTable . "\t</table>\n";
 		}
 		return FALSE;

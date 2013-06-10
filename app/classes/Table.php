@@ -42,8 +42,11 @@ class Table {
 		FORMAT_UT = 'ut',
 
 		FLOAT_DECIMALS = 'decs',
+		XML_INT = '#,##0',
+
 		DATE_FORMAT = 'date',
 		XML_DATE_STRING = 'Y-m-d\TH:i:s.000',
+
 		XML_ZOOM = 'zoom';
 
 	private static $date2xml = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
@@ -231,7 +234,7 @@ class Table {
 				&& ($len = mb_strlen(strval($columns[$i][self::COLUMN_HEADER]))) > $columns[$i]['_maxLength']) $columns[$i]['_maxLength'] = $len;
 
 			if ($this->type === self::TYPE_HTML) {
-				$header .= "\t\t\t<th bgcolor=\"$this->headBg\"" . ' style="mso-number-format: \'@\'">' . $value . "</th>\n";
+				$header .= "\t\t\t<th bgcolor=\"$this->headBg\"" . ' style="mso-number-format: \'\@\'">' . $value . "</th>\n";
 			} else {
 				$header .= "\t\t\t<Cell ss:StyleID=\"h\"><Data ss:Type=\"String\">" . $value . "</Data></Cell>\n";
 			}
@@ -248,16 +251,18 @@ class Table {
 
 			switch($col[self::COLUMN_FORMAT]) {
 				case self::FORMAT_INTEGER:
-					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0, '.', '');
+					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0, '.', ' ');
 					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
+					if ($this->type === self::TYPE_XML) $var = number_format($value, 0, '.', '');
 					break;
 				case self::FORMAT_FLOAT:
-					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals, '.', '');
+					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals, '.', ' ');
 					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
+					if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals, '.', '');
 					break;
 				case self::FORMAT_UT:
 					$var = date($this->dateFormat, $value = intval(strval($row[$i])));
@@ -296,10 +301,11 @@ class Table {
 
 			if ($this->type === self::TYPE_HTML) {
 				$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
-				if (!$num) $attributes .= ' style="mso-number-format: \'@\'"';
+				if (!$num) $attributes .= ' style="mso-number-format: \'\@\'"';
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xmlDate . '\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \'0.' . $this->xmlDecs . '\'"';
-				else $attributes .= ' style="mso-number-format: \'0\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \''
+					. self::XML_INT . ".$this->xmlDecs" . '\'"';
+				else $attributes .= ' style="mso-number-format: \'' . self::XML_INT . '\'"';
 
 				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
@@ -361,20 +367,22 @@ class Table {
 				switch($col[self::COLUMN_FORMAT]) {
 					case self::FORMAT_INTEGER:
 						if ($col[self::COLUMN_FUNCTION] === 'avg') {
-							$var = number_format(is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', '');
+							$var = number_format($value = is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', ' ');
 							$float = TRUE;
 						} else {
-							$var = number_format(is_int($result) ? $result : intval(strval($result)), 0, '.', '');
+							$var = number_format($value = is_int($result) ? $result : intval(strval($result)), 0, '.', ' ');
 						}
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
 						}
+						if ($this->type === self::TYPE_XML) $var = number_format($value, $float ? $this->decimals : 0, '.', '');
 						break;
 					case self::FORMAT_FLOAT:
-						$var = number_format(is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', '');
+						$var = number_format($value = is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', ' ');
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
 						}
+						if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals, '.', '');
 						break;
 					case self::FORMAT_UT:
 						$var = date($this->dateFormat, $value = intval(strval($result)));
@@ -394,16 +402,15 @@ class Table {
 				else $num = $col['_num'];
 			} else $var = '';
 
-
 			if ($col[self::COLUMN_CHAR_WIDTH] === 'default') $this->columns[$i][self::COLUMN_CHAR_WIDTH] = 'default';
 			elseif ($col[self::COLUMN_CHAR_WIDTH] === 'auto') $this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col['_maxLength'] ?: 'default';
 			else $this->columns[$i][self::COLUMN_CHAR_WIDTH] = $col[self::COLUMN_CHAR_WIDTH];
 
 			if ($this->type === self::TYPE_HTML) {
-				if (!$num) $attributes = 'style="mso-number-format: \'@\'"';
+				if (!$num) $attributes = 'style="mso-number-format: \'\@\'"';
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xmlDate . '\'"';
-				elseif ($float) $attributes = 'style="mso-number-format: \'0.' . $this->xmlDecs . '\'"';
-				else $attributes = 'style="mso-number-format: \'0\'"';
+				elseif ($float) $attributes = 'style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
+				else $attributes = 'style="mso-number-format: \'' . self::XML_INT . '\'"';
 
 				if ($col[self::COLUMN_ALIGN] != 'center') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
@@ -514,7 +521,7 @@ class Table {
 			. "\t\t<Interior ss:Color=\"$this->headBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" ss:WrapText=\"1\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"f\" ss:Parent=\"h\">\n"
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
@@ -528,7 +535,7 @@ class Table {
 			. "\t\t</Borders>\n"
 			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"elt\" ss:Name=\"elt\">\n"
 			. "\t\t<Borders>\n"
@@ -540,7 +547,7 @@ class Table {
 			. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"oct\" ss:Name=\"oct\">\n"
 			. "\t\t<Borders>\n"
@@ -549,7 +556,7 @@ class Table {
 			. "\t\t</Borders>\n"
 			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"ect\" ss:Name=\"ect\">\n"
 			. "\t\t<Borders>\n"
@@ -561,7 +568,7 @@ class Table {
 			. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"ort\" ss:Name=\"ort\">\n"
 			. "\t\t<Borders>\n"
@@ -570,7 +577,7 @@ class Table {
 			. "\t\t</Borders>\n"
 			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"ert\" ss:Name=\"ert\">\n"
 			. "\t\t<Borders>\n"
@@ -582,22 +589,22 @@ class Table {
 			. "\t\t<Interior ss:Color=\"$this->evenBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 
-			. "\t<Style ss:ID=\"oli\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"eli\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"oci\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"eci\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"ori\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"eri\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"oli\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"eli\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"oci\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"eci\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ori\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"eri\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
 
-			. "\t<Style ss:ID=\"olf\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"elf\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"ocf\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"ecf\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"orf\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"erf\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"olf\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"elf\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ocf\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ecf\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"orf\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"erf\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
 
 			. "\t<Style ss:ID=\"olu\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"elu\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
@@ -616,7 +623,7 @@ class Table {
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Left\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"rct\" ss:Name=\"rct\">\n"
 			. "\t\t<Borders>\n"
@@ -628,7 +635,7 @@ class Table {
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Center\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 			. "\t<Style ss:ID=\"rrt\" ss:Name=\"rrt\">\n"
 			. "\t\t<Borders>\n"
@@ -640,16 +647,16 @@ class Table {
 			. "\t\t<Interior ss:Color=\"$this->footBg\" ss:Pattern=\"Solid\" />\n"
 			. "\t\t<Font ss:Bold=\"1\" ss:FontName=\"Courier New\" ss:Size=\"13\" />\n"
 			. "\t\t<Alignment ss:Horizontal=\"Right\" ss:Vertical=\"Center\" />\n"
-			. "\t\t<NumberFormat ss:Format=\"@\" />\n"
+			. "\t\t<NumberFormat ss:Format=\"\@\" />\n"
 			. "\t</Style>\n"
 
-			. "\t<Style ss:ID=\"rli\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"rci\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"rri\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rli\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rci\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rri\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . "\" />\n\t</Style>\n"
 
-			. "\t<Style ss:ID=\"rlf\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"rcf\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
-			. "\t<Style ss:ID=\"rrf\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"0.$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rlf\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rcf\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rrf\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
 
 			. "\t<Style ss:ID=\"rlu\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"rcu\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"

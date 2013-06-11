@@ -361,21 +361,15 @@ class Table {
 			}
 
 			$num = FALSE;
-			$float = $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT;
 
 			if ($result !== NULL) {
 				switch($col[self::COLUMN_FORMAT]) {
 					case self::FORMAT_INTEGER:
-						if ($col[self::COLUMN_FUNCTION] === 'avg') {
-							$var = number_format($value = is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', ' ');
-							$float = TRUE;
-						} else {
-							$var = number_format($value = is_int($result) ? $result : intval(strval($result)), 0, '.', ' ');
-						}
+						$var = number_format($value = is_int($result) ? $result : intval(strval($result)), 0, '.', ' ');
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
 						}
-						if ($this->type === self::TYPE_XML) $var = number_format($value, $float ? $this->decimals : 0, '.', '');
+						if ($this->type === self::TYPE_XML) $var = number_format($value, 0, '.', '');
 						break;
 					case self::FORMAT_FLOAT:
 						$var = number_format($value = is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', ' ');
@@ -409,8 +403,9 @@ class Table {
 			if ($this->type === self::TYPE_HTML) {
 				if (!$num) $attributes = 'style="mso-number-format: \'@\'"';
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xmlDate . '\'"';
-				elseif ($float) $attributes = 'style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
-				else $attributes = 'style="mso-number-format: \'' . self::XML_INT . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) {
+					$attributes = 'style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
+				} else $attributes = 'style="mso-number-format: \'' . self::XML_INT . '\'"';
 
 				if ($col[self::COLUMN_ALIGN] != 'center') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
@@ -419,7 +414,7 @@ class Table {
 			} else {
 				if (!$num) $type = array('String', 't');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $type = array('DateTime', 'u');
-				elseif ($float) $type = array('Number', 'f');
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $type = array('Number', 'f');
 				else $type = array('Number', 'i');
 
 				$results .= "\t\t\t<Cell ss:StyleID=\"r$col[_xmlAlign]$type[1]\"><Data ss:Type=\"$type[0]\">" . $var . "</Data></Cell>\n";

@@ -9,12 +9,13 @@ $export->config(array(
 //	'stream' => TRUE,
 	'date' => 'y-n-j G:i',
 	'source' => array(
-		array(1, 'ΚΑΛΛΙΟΠΗ ΧΟΝΔΡΟΣΠ', '006', 1370086580),
-		array(3, '<td>zluvik</td>', '+420777367753', 1367667380),
-		array(7, 'něco', '10.11', 1372937780)
+		array(123123.132, 123123.132, 'ΚΑΛΛΙΟΠΗ ΧΟΝΔΡΟΣΠ', '006', 1370086580),
+		array(0.371, 0.371, '<td>zluvik</td>', '+420777367753', 1367667380),
+		array(0.7323, 0.7323, 'něco', '10.11', 1372937780)
 	),
 	'columns' => array(
-		array('format' => 'int', 'func' => 'avg', 'align' => 'right'),
+		array('format' => 'percent', 'func' => 'avg', 'align' => 'right'),
+		array('format' => 'float', 'func' => 'avg', 'align' => 'right'),
 		array('func' => 'min', 'width' => 0),
 		array('func' => 'min', 'align' => 'center'),
 		array('format' => 'ut', 'func' => 'avg', 'align' => 'right')

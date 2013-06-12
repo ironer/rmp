@@ -40,14 +40,16 @@ class Table {
 		FORMAT_INTEGER = 'int',
 		FORMAT_FLOAT = 'float',
 		FORMAT_UT = 'ut',
+		FORMAT_PERCENT = 'percent',
 
 		FLOAT_DECIMALS = 'decs',
-		XML_INT = '#,##0',
-
 		DATE_FORMAT = 'date',
-		XML_DATE_STRING = 'Y-m-d\TH:i:s.000',
+		HTML_DECIMAL_POINT = 'point',
+		XML_ZOOM = 'zoom',
 
-		XML_ZOOM = 'zoom';
+		XML_INT = '#,##0',
+		XML_DATE_STRING = 'Y-m-d\TH:i:s.000';
+
 
 	private static $date2xml = array('d' => 'dd', 'j' => 'd', 'm' => 'mm', 'n' => 'm', 'y' => 'yy', 'Y' => 'yyyy',
 		'G' => 'h', 'H' => 'hh', 'i' => 'mm', 's' => 'ss', ' ' => '\ ', '.' => '\.', '/' => '\/', '-' => '\-', ':' => '\:');
@@ -68,6 +70,7 @@ class Table {
 	private $evenBg = '#CCFFFF';
 	private $footBg = '#CCFFCC';
 
+	private $htmlDecPoint = '.';
 	private $decimals = 2;
 	private $xmlDecs = '00';
 	private $dateFormat = 'd.m.Y H:i:s';
@@ -125,6 +128,8 @@ class Table {
 		}
 
 		if (!empty($options[self::XML_ZOOM])) $this->xmlZoom = intval(strval($options[self::XML_ZOOM]));
+
+		if (isset($options[self::HTML_DECIMAL_POINT]) && $options[self::HTML_DECIMAL_POINT] === ',') $this->htmlDecPoint = ',';
 
 		if ($this->debug) App::lg('Nactena konfigurace', $this);
 	}
@@ -251,18 +256,26 @@ class Table {
 
 			switch($col[self::COLUMN_FORMAT]) {
 				case self::FORMAT_INTEGER:
-					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0, '.', ' ');
+					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0, $this->htmlDecPoint, ' ');
 					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
 					if ($this->type === self::TYPE_XML) $var = number_format($value, 0, '.', '');
 					break;
 				case self::FORMAT_FLOAT:
-					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals, '.', ' ');
+					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals, $this->htmlDecPoint, ' ');
 					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
 					if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals, '.', '');
+					break;
+				case self::FORMAT_PERCENT:
+					$var = number_format(100 * ($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i]))),
+						$this->decimals, $this->htmlDecPoint, '') . '%';
+					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+						$col['_maxLength'] = $len;
+					}
+					if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals + 2, '.', '');
 					break;
 				case self::FORMAT_UT:
 					$var = date($this->dateFormat, $value = intval(strval($row[$i])));
@@ -303,9 +316,9 @@ class Table {
 				$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
 				if (!$num) $attributes .= ' style="mso-number-format: \'@\'"';
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xmlDate . '\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $attributes .= ' style="mso-number-format: \''
-					. self::XML_INT . ".$this->xmlDecs" . '\'"';
-				else $attributes .= ' style="mso-number-format: \'' . self::XML_INT . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER) $attributes .= ' style="mso-number-format: \'' . self::XML_INT . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $attributes .= ' style="mso-number-format: \'Percent\'"';
+				else 	$attributes .= ' style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
 
 				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
@@ -313,6 +326,7 @@ class Table {
 				if (!$num) $type = array('String', 't');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $type = array('DateTime', 'u');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $type = array('Number', 'f');
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $type = array('Number', 'p');
 				else $type = array('Number', 'i');
 
 				$styleId = ($rowNum % 2 ? 'o' : 'e') . $col['_xmlAlign'] . $type[1];
@@ -349,7 +363,9 @@ class Table {
 					break;
 				case 'avg':
 					if (isset($col['_calc'])) {
-						$result = $rowNum ? round($col['_calc'] / $rowNum, $this->decimals) : 0;
+						$result = $rowNum ?
+							round($col['_calc'] / $rowNum, $this->decimals + ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT ? 2 : 0))
+							: 0;
 						$label = 'ø';
 					}
 					break;
@@ -365,18 +381,26 @@ class Table {
 			if ($result !== NULL) {
 				switch($col[self::COLUMN_FORMAT]) {
 					case self::FORMAT_INTEGER:
-						$var = number_format($value = is_int($result) ? $result : intval(strval($result)), 0, '.', ' ');
+						$var = number_format($value = is_int($result) ? $result : intval(strval($result)), 0, $this->htmlDecPoint, ' ');
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
 						}
 						if ($this->type === self::TYPE_XML) $var = number_format($value, 0, '.', '');
 						break;
 					case self::FORMAT_FLOAT:
-						$var = number_format($value = is_float($result) ? $result : floatval(strval($result)), $this->decimals, '.', ' ');
+						$var = number_format($value = is_float($result) ? $result : floatval(strval($result)), $this->decimals, $this->htmlDecPoint, ' ');
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
 						}
 						if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals, '.', '');
+						break;
+					case self::FORMAT_PERCENT:
+						$var = number_format(100 * ($value = is_float($result) ? $result : floatval(strval($result))),
+							$this->decimals, $this->htmlDecPoint, '') . '%';
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
+						if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals + 2, '.', '');
 						break;
 					case self::FORMAT_UT:
 						$var = date($this->dateFormat, $value = intval(strval($result)));
@@ -403,9 +427,9 @@ class Table {
 			if ($this->type === self::TYPE_HTML) {
 				if (!$num) $attributes = 'style="mso-number-format: \'@\'"';
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xmlDate . '\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) {
-					$attributes = 'style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
-				} else $attributes = 'style="mso-number-format: \'' . self::XML_INT . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER) $attributes = 'style="mso-number-format: \'' . self::XML_INT . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $attributes = 'style="mso-number-format: \'Percent\'"';
+				else 	$attributes = 'style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
 
 				if ($col[self::COLUMN_ALIGN] != 'center') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 
@@ -415,6 +439,7 @@ class Table {
 				if (!$num) $type = array('String', 't');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $type = array('DateTime', 'u');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $type = array('Number', 'f');
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $type = array('Number', 'p');
 				else $type = array('Number', 'i');
 
 				$results .= "\t\t\t<Cell ss:StyleID=\"r$col[_xmlAlign]$type[1]\"><Data ss:Type=\"$type[0]\">" . $var . "</Data></Cell>\n";
@@ -441,6 +466,11 @@ class Table {
 				'_maxLength' => 0
 			);
 
+			if (in_array($format = strtolower($col[self::COLUMN_FORMAT]),
+				array(self::FORMAT_INTEGER, self::FORMAT_FLOAT, self::FORMAT_UT, self::FORMAT_PERCENT), TRUE)
+			) $col[self::COLUMN_FORMAT] = $format;
+			else $col[self::COLUMN_FORMAT] = self::FORMAT_TEXT;
+
 			$col['_prePostLen'] = mb_strlen($col[self::COLUMN_PREFIX] . $col[self::COLUMN_POSTFIX]);
 			$col[self::COLUMN_PREFIX] = htmlspecialchars($col[self::COLUMN_PREFIX], ENT_QUOTES);
 			$col[self::COLUMN_POSTFIX] = htmlspecialchars($col[self::COLUMN_POSTFIX], ENT_QUOTES);
@@ -456,7 +486,7 @@ class Table {
 			}
 
 			$col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER || $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT
-				|| $col[self::COLUMN_FORMAT] === self::FORMAT_UT;;
+				|| $col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT || $col[self::COLUMN_FORMAT] === self::FORMAT_UT;
 
 			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
 
@@ -607,6 +637,13 @@ class Table {
 			. "\t<Style ss:ID=\"orf\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"erf\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
 
+			. "\t<Style ss:ID=\"olp\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"elp\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ocp\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"ecp\" ss:Parent=\"ect\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"orp\" ss:Parent=\"ort\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"erp\" ss:Parent=\"ert\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+
 			. "\t<Style ss:ID=\"olu\" ss:Parent=\"olt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"elu\" ss:Parent=\"elt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"ocu\" ss:Parent=\"oct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
@@ -658,6 +695,10 @@ class Table {
 			. "\t<Style ss:ID=\"rlf\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"rcf\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"rrf\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"" . self::XML_INT . ".$this->xmlDecs\" />\n\t</Style>\n"
+
+			. "\t<Style ss:ID=\"rlp\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rcp\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
+			. "\t<Style ss:ID=\"rrp\" ss:Parent=\"rrt\">\n\t\t<NumberFormat ss:Format=\"Percent\" />\n\t</Style>\n"
 
 			. "\t<Style ss:ID=\"rlu\" ss:Parent=\"rlt\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"
 			. "\t<Style ss:ID=\"rcu\" ss:Parent=\"rct\">\n\t\t<NumberFormat ss:Format=\"$this->xmlDate\" />\n\t</Style>\n"

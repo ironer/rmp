@@ -491,7 +491,7 @@ class Table {
 			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
 
 			if (strtolower($col[self::COLUMN_CHAR_WIDTH]) === 'auto') {
-				$col[self::COLUMN_CHAR_WIDTH] = $this->type === $this->stream ? 'default' : 'auto';//self::TYPE_HTML ||
+				$col[self::COLUMN_CHAR_WIDTH] = $this->type === self::TYPE_HTML || $this->stream ? 'default' : 'auto';
 			} else $col[self::COLUMN_CHAR_WIDTH] = intval(strval($col[self::COLUMN_CHAR_WIDTH]));
 
 		} unset($col);

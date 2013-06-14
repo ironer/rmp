@@ -191,8 +191,8 @@ class Table {
 
 
 	private function getTable(&$columns) {
-		$rowEls = array(self::TYPE_HTML => array('_tr' => "\t\t<tr>\n", '_/tr' => "\t\t</tr>\n", '_trLeft' => "\t\t<tr align=\"left\">\n"),
-			self::TYPE_XML => array('_tr' => "\t\t<Row>\n", '_/tr' => "\t\t</Row>\n", '_trLeft' => "\t\t<Row>\n"));
+		$rowEls = array(self::TYPE_HTML => array('_tr' => "\t\t<tr>\n", '_/tr' => "\t\t</tr>\n", '_trBody' => "\t\t<tr align=\"left\">\n"),
+			self::TYPE_XML => array('_tr' => "\t\t<Row>\n", '_/tr' => "\t\t</Row>\n", '_trBody' => "\t\t<Row ss:Height=\"18\">\n"));
 
 		$header = $rowEls[$this->type]['_tr'] . $this->getTableHeader($columns) . $rowEls[$this->type]['_/tr'];
 		if ($this->stream) echo $header;
@@ -201,7 +201,7 @@ class Table {
 		$rowNum = 0;
 		if (isset($this->data)) {
 			for ($j = count($this->data); $rowNum < $j; ++$rowNum) {
-				$body .= $rowEls[$this->type]['_trLeft'] . $this->getRow($this->data[$rowNum], $rowNum + 1, $columns) . $rowEls[$this->type]['_/tr'];
+				$body .= $rowEls[$this->type]['_trBody'] . $this->getRow($this->data[$rowNum], $rowNum + 1, $columns) . $rowEls[$this->type]['_/tr'];
 				if ($this->stream) {
 					echo $body;
 					$body = '';
@@ -210,7 +210,7 @@ class Table {
 		}
 		if (isset($this->resource)) {
 			while ($row = mysql_fetch_assoc($this->resource)) {
-				$body .= $rowEls[$this->type]['_trLeft'] . $this->getRow(array_values($row), ++$rowNum, $columns) . $rowEls[$this->type]['_/tr'];
+				$body .= $rowEls[$this->type]['_trBody'] . $this->getRow(array_values($row), ++$rowNum, $columns) . $rowEls[$this->type]['_/tr'];
 				if ($this->stream) {
 					echo $body;
 					$body = '';

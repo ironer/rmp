@@ -270,12 +270,13 @@ class Table {
 					if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals, '.', '');
 					break;
 				case self::FORMAT_PERCENT:
-					$var = number_format(100 * ($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i]))),
-						$this->decimals, $this->htmlDecPoint, '') . '%';
+					$var = ($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])))
+						? number_format(100 * $value, $this->decimals, $this->htmlDecPoint, '') . '%'
+						: '';
 					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 						$col['_maxLength'] = $len;
 					}
-					if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals + 2, '.', '');
+					if ($this->type === self::TYPE_XML && $value) $var = number_format($value, $this->decimals + 2, '.', '');
 					break;
 				case self::FORMAT_UT:
 					$var = date($this->dateFormat, $value = intval(strval($row[$i])));
@@ -323,7 +324,7 @@ class Table {
 				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
 			} else {
-				if (!$num) $type = array('String', 't');
+				if (!$num || $var === '') $type = array('String', 't');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $type = array('DateTime', 'u');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT) $type = array('Number', 'f');
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $type = array('Number', 'p');

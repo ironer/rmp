@@ -31,13 +31,14 @@ class Table {
 		COLUMN_FUNCTION = 'func',
 		COLUMN_ALIGN = 'align',
 		COLUMN_CHAR_WIDTH = 'width',
+		COLUMN_ERROR = 'error',
 
 		T_HEAD_TR_BACKGROUND = 'headbg',
 		T_BODY_TR_EVEN_BACKGROUND = 'evenbg',
 		T_FOOT_TR_BACKGROUND = 'footbg',
 
 		FORMAT_TEXT = 'text',
-		FORMAT_INTEGER = 'int',
+		FORMAT_INT = 'int',
 		FORMAT_FLOAT = 'float',
 		FORMAT_UT = 'ut',
 		FORMAT_PERCENT = 'percent',
@@ -254,72 +255,89 @@ class Table {
 		for ($i = 0, $j = count($row); $i < $j; ++$i) {
 			$col = &$columns[$i];
 
-			switch($col[self::COLUMN_FORMAT]) {
-				case self::FORMAT_INTEGER:
-					$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0, $this->htmlDecPoint, ' ');
-					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
-						$col['_maxLength'] = $len;
-					}
-					if ($this->type === self::TYPE_XML) $var = number_format($value, 0, '.', '');
-					break;
-				case self::FORMAT_FLOAT:
-					$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals, $this->htmlDecPoint, ' ');
-					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
-						$col['_maxLength'] = $len;
-					}
-					if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals, '.', '');
-					break;
-				case self::FORMAT_PERCENT:
-					$var = ($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])))
-						? number_format(100 * $value, $this->decimals, $this->htmlDecPoint, '') . '%'
-						: '';
-					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
-						$col['_maxLength'] = $len;
-					}
-					if ($this->type === self::TYPE_XML && $value) $var = number_format($value, $this->decimals + 2, '.', '');
-					break;
-				case self::FORMAT_UT:
-					$var = date($this->dateFormat, $value = intval(strval($row[$i])));
-					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
-						$col['_maxLength'] = $len;
-					}
-					if ($this->type === self::TYPE_XML) $var = date(self::XML_DATE_STRING, $value);
-					break;
-				default:
-					$var = htmlspecialchars($value = strval($row[$i]), ENT_QUOTES);
-					if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen($value) + $col['_prePostLen']) > $col['_maxLength']) {
-						$col['_maxLength'] = $len;
-					}
-			}
+			if ($col[self::COLUMN_ERROR]) {
+				if (isset($row[$i][0], $row[$i][1]) && $row[$i][1] < 1) {
+					$error = $row[$i][1];
+					$row[$i] = $row[$i][0];
+				} else $error = 1;
+			} else $error = FALSE;
 
-			switch($col[self::COLUMN_FUNCTION]) {
-				case 'min':
-					if (!isset($col['_calc']) || ($col['_num'] ? $value < $col['_calc'] : strcasecmp($value, $col['_calc']) < 0)) {
-						$col['_calc'] = $value;
-					}
-					break;
-				case 'max':
-					if (!isset($col['_calc']) || ($col['_num'] ? $value > $col['_calc'] : strcasecmp($value, $col['_calc']) > 0)) {
-						$col['_calc'] = $value;
-					}
-					break;
-				case 'avg':
-				case 'sum':
-					if (!isset($col['_calc'])) $col['_calc'] = $value;
-					else $col['_calc'] += $value;
-			}
+			if ($error === FALSE || $error < 1) {
+				switch($col[self::COLUMN_FORMAT]) {
+					case self::FORMAT_INT:
+						$var = number_format($value = is_int($row[$i]) ? $row[$i] : intval(strval($row[$i])), 0, $this->htmlDecPoint, ' ');
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
+						if ($this->type === self::TYPE_XML) $var = number_format($value, 0, '.', '');
+						break;
+					case self::FORMAT_FLOAT:
+						$var = number_format($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])), $this->decimals, $this->htmlDecPoint, ' ');
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
+						if ($this->type === self::TYPE_XML) $var = number_format($value, $this->decimals, '.', '');
+						break;
+					case self::FORMAT_PERCENT:
+						$var = ($value = is_float($row[$i]) ? $row[$i] : floatval(strval($row[$i])))
+							? number_format(100 * $value, $this->decimals, $this->htmlDecPoint, '') . '%'
+							: '';
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
+						if ($this->type === self::TYPE_XML && $value) $var = number_format($value, $this->decimals + 2, '.', '');
+						break;
+					case self::FORMAT_UT:
+						$var = date($this->dateFormat, $value = intval(strval($row[$i])));
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
+						if ($this->type === self::TYPE_XML) $var = date(self::XML_DATE_STRING, $value);
+						break;
+					default:
+						$var = htmlspecialchars($value = strval($row[$i]), ENT_QUOTES);
+						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen($value) + $col['_prePostLen']) > $col['_maxLength']) {
+							$col['_maxLength'] = $len;
+						}
+				}
 
-			$num = FALSE;
-			if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
-			else $num = $col['_num'];
+				switch($col[self::COLUMN_FUNCTION]) {
+					case 'min':
+						if (!isset($col['_calc']) || ($col['_num'] ? $value < $col['_calc'] : strcasecmp($value, $col['_calc']) < 0)) {
+							$col['_calc'] = $value;
+						}
+						break;
+					case 'max':
+						if (!isset($col['_calc']) || ($col['_num'] ? $value > $col['_calc'] : strcasecmp($value, $col['_calc']) > 0)) {
+							$col['_calc'] = $value;
+						}
+						break;
+					case 'avg':
+						if (!isset($col['_count'])) $col['_count'] = 1;
+						else ++$col['_count'];
+					case 'sum':
+						if (!isset($col['_calc'])) $col['_calc'] = $value;
+						else $col['_calc'] += $value;
+				}
+
+				$num = FALSE;
+				if ($col['_prePostLen']) $var = $col[self::COLUMN_PREFIX] . $var . $col[self::COLUMN_POSTFIX];
+				else $num = $col['_num'];
+			} else {
+				$var = '';
+				$num = FALSE;
+			}
 
 			if ($this->type === self::TYPE_HTML) {
+				if ($error !== FALSE && $error < 1) $color = '; color: ' . self::getFontColor($error);
+				else $color = '';
+
 				$attributes = $rowNum % 2 ? '' : " bgcolor=\"$this->evenBg\"";
-				if (!$num) $attributes .= ' style="mso-number-format: \'@\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= ' style="mso-number-format: \'' . $this->xmlDate . '\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER) $attributes .= ' style="mso-number-format: \'' . self::XML_INT . '\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $attributes .= ' style="mso-number-format: \'Percent\'"';
-				else 	$attributes .= ' style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
+				if (!$num) $attributes .= " style=\"mso-number-format: '@'$color\"";
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes .= " style=\"mso-number-format: '" . $this->xmlDate . "'$color\"";
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_INT) $attributes .= " style=\"mso-number-format: '" . self::XML_INT . "'$color\"";
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $attributes .= " style=\"mso-number-format: 'Percent'$color\"";
+				else 	$attributes .= " style=\"mso-number-format: '" . self::XML_INT . ".$this->xmlDecs'$color\"";
 
 				if ($col[self::COLUMN_ALIGN] != 'left') $attributes .= ' align="' . $col[self::COLUMN_ALIGN] . '"';
 				$rowText .= "\t\t\t<td" . $attributes . '>' . $var . "</td>\n";
@@ -332,7 +350,12 @@ class Table {
 
 				$styleId = ($rowNum % 2 ? 'o' : 'e') . $col['_xmlAlign'] . $type[1];
 
-				$rowText .= "\t\t\t<Cell ss:StyleID=\"$styleId\"><Data ss:Type=\"$type[0]\">" . $var . "</Data></Cell>\n";
+				if ($error !== FALSE && $error < 1) {
+					$var = "<ss:Data ss:Type=\"String\" xmlns=\"http://www.w3.org/TR/REC-html40\">"
+						. "<Font x:Color=\"" . self::getFontColor($error) . "\">" . $var . "</Font></Data>";
+				} else $var = "<Data ss:Type=\"$type[0]\">" . $var . "</Data>";
+
+				$rowText .= "\t\t\t<Cell ss:StyleID=\"$styleId\">" . $var . "</Cell>\n";
 			}
 
 		} unset($col);
@@ -363,9 +386,9 @@ class Table {
 					}
 					break;
 				case 'avg':
-					if (isset($col['_calc'])) {
-						$result = $rowNum ?
-							round($col['_calc'] / $rowNum, $this->decimals + ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT ? 2 : 0))
+					if (isset($col['_calc'], $col['_count'])) {
+						$result = $col['_count'] ?
+							round($col['_calc'] / $col['_count'], $this->decimals + ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT ? 2 : 0))
 							: 0;
 						$label = 'ø';
 					}
@@ -381,7 +404,7 @@ class Table {
 
 			if ($result !== NULL) {
 				switch($col[self::COLUMN_FORMAT]) {
-					case self::FORMAT_INTEGER:
+					case self::FORMAT_INT:
 						$var = number_format($value = is_int($result) ? $result : intval(strval($result)), 0, $this->htmlDecPoint, ' ');
 						if ($col[self::COLUMN_CHAR_WIDTH] === 'auto' && ($len = mb_strlen(strval($var)) + $col['_prePostLen']) > $col['_maxLength']) {
 							$col['_maxLength'] = $len;
@@ -428,7 +451,7 @@ class Table {
 			if ($this->type === self::TYPE_HTML) {
 				if (!$num) $attributes = 'style="mso-number-format: \'@\'"';
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_UT) $attributes = 'style="mso-number-format: \'' . $this->xmlDate . '\'"';
-				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER) $attributes = 'style="mso-number-format: \'' . self::XML_INT . '\'"';
+				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_INT) $attributes = 'style="mso-number-format: \'' . self::XML_INT . '\'"';
 				elseif ($col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT) $attributes = 'style="mso-number-format: \'Percent\'"';
 				else 	$attributes = 'style="mso-number-format: \'' . self::XML_INT . ".$this->xmlDecs" . '\'"';
 
@@ -468,7 +491,7 @@ class Table {
 			);
 
 			if (in_array($format = strtolower($col[self::COLUMN_FORMAT]),
-				array(self::FORMAT_INTEGER, self::FORMAT_FLOAT, self::FORMAT_UT, self::FORMAT_PERCENT), TRUE)
+				array(self::FORMAT_INT, self::FORMAT_FLOAT, self::FORMAT_UT, self::FORMAT_PERCENT), TRUE)
 			) $col[self::COLUMN_FORMAT] = $format;
 			else $col[self::COLUMN_FORMAT] = self::FORMAT_TEXT;
 
@@ -486,7 +509,7 @@ class Table {
 				$col['_xmlAlign'] = 'l';
 			}
 
-			$col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INTEGER || $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT
+			$col['_num'] = $col[self::COLUMN_FORMAT] === self::FORMAT_INT || $col[self::COLUMN_FORMAT] === self::FORMAT_FLOAT
 				|| $col[self::COLUMN_FORMAT] === self::FORMAT_PERCENT || $col[self::COLUMN_FORMAT] === self::FORMAT_UT;
 
 			if (!$col['_num'] && ($func === 'sum' || $func === 'avg')) $col[self::COLUMN_FUNCTION] = '';
@@ -708,5 +731,11 @@ class Table {
 			. "</Styles>\n";
 	}
 
+
+	private static function getFontColor($error) {
+		if ($error <= 0.25) return '#006411';
+		else if ($error < 0.5) return '#90713A';
+		return '#900000';
+	}
 }
 

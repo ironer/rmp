@@ -35,7 +35,6 @@ if (DEBUG) {
 			. ' / <a href="' . WEBROOT . '">homepage</a> / <a href="' . WEBROOT . '?mail=1">odeslat email</a>'
 			. ' / <a href="' . WEBROOT . '?imap=1">zpracovat imap</a>'
 			. ' / <a href="' . WEBROOT . '?xls=1">xls</a>'
-			. ' / <a href="' . WEBROOT . '?future=1">future</a>'
 			. ' / <a href="' . WEBROOT	. '?read=1">nacist odeslani</a>' . "\n";
 
 	if (!ADVANCEDLOG) App::dump($app);
@@ -48,6 +47,5 @@ if (DEBUG) {
 			. ' / <a href="' . WEBROOT . '">homepage</a> / <a href="' . WEBROOT . '?mail=1">odeslat email</a>'
 			. ' / <a href="' . WEBROOT . '?imap=1">zpracovat imap</a>'
 			. ' / <a href="' . WEBROOT . '?xls=1">xls</a>'
-			. ' / <a href="' . WEBROOT . '?future=1">future</a>'
 			. ' / <a href="' . WEBROOT	. '?read=1">nacist odeslani</a>' . "\n";
 }
